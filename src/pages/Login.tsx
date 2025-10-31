@@ -29,17 +29,17 @@ export default function Login() {
 
       if (signInError) throw signInError;
 
-      // Get user profile to determine role
-      const { data: profile } = await supabase
-        .from('profiles')
+      // Get user roles to determine redirection
+      const { data: roles } = await supabase
+        .from('user_roles')
         .select('role')
-        .eq('id', data.user.id)
-        .single();
+        .eq('user_id', data.user.id);
 
       toast.success('Login berhasil!');
 
       // Redirect based on role
-      if (profile?.role === 'admin') {
+      const isAdmin = roles?.some((r) => r.role === 'admin');
+      if (isAdmin) {
         navigate('/admin/dashboard');
       } else {
         navigate('/app/dashboard');
@@ -118,8 +118,14 @@ export default function Login() {
               </Button>
             </form>
 
-            <div className="mt-6 text-center text-sm text-muted-foreground">
-              <p>Tidak bisa masuk? Hubungi administrator Anda</p>
+            <div className="mt-6 space-y-3 text-center text-sm">
+              <p className="text-muted-foreground">
+                Belum punya akun?{' '}
+                <Link to="/signup" className="text-primary hover:underline font-medium">
+                  Daftar di sini
+                </Link>
+              </p>
+              <p className="text-muted-foreground">Tidak bisa masuk? Hubungi administrator Anda</p>
             </div>
           </CardContent>
         </Card>

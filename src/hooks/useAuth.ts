@@ -7,8 +7,9 @@ export interface Profile {
   id: string;
   full_name: string;
   student_id: string;
-  role: 'admin' | 'voter' | 'candidate';
+  department: string | null;
   class_id: string | null;
+  roles: ('admin' | 'voter' | 'candidate')[];
 }
 
 export function useAuth() {
@@ -46,14 +47,28 @@ export function useAuth() {
 
   const fetchProfile = async (userId: string) => {
     try {
-      const { data, error } = await supabase
+      const { data: profileData, error: profileError } = await supabase
         .from('profiles')
         .select('*')
         .eq('id', userId)
         .single();
 
-      if (error) throw error;
-      setProfile(data as Profile);
+      if (profileError) throw profileError;
+
+      // Fetch user roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('role')
+        .eq('user_id', userId);
+
+      if (rolesError) throw rolesError;
+
+      const roles = rolesData?.map((r) => r.role as 'admin' | 'voter' | 'candidate') || [];
+
+      setProfile({
+        ...profileData,
+        roles,
+      } as Profile);
     } catch (error) {
       console.error('Error fetching profile:', error);
       setProfile(null);
@@ -74,8 +89,8 @@ export function useAuth() {
     profile,
     loading,
     signOut,
-    isAdmin: profile?.role === 'admin',
-    isVoter: profile?.role === 'voter',
-    isCandidate: profile?.role === 'candidate',
+    isAdmin: profile?.roles.includes('admin') || false,
+    isVoter: profile?.roles.includes('voter') || false,
+    isCandidate: profile?.roles.includes('candidate') || false,
   };
 }

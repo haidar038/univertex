@@ -97,15 +97,14 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
+                <Label>Jurusan</Label>
+                <Input value={profile?.department || '-'} disabled />
+              </div>
+
+              <div className="space-y-2">
                 <Label>Role</Label>
                 <Input
-                  value={
-                    profile?.role === 'admin'
-                      ? 'Administrator'
-                      : profile?.role === 'candidate'
-                      ? 'Kandidat'
-                      : 'Pemilih'
-                  }
+                  value={profile?.roles.join(', ').replace('admin', 'Administrator').replace('candidate', 'Kandidat').replace('voter', 'Pemilih') || '-'}
                   disabled
                 />
               </div>

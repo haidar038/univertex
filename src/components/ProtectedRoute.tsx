@@ -22,9 +22,9 @@ export function ProtectedRoute({ children, requireRole }: ProtectedRouteProps) {
     return <Navigate to="/login" replace />;
   }
 
-  if (requireRole && profile?.role !== requireRole) {
+  if (requireRole && !profile?.roles.includes(requireRole)) {
     // Redirect based on user role
-    if (profile?.role === 'admin') {
+    if (profile?.roles.includes('admin')) {
       return <Navigate to="/admin/dashboard" replace />;
     }
     return <Navigate to="/app/dashboard" replace />;
