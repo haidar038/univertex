@@ -1,20 +1,43 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { toast } from 'sonner';
 import { User, Lock } from 'lucide-react';
 
 export default function ProfilePage() {
   const { profile } = useAuth();
   const [fullName, setFullName] = useState(profile?.full_name || '');
+  const [department, setDepartment] = useState(profile?.department || '');
+  const [classId, setClassId] = useState(profile?.class_id || '');
+  const [classes, setClasses] = useState<Array<{ id: string; name: string; faculty: string }>>([]);
   const [oldPassword, setOldPassword] = useState('');
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    fetchClasses();
+  }, []);
+
+  const fetchClasses = async () => {
+    const { data, error } = await supabase
+      .from('classes')
+      .select('id, name, faculty')
+      .order('faculty', { ascending: true })
+      .order('name', { ascending: true });
+
+    if (error) {
+      console.error('Error fetching classes:', error);
+      return;
+    }
+
+    setClasses(data || []);
+  };
 
   const handleUpdateProfile = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -23,7 +46,11 @@ export default function ProfilePage() {
     try {
       const { error } = await supabase
         .from('profiles')
-        .update({ full_name: fullName })
+        .update({ 
+          full_name: fullName,
+          department: department,
+          class_id: classId || null
+        })
         .eq('id', profile?.id || '');
 
       if (error) throw error;
@@ -97,8 +124,30 @@ export default function ProfilePage() {
               </div>
 
               <div className="space-y-2">
-                <Label>Jurusan</Label>
-                <Input value={profile?.department || '-'} disabled />
+                <Label htmlFor="department">Jurusan</Label>
+                <Input
+                  id="department"
+                  value={department}
+                  onChange={(e) => setDepartment(e.target.value)}
+                  placeholder="Masukkan jurusan Anda"
+                  disabled={loading}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="class">Kelas</Label>
+                <Select value={classId} onValueChange={setClassId} disabled={loading}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pilih kelas" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {classes.map((cls) => (
+                      <SelectItem key={cls.id} value={cls.id}>
+                        {cls.name} - {cls.faculty}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
               </div>
 
               <div className="space-y-2">
