@@ -10,7 +10,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { toast } from 'sonner';
 import { Vote } from 'lucide-react';
 
-export default function SignupPage() {
+function SignupPage() {
   const navigate = useNavigate();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -213,3 +213,5 @@ export default function SignupPage() {
     </div>
   );
 }
+
+export default SignupPage;
