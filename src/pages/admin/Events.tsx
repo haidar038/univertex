@@ -4,13 +4,22 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { Plus, Calendar, Clock, Eye } from 'lucide-react';
+import { Plus, Calendar, Clock, Eye, Edit, Trash2, Settings } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { CreateEventDialog } from '@/components/admin/events/CreateEventDialog';
+import { EditEventDialog } from '@/components/admin/events/EditEventDialog';
+import { DeleteEventDialog } from '@/components/admin/events/DeleteEventDialog';
+import { EventStatusDialog } from '@/components/admin/events/EventStatusDialog';
 
 export default function AdminEvents() {
   const [events, setEvents] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [statusDialogOpen, setStatusDialogOpen] = useState(false);
+  const [selectedEvent, setSelectedEvent] = useState<any>(null);
 
   useEffect(() => {
     fetchEvents();
@@ -32,6 +41,21 @@ export default function AdminEvents() {
     }
   };
 
+  const handleEdit = (event: any) => {
+    setSelectedEvent(event);
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = (event: any) => {
+    setSelectedEvent(event);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleStatusChange = (event: any) => {
+    setSelectedEvent(event);
+    setStatusDialogOpen(true);
+  };
+
   const getStatusBadge = (status: string) => {
     switch (status) {
       case 'active':
@@ -50,7 +74,7 @@ export default function AdminEvents() {
           <h1 className="mb-2 text-3xl font-bold text-foreground">Acara Pemilihan</h1>
           <p className="text-muted-foreground">Kelola semua acara pemilihan</p>
         </div>
-        <Button className="gap-2">
+        <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
           <Plus className="h-4 w-4" />
           Buat Acara Baru
         </Button>
@@ -66,7 +90,7 @@ export default function AdminEvents() {
             <p className="mb-4 text-sm text-muted-foreground">
               Mulai dengan membuat acara pemilihan pertama Anda
             </p>
-            <Button className="gap-2">
+            <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
               <Plus className="h-4 w-4" />
               Buat Acara
             </Button>
@@ -97,17 +121,80 @@ export default function AdminEvents() {
                   </div>
                 </div>
 
-                <Link to={`/admin/events/${event.id}`}>
-                  <Button variant="outline" className="w-full gap-2">
-                    <Eye className="h-4 w-4" />
-                    Lihat Detail
-                  </Button>
-                </Link>
+                <div className="space-y-2">
+                  <Link to={`/admin/events/${event.id}`} className="block">
+                    <Button variant="outline" className="w-full gap-2">
+                      <Eye className="h-4 w-4" />
+                      Lihat Detail
+                    </Button>
+                  </Link>
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 gap-2"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleStatusChange(event);
+                      }}
+                    >
+                      <Settings className="h-4 w-4" />
+                      Status
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleEdit(event);
+                      }}
+                    >
+                      <Edit className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      onClick={(e) => {
+                        e.preventDefault();
+                        handleDelete(event);
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
               </CardContent>
             </Card>
           ))}
         </div>
       )}
+
+      {/* Dialogs */}
+      <CreateEventDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={fetchEvents}
+      />
+      <EditEventDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        event={selectedEvent}
+        onSuccess={fetchEvents}
+      />
+      <DeleteEventDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        eventId={selectedEvent?.id}
+        eventTitle={selectedEvent?.title}
+        onSuccess={fetchEvents}
+      />
+      <EventStatusDialog
+        open={statusDialogOpen}
+        onOpenChange={setStatusDialogOpen}
+        eventId={selectedEvent?.id}
+        currentStatus={selectedEvent?.status}
+        onSuccess={fetchEvents}
+      />
     </div>
   );
 }

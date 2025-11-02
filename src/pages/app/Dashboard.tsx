@@ -1,169 +1,252 @@
-import { useEffect, useState } from 'react';
-import { Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { useAuth } from '@/hooks/useAuth';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Vote, Calendar, CheckCircle2, Clock } from 'lucide-react';
-import { format } from 'date-fns';
-import { id } from 'date-fns/locale';
+import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/hooks/useAuth";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Vote, Calendar, CheckCircle2, Clock, BarChart3, Eye, EyeOff } from "lucide-react";
+import { format } from "date-fns";
+import { id } from "date-fns/locale";
 
 export default function VoterDashboard() {
-  const { profile } = useAuth();
-  const [activeEvents, setActiveEvents] = useState<any[]>([]);
-  const [closedEvents, setClosedEvents] = useState<any[]>([]);
-  const [votedEvents, setVotedEvents] = useState<Set<string>>(new Set());
-  const [loading, setLoading] = useState(true);
+    const { profile } = useAuth();
+    const [activeEvents, setActiveEvents] = useState<any[]>([]);
+    const [closedEvents, setClosedEvents] = useState<any[]>([]);
+    const [votedEvents, setVotedEvents] = useState<Set<string>>(new Set());
+    const [loading, setLoading] = useState(true);
+    const [className, setClassName] = useState<string>("");
 
-  useEffect(() => {
-    if (profile) {
-      fetchEvents();
-    }
-  }, [profile]);
+    useEffect(() => {
+        if (profile) {
+            fetchEvents();
+        }
+    }, [profile]);
 
-  const fetchEvents = async () => {
-    try {
-      // Get user's class eligible events
-      const { data: eligibleGroups } = await supabase
-        .from('event_voter_groups')
-        .select('event_id')
-        .eq('class_id', profile?.class_id || '');
+    const fetchEvents = async () => {
+        try {
+            console.log("Fetching events for user:", {
+                userId: profile?.id,
+                classId: profile?.class_id,
+                fullName: profile?.full_name,
+            });
 
-      const eligibleEventIds = eligibleGroups?.map((g) => g.event_id) || [];
+            // Check if user has a class assigned
+            if (!profile?.class_id) {
+                console.warn("User has no class assigned. Cannot fetch eligible events.");
+                setActiveEvents([]);
+                setClosedEvents([]);
+                setLoading(false);
+                return;
+            }
 
-      // Fetch active events
-      const { data: activeData } = await supabase
-        .from('election_events')
-        .select('*')
-        .eq('status', 'active')
-        .in('id', eligibleEventIds);
+            // Fetch class name
+            const { data: classData } = await supabase.from("classes").select("name").eq("id", profile.class_id).single();
 
-      // Fetch closed events
-      const { data: closedData } = await supabase
-        .from('election_events')
-        .select('*')
-        .eq('status', 'closed')
-        .in('id', eligibleEventIds);
+            if (classData) {
+                setClassName(classData.name);
+            }
 
-      // Check which events user has voted in
-      const { data: votes } = await supabase
-        .from('votes')
-        .select('event_id')
-        .eq('voter_id', profile?.id || '');
+            // Get user's class eligible events
+            const { data: eligibleGroups, error: groupsError } = await supabase.from("event_voter_groups").select("event_id").eq("class_id", profile.class_id);
 
-      const votedSet = new Set(votes?.map((v) => v.event_id) || []);
+            console.log("Eligible groups fetch:", {
+                classId: profile.class_id,
+                eligibleGroups,
+                error: groupsError,
+            });
 
-      setActiveEvents(activeData || []);
-      setClosedEvents(closedData || []);
-      setVotedEvents(votedSet);
-    } catch (error) {
-      console.error('Error fetching events:', error);
-    } finally {
-      setLoading(false);
-    }
-  };
+            if (groupsError) {
+                console.error("Error fetching voter groups:", groupsError);
+            }
 
-  const hasVoted = (eventId: string) => votedEvents.has(eventId);
+            const eligibleEventIds = eligibleGroups?.map((g) => g.event_id) || [];
 
-  return (
-    <div className="p-8">
-      <div className="mb-8">
-        <h1 className="mb-2 text-3xl font-bold text-foreground">
-          Selamat datang, {profile?.full_name}
-        </h1>
-        <p className="text-muted-foreground">
-          Lihat pemilihan yang tersedia dan berikan suara Anda
-        </p>
-      </div>
+            // If no eligible events found, show message
+            if (eligibleEventIds.length === 0) {
+                console.warn("No events assigned to this class. Check event_voter_groups table.");
+                setActiveEvents([]);
+                setClosedEvents([]);
+                setLoading(false);
+                return;
+            }
 
-      {loading ? (
-        <div className="text-center text-muted-foreground">Memuat...</div>
-      ) : (
-        <div className="space-y-8">
-          {/* Active Elections */}
-          <div>
-            <h2 className="mb-4 text-xl font-bold text-foreground">Pemilihan Aktif</h2>
-            {activeEvents.length === 0 ? (
-              <Card>
-                <CardContent className="flex min-h-[200px] flex-col items-center justify-center py-12">
-                  <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    Tidak ada pemilihan aktif saat ini
-                  </p>
-                </CardContent>
-              </Card>
-            ) : (
-              <div className="grid gap-6 md:grid-cols-2">
-                {activeEvents.map((event) => (
-                  <Card key={event.id} className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg">{event.title}</CardTitle>
-                        {hasVoted(event.id) ? (
-                          <Badge className="bg-success gap-1">
-                            <CheckCircle2 className="h-3 w-3" />
-                            Sudah Memilih
-                          </Badge>
-                        ) : (
-                          <Badge className="bg-primary">Aktif</Badge>
-                        )}
-                      </div>
-                    </CardHeader>
-                    <CardContent className="space-y-4">
-                      <p className="text-sm text-muted-foreground">{event.description}</p>
-                      <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                        <Clock className="h-4 w-4" />
-                        Berakhir: {format(new Date(event.end_time), 'dd MMM yyyy HH:mm', { locale: id })}
-                      </div>
-                      {hasVoted(event.id) ? (
-                        <div className="rounded-lg bg-success/10 p-3 text-center">
-                          <p className="text-sm font-medium text-success-foreground">
-                            Terima kasih telah memberikan suara!
-                          </p>
-                        </div>
-                      ) : (
-                        <Link to={`/app/vote/${event.id}`}>
-                          <Button className="w-full gap-2">
-                            <Vote className="h-4 w-4" />
-                            Berikan Suara
-                          </Button>
-                        </Link>
-                      )}
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            )}
-          </div>
+            console.log("Eligible event IDs:", eligibleEventIds);
 
-          {/* Closed Elections */}
-          {closedEvents.length > 0 && (
-            <div>
-              <h2 className="mb-4 text-xl font-bold text-foreground">Hasil Pemilihan</h2>
-              <div className="grid gap-6 md:grid-cols-2">
-                {closedEvents.map((event) => (
-                  <Card key={event.id}>
-                    <CardHeader>
-                      <div className="flex items-start justify-between">
-                        <CardTitle className="text-lg">{event.title}</CardTitle>
-                        <Badge variant="secondary">Selesai</Badge>
-                      </div>
-                    </CardHeader>
-                    <CardContent>
-                      <Link to={`/app/results/${event.id}`}>
-                        <Button variant="outline" className="w-full">
-                          Lihat Hasil
-                        </Button>
-                      </Link>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
+            // Fetch active events
+            const { data: activeData, error: activeError } = await supabase.from("election_events").select("*").eq("status", "active").in("id", eligibleEventIds);
+
+            if (activeError) {
+                console.error("Error fetching active events:", activeError);
+            }
+
+            // Fetch closed events
+            const { data: closedData, error: closedError } = await supabase.from("election_events").select("*").eq("status", "closed").in("id", eligibleEventIds);
+
+            if (closedError) {
+                console.error("Error fetching closed events:", closedError);
+            }
+
+            // Check which events user has voted in
+            const { data: votes } = await supabase
+                .from("votes")
+                .select("event_id")
+                .eq("voter_id", profile?.id || "");
+
+            const votedSet = new Set(votes?.map((v) => v.event_id) || []);
+
+            setActiveEvents(activeData || []);
+            setClosedEvents(closedData || []);
+            setVotedEvents(votedSet);
+        } catch (error) {
+            console.error("Error fetching events:", error);
+        } finally {
+            setLoading(false);
+        }
+    };
+
+    const hasVoted = (eventId: string) => votedEvents.has(eventId);
+
+    return (
+        <div className="p-8">
+            <div className="mb-8">
+                <h1 className="mb-2 text-3xl font-bold text-foreground">Selamat datang, {profile?.full_name}</h1>
+                <p className="text-muted-foreground">Lihat pemilihan yang tersedia dan berikan suara Anda</p>
             </div>
-          )}
+
+            {loading ? (
+                <div className="text-center text-muted-foreground">Memuat...</div>
+            ) : (
+                <div className="space-y-8">
+                    {/* Active Elections */}
+                    <div>
+                        <h2 className="mb-4 text-xl font-bold text-foreground">Pemilihan Aktif</h2>
+                        {activeEvents.length === 0 ? (
+                            <Card>
+                                <CardContent className="flex min-h-[200px] flex-col items-center justify-center py-12">
+                                    <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
+                                    <p className="text-sm text-muted-foreground">Tidak ada pemilihan aktif saat ini</p>
+                                    {!profile?.class_id && (
+                                        <div className="mt-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-4 max-w-md">
+                                            <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                                                <strong>Perhatian:</strong> Anda belum di-assign ke kelas. Hubungi admin untuk mendaftarkan Anda ke kelas.
+                                            </p>
+                                        </div>
+                                    )}
+                                    {profile?.class_id && (
+                                        <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 max-w-md">
+                                            <p className="text-xs text-blue-800 dark:text-blue-200">
+                                                <strong>Info:</strong> Kelas Anda: <em>{className || "Unknown"}</em>. Jika ada pemilihan aktif namun tidak muncul, hubungi admin untuk mengaktifkan pemilihan untuk kelas Anda.
+                                            </p>
+                                        </div>
+                                    )}
+                                </CardContent>
+                            </Card>
+                        ) : (
+                            <div className="grid gap-6 md:grid-cols-2">
+                                {activeEvents.map((event) => (
+                                    <Card key={event.id} className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
+                                        <CardHeader>
+                                            <div className="flex items-start justify-between">
+                                                <CardTitle className="text-lg">{event.title}</CardTitle>
+                                                {hasVoted(event.id) ? (
+                                                    <Badge className="bg-success gap-1">
+                                                        <CheckCircle2 className="h-3 w-3" />
+                                                        Sudah Memilih
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge className="bg-primary">Aktif</Badge>
+                                                )}
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
+
+                                            {/* Election Type Badge */}
+                                            <div className="mb-3 flex items-center gap-2">
+                                                {event.election_type === 'open' ? (
+                                                    <Badge variant="outline" className="gap-1 text-xs">
+                                                        <Eye className="h-3 w-3" />
+                                                        Pemilihan Terbuka
+                                                    </Badge>
+                                                ) : (
+                                                    <Badge variant="outline" className="gap-1 text-xs">
+                                                        <EyeOff className="h-3 w-3" />
+                                                        Pemilihan Tertutup
+                                                    </Badge>
+                                                )}
+                                            </div>
+
+                                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
+                                                <Clock className="h-4 w-4" />
+                                                Berakhir: {format(new Date(event.end_time), "dd MMM yyyy HH:mm", { locale: id })}
+                                            </div>
+                                            {hasVoted(event.id) ? (
+                                                <div className="space-y-3">
+                                                    <div className="rounded-lg bg-success/10 p-3 text-center">
+                                                        <p className="text-sm font-medium text-success-foreground">Terima kasih telah memberikan suara!</p>
+                                                    </div>
+                                                    {(event.election_type === 'open' || event.show_results_after_voting) && (
+                                                        <Link to={`/app/results/${event.id}`}>
+                                                            <Button variant="outline" className="w-full gap-2">
+                                                                <BarChart3 className="h-4 w-4" />
+                                                                Lihat Hasil Sementara
+                                                            </Button>
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            ) : (
+                                                <div className="space-y-3">
+                                                    <Link to={`/app/vote/${event.id}`}>
+                                                        <Button className="w-full gap-2">
+                                                            <Vote className="h-4 w-4" />
+                                                            Berikan Suara
+                                                        </Button>
+                                                    </Link>
+                                                    {event.election_type === 'open' && (
+                                                        <Link to={`/app/results/${event.id}`}>
+                                                            <Button variant="ghost" className="w-full gap-2">
+                                                                <BarChart3 className="h-4 w-4" />
+                                                                Lihat Hasil Real-time
+                                                            </Button>
+                                                        </Link>
+                                                    )}
+                                                </div>
+                                            )}
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    {/* Closed Elections */}
+                    {closedEvents.length > 0 && (
+                        <div>
+                            <h2 className="mb-4 text-xl font-bold text-foreground">Hasil Pemilihan</h2>
+                            <div className="grid gap-6 md:grid-cols-2">
+                                {closedEvents.map((event) => (
+                                    <Card key={event.id}>
+                                        <CardHeader>
+                                            <div className="flex items-start justify-between">
+                                                <CardTitle className="text-lg">{event.title}</CardTitle>
+                                                <Badge variant="secondary">Selesai</Badge>
+                                            </div>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <Link to={`/app/results/${event.id}`}>
+                                                <Button variant="outline" className="w-full">
+                                                    Lihat Hasil
+                                                </Button>
+                                            </Link>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            )}
         </div>
-      )}
-    </div>
-  );
+    );
 }

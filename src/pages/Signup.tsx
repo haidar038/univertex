@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
@@ -7,7 +7,7 @@ import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Vote, Eye, EyeOff } from 'lucide-react';
+import { Vote, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 function SignupPage() {
   const navigate = useNavigate();
@@ -20,6 +20,24 @@ function SignupPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
+
+  // Check if user is already logged in
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data: { session } } = await supabase.auth.getSession();
+      if (session) {
+        // Get user roles to redirect to appropriate dashboard
+        const { data: roles } = await supabase
+          .from("user_roles")
+          .select("role")
+          .eq("user_id", session.user.id);
+
+        const isAdmin = roles?.some((r) => r.role === "admin");
+        navigate(isAdmin ? "/admin/dashboard" : "/app/dashboard", { replace: true });
+      }
+    };
+    checkSession();
+  }, [navigate]);
 
 
   const handleSignup = async (e: React.FormEvent) => {
@@ -70,7 +88,14 @@ function SignupPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-primary/5 to-secondary/5 p-4">
-      <Card className="w-full max-w-md">
+      <div className="w-full max-w-md">
+        <div className="mb-4">
+          <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
+            <ArrowLeft className="h-4 w-4" />
+            Kembali ke Beranda
+          </Link>
+        </div>
+        <Card className="w-full">
         <CardHeader className="space-y-1 text-center">
           <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
             <Vote className="h-6 w-6 text-primary" />
@@ -178,6 +203,7 @@ function SignupPage() {
           </form>
         </CardContent>
       </Card>
+      </div>
     </div>
   );
 }

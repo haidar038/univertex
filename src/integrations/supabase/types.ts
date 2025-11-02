@@ -14,33 +14,89 @@ export type Database = {
   }
   public: {
     Tables: {
+      candidate_notifications: {
+        Row: {
+          candidate_id: string | null
+          created_at: string | null
+          id: string
+          is_read: boolean | null
+          message: string
+          type: string
+          user_id: string | null
+        }
+        Insert: {
+          candidate_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message: string
+          type: string
+          user_id?: string | null
+        }
+        Update: {
+          candidate_id?: string | null
+          created_at?: string | null
+          id?: string
+          is_read?: boolean | null
+          message?: string
+          type?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "candidate_notifications_candidate_id_fkey"
+            columns: ["candidate_id"]
+            isOneToOne: false
+            referencedRelation: "candidates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       candidates: {
         Row: {
+          admin_notes: string | null
+          approved_at: string | null
+          approved_by: string | null
           created_at: string
           event_id: string
           id: string
           mission: string | null
+          photo_storage_path: string | null
           photo_url: string | null
+          rejection_reason: string | null
+          status: Database["public"]["Enums"]["candidate_status"]
           updated_at: string
           user_id: string
           vision: string | null
         }
         Insert: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           event_id: string
           id?: string
           mission?: string | null
+          photo_storage_path?: string | null
           photo_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["candidate_status"]
           updated_at?: string
           user_id: string
           vision?: string | null
         }
         Update: {
+          admin_notes?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
           created_at?: string
           event_id?: string
           id?: string
           mission?: string | null
+          photo_storage_path?: string | null
           photo_url?: string | null
+          rejection_reason?: string | null
+          status?: Database["public"]["Enums"]["candidate_status"]
           updated_at?: string
           user_id?: string
           vision?: string | null
@@ -90,8 +146,11 @@ export type Database = {
         Row: {
           created_at: string
           description: string | null
+          election_type: Database["public"]["Enums"]["election_type"]
           end_time: string
           id: string
+          public_results: boolean
+          show_results_after_voting: boolean
           start_time: string
           status: string
           title: string
@@ -100,8 +159,11 @@ export type Database = {
         Insert: {
           created_at?: string
           description?: string | null
+          election_type?: Database["public"]["Enums"]["election_type"]
           end_time: string
           id?: string
+          public_results?: boolean
+          show_results_after_voting?: boolean
           start_time: string
           status?: string
           title: string
@@ -110,8 +172,11 @@ export type Database = {
         Update: {
           created_at?: string
           description?: string | null
+          election_type?: Database["public"]["Enums"]["election_type"]
           end_time?: string
           id?: string
+          public_results?: boolean
+          show_results_after_voting?: boolean
           start_time?: string
           status?: string
           title?: string
@@ -265,6 +330,28 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      admin_create_user: {
+        Args: {
+          p_class_id?: string
+          p_department?: string
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_skip_confirmation?: boolean
+          p_student_id: string
+        }
+        Returns: string
+      }
+      create_admin_user: {
+        Args: {
+          p_email: string
+          p_full_name: string
+          p_password: string
+          p_student_id: string
+        }
+        Returns: string
+      }
+      get_user_email: { Args: { user_id: string }; Returns: string }
       has_role: {
         Args: {
           _role: Database["public"]["Enums"]["app_role"]
@@ -272,9 +359,12 @@ export type Database = {
         }
         Returns: boolean
       }
+      make_user_admin: { Args: { user_email: string }; Returns: undefined }
     }
     Enums: {
       app_role: "admin" | "voter" | "candidate"
+      candidate_status: "pending" | "approved" | "rejected"
+      election_type: "open" | "closed"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -403,6 +493,8 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["admin", "voter", "candidate"],
+      candidate_status: ["pending", "approved", "rejected"],
+      election_type: ["open", "closed"],
     },
   },
 } as const

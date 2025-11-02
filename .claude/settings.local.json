@@ -1,0 +1,12 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(npx supabase db push)",
+      "Bash(npx supabase:*)",
+      "Bash(src/integrations/supabase/types.ts)",
+      "Bash(npm run build:*)"
+    ],
+    "deny": [],
+    "ask": []
+  }
+}

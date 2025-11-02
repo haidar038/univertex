@@ -7,6 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { toast } from 'sonner';
 import { Vote, User } from 'lucide-react';
+import { getCandidatePhotoUrl } from '@/lib/candidate-helpers';
 
 export default function VotingPage() {
   const { eventId } = useParams();
@@ -33,10 +34,12 @@ export default function VotingPage() {
         .eq('id', eventId)
         .single();
 
+      // Only fetch approved candidates
       const { data: candidatesData } = await supabase
         .from('candidates')
         .select('*, profiles(full_name, student_id)')
-        .eq('event_id', eventId);
+        .eq('event_id', eventId)
+        .eq('status', 'approved');
 
       setEvent(eventData);
       setCandidates(candidatesData || []);
@@ -66,7 +69,15 @@ export default function VotingPage() {
         }
       } else {
         toast.success('Suara Anda berhasil tercatat!');
-        navigate('/app/dashboard');
+
+        // Check if we should show results after voting
+        if (event?.election_type === 'open' || event?.show_results_after_voting) {
+          // Redirect to results page
+          navigate(`/app/results/${eventId}`);
+        } else {
+          // Go back to dashboard
+          navigate('/app/dashboard');
+        }
       }
     } catch (error: any) {
       console.error('Error submitting vote:', error);
@@ -104,52 +115,66 @@ export default function VotingPage() {
           </Card>
         ) : (
           <div className="space-y-4">
-            {candidates.map((candidate) => (
-              <Card
-                key={candidate.id}
-                className={`cursor-pointer transition-all hover:shadow-lg ${
-                  selectedCandidate === candidate.id
-                    ? 'border-primary bg-primary/5 shadow-primary'
-                    : ''
-                }`}
-                onClick={() => setSelectedCandidate(candidate.id)}
-              >
-                <CardHeader>
-                  <div className="flex items-start gap-4">
-                    <div className="flex h-16 w-16 items-center justify-center rounded-full bg-gradient-primary">
-                      <User className="h-8 w-8 text-primary-foreground" />
+            {candidates.map((candidate) => {
+              const photoUrl = getCandidatePhotoUrl(candidate.photo_storage_path, candidate.photo_url);
+
+              return (
+                <Card
+                  key={candidate.id}
+                  className={`cursor-pointer transition-all hover:shadow-lg ${
+                    selectedCandidate === candidate.id
+                      ? 'border-primary bg-primary/5 shadow-primary'
+                      : ''
+                  }`}
+                  onClick={() => setSelectedCandidate(candidate.id)}
+                >
+                  <CardHeader>
+                    <div className="flex items-start gap-4">
+                      <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
+                        {photoUrl ? (
+                          <img
+                            src={photoUrl}
+                            alt={`Foto ${(candidate.profiles as any).full_name}`}
+                            className="h-full w-full object-cover"
+                          />
+                        ) : (
+                          <div className="flex h-full w-full items-center justify-center bg-gradient-primary">
+                            <User className="h-10 w-10 text-primary-foreground" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="flex-1">
+                        <CardTitle className="text-xl">
+                          {(candidate.profiles as any).full_name}
+                        </CardTitle>
+                        <p className="text-sm text-muted-foreground">
+                          {(candidate.profiles as any).student_id}
+                        </p>
+                      </div>
+                      {selectedCandidate === candidate.id && (
+                        <div className="rounded-full bg-primary p-2">
+                          <Vote className="h-5 w-5 text-primary-foreground" />
+                        </div>
+                      )}
                     </div>
-                    <div className="flex-1">
-                      <CardTitle className="text-xl">
-                        {(candidate.profiles as any).full_name}
-                      </CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div>
+                      <h3 className="mb-2 font-semibold text-foreground">Visi</h3>
                       <p className="text-sm text-muted-foreground">
-                        {(candidate.profiles as any).student_id}
+                        {candidate.vision || 'Belum diisi'}
                       </p>
                     </div>
-                    {selectedCandidate === candidate.id && (
-                      <div className="rounded-full bg-primary p-2">
-                        <Vote className="h-5 w-5 text-primary-foreground" />
-                      </div>
-                    )}
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  <div>
-                    <h3 className="mb-2 font-semibold text-foreground">Visi</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {candidate.vision || 'Belum diisi'}
-                    </p>
-                  </div>
-                  <div>
-                    <h3 className="mb-2 font-semibold text-foreground">Misi</h3>
-                    <p className="text-sm text-muted-foreground">
-                      {candidate.mission || 'Belum diisi'}
-                    </p>
-                  </div>
-                </CardContent>
-              </Card>
-            ))}
+                    <div>
+                      <h3 className="mb-2 font-semibold text-foreground">Misi</h3>
+                      <p className="text-sm text-muted-foreground">
+                        {candidate.mission || 'Belum diisi'}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
           </div>
         )}
 

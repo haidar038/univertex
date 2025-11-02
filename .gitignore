@@ -7,9 +7,22 @@ yarn-error.log*
 pnpm-debug.log*
 lerna-debug.log*
 
+# Dependencies
 node_modules
+
+# Build outputs
 dist
 dist-ssr
+build
+out
+.next
+
+# Environment files
+.env
+.env.local
+.env.development
+.env.production
+.env.test
 *.local
 
 # Editor directories and files
@@ -22,3 +35,30 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+*.swp
+*.swo
+Thumbs.db
+
+# Testing & Coverage
+coverage
+.nyc_output
+*.lcov
+
+# Cache & Temporary
+.cache
+.parcel-cache
+.turbo
+*.tmp
+*.temp
+.eslintcache
+
+# Supabase local files
+supabase/.temp
+supabase/.branches
+
+# Debug
+*.tsbuildinfo
+
+# OS files
+.DS_Store
+Desktop.ini

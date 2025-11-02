@@ -3,25 +3,86 @@ import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Users as UsersIcon } from 'lucide-react';
+import { UserPlus, Users as UsersIcon, Edit, Trash2, Upload, KeyRound } from 'lucide-react';
+import { CreateUserDialog } from '@/components/admin/users/CreateUserDialog';
+import { EditUserDialog } from '@/components/admin/users/EditUserDialog';
+import { DeleteUserDialog } from '@/components/admin/users/DeleteUserDialog';
+import { BulkImportUsersDialog } from '@/components/admin/users/BulkImportUsersDialog';
+import { ResetPasswordDialog } from '@/components/admin/users/ResetPasswordDialog';
+
+interface UserWithRoles {
+  id: string;
+  full_name: string;
+  student_id: string;
+  email?: string;
+  department: string | null;
+  class_id: string | null;
+  classes: { name: string } | null;
+  roles: Array<{ role: string }>;
+}
 
 export default function AdminUsers() {
-  const [users, setUsers] = useState<any[]>([]);
+  const [users, setUsers] = useState<UserWithRoles[]>([]);
   const [loading, setLoading] = useState(true);
+  const [createDialogOpen, setCreateDialogOpen] = useState(false);
+  const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
 
   useEffect(() => {
     fetchUsers();
   }, []);
 
+  const handleEdit = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setEditDialogOpen(true);
+  };
+
+  const handleDelete = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setDeleteDialogOpen(true);
+  };
+
+  const handleResetPassword = (user: UserWithRoles) => {
+    setSelectedUser(user);
+    setResetPasswordDialogOpen(true);
+  };
+
   const fetchUsers = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch all profiles with their classes and roles
+      const { data: profilesData, error: profilesError } = await supabase
         .from('profiles')
-        .select('*, classes(name)')
+        .select('id, full_name, student_id, department, class_id, classes(name)')
         .order('created_at', { ascending: false });
 
-      if (error) throw error;
-      setUsers(data || []);
+      if (profilesError) throw profilesError;
+
+      // Fetch all user roles
+      const { data: rolesData, error: rolesError } = await supabase
+        .from('user_roles')
+        .select('user_id, role');
+
+      if (rolesError) throw rolesError;
+
+      // Combine profiles with their roles and filter out admins
+      const usersWithRoles = (profilesData || []).map(profile => {
+        const userRoles = (rolesData || [])
+          .filter(r => r.user_id === profile.id)
+          .map(r => ({ role: r.role }));
+
+        return {
+          ...profile,
+          roles: userRoles,
+        };
+      }).filter(user => {
+        // Exclude users with admin role
+        return !user.roles.some(r => r.role === 'admin');
+      });
+
+      setUsers(usersWithRoles);
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -47,10 +108,16 @@ export default function AdminUsers() {
           <h1 className="mb-2 text-3xl font-bold text-foreground">Manajemen Pengguna</h1>
           <p className="text-muted-foreground">Kelola pengguna dan peran mereka</p>
         </div>
-        <Button className="gap-2">
-          <UserPlus className="h-4 w-4" />
-          Tambah Pengguna
-        </Button>
+        <div className="flex gap-2">
+          <Button variant="outline" className="gap-2" onClick={() => setBulkImportDialogOpen(true)}>
+            <Upload className="h-4 w-4" />
+            Import CSV
+          </Button>
+          <Button className="gap-2" onClick={() => setCreateDialogOpen(true)}>
+            <UserPlus className="h-4 w-4" />
+            Tambah Pengguna
+          </Button>
+        </div>
       </div>
 
       {loading ? (
@@ -76,6 +143,7 @@ export default function AdminUsers() {
                     <th className="p-4 text-left text-sm font-medium text-foreground">NIM</th>
                     <th className="p-4 text-left text-sm font-medium text-foreground">Kelas</th>
                     <th className="p-4 text-left text-sm font-medium text-foreground">Role</th>
+                    <th className="p-4 text-left text-sm font-medium text-foreground">Aksi</th>
                   </tr>
                 </thead>
                 <tbody className="divide-y divide-border">
@@ -86,7 +154,44 @@ export default function AdminUsers() {
                       <td className="p-4 text-sm text-muted-foreground">
                         {user.classes?.name || '-'}
                       </td>
-                      <td className="p-4">{getRoleBadge(user.role)}</td>
+                      <td className="p-4">
+                        <div className="flex gap-1">
+                          {user.roles.length > 0 ? (
+                            user.roles.map((roleObj, idx) => (
+                              <span key={idx}>{getRoleBadge(roleObj.role)}</span>
+                            ))
+                          ) : (
+                            <span className="text-sm text-muted-foreground">-</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className="p-4">
+                        <div className="flex gap-2">
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleEdit(user)}
+                          >
+                            <Edit className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleResetPassword(user)}
+                            title="Reset Password"
+                          >
+                            <KeyRound className="h-4 w-4" />
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(user)}
+                            className="text-destructive hover:text-destructive"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -95,6 +200,39 @@ export default function AdminUsers() {
           </CardContent>
         </Card>
       )}
+
+      {/* Dialogs */}
+      <CreateUserDialog
+        open={createDialogOpen}
+        onOpenChange={setCreateDialogOpen}
+        onSuccess={fetchUsers}
+      />
+      <BulkImportUsersDialog
+        open={bulkImportDialogOpen}
+        onOpenChange={setBulkImportDialogOpen}
+        onSuccess={fetchUsers}
+      />
+      <EditUserDialog
+        open={editDialogOpen}
+        onOpenChange={setEditDialogOpen}
+        user={selectedUser}
+        onSuccess={fetchUsers}
+      />
+      <ResetPasswordDialog
+        open={resetPasswordDialogOpen}
+        onOpenChange={setResetPasswordDialogOpen}
+        userId={selectedUser?.id || null}
+        userEmail={selectedUser?.email || `${selectedUser?.student_id}@university.edu`}
+        userName={selectedUser?.full_name || null}
+        onSuccess={fetchUsers}
+      />
+      <DeleteUserDialog
+        open={deleteDialogOpen}
+        onOpenChange={setDeleteDialogOpen}
+        userId={selectedUser?.id || null}
+        userName={selectedUser?.full_name || null}
+        onSuccess={fetchUsers}
+      />
     </div>
   );
 }
