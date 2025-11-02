@@ -25,6 +25,8 @@ import {
     Phone,
     MapPin,
     ArrowRight,
+    Menu,
+    X,
 } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
@@ -45,6 +47,7 @@ function Index() {
     const [activeEvents, setActiveEvents] = useState<Event[]>([]);
     const [publicResults, setPublicResults] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
     const [stats, setStats] = useState({
         participationRate: 0,
         activeElections: 0,
@@ -109,11 +112,13 @@ function Index() {
             <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
                 <div className="container mx-auto px-4">
                     <div className="flex h-16 items-center justify-between">
+                        {/* Logo */}
                         <div className="flex items-center gap-3">
                             <img src={resolvedTheme === "dark" ? "/UniVertexWhite.png" : "/UniVertex-Primary.png"} alt="UniVertex" className="h-10 w-auto" />
                             <span className="text-xl font-bold text-foreground">UniVertex</span>
                         </div>
 
+                        {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center gap-8">
                             <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                                 Fitur
@@ -132,7 +137,8 @@ function Index() {
                             </a>
                         </div>
 
-                        <div className="flex items-center gap-3">
+                        {/* Desktop Actions */}
+                        <div className="hidden md:flex items-center gap-3">
                             <ThemeToggle />
                             <Button asChild variant="ghost" size="sm">
                                 <Link to="/login">Masuk</Link>
@@ -141,7 +147,74 @@ function Index() {
                                 <Link to="/signup">Daftar</Link>
                             </Button>
                         </div>
+
+                        {/* Mobile Menu Button */}
+                        <div className="flex md:hidden items-center gap-2">
+                            <ThemeToggle />
+                            <Button
+                                variant="ghost"
+                                size="sm"
+                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+                                className="p-2"
+                            >
+                                {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
+                            </Button>
+                        </div>
                     </div>
+
+                    {/* Mobile Menu */}
+                    {mobileMenuOpen && (
+                        <div className="md:hidden border-t py-4 space-y-4 animate-in slide-in-from-top-5">
+                            {/* Mobile Navigation Links */}
+                            <div className="flex flex-col space-y-3">
+                                <a
+                                    href="#features"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
+                                >
+                                    Fitur
+                                </a>
+                                <a
+                                    href="#how-it-works"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
+                                >
+                                    Cara Kerja
+                                </a>
+                                <a
+                                    href="#elections"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
+                                >
+                                    Pemilihan
+                                </a>
+                                <a
+                                    href="#faq"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
+                                >
+                                    FAQ
+                                </a>
+                                <a
+                                    href="#contact"
+                                    onClick={() => setMobileMenuOpen(false)}
+                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
+                                >
+                                    Kontak
+                                </a>
+                            </div>
+
+                            {/* Mobile Action Buttons */}
+                            <div className="flex flex-col gap-2 pt-4 border-t">
+                                <Button asChild variant="ghost" size="sm" className="w-full justify-start">
+                                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Masuk</Link>
+                                </Button>
+                                <Button asChild size="sm" className="w-full">
+                                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>Daftar</Link>
+                                </Button>
+                            </div>
+                        </div>
+                    )}
                 </div>
             </nav>
 

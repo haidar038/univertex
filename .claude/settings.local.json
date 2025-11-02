@@ -4,7 +4,8 @@
       "Bash(npx supabase db push)",
       "Bash(npx supabase:*)",
       "Bash(src/integrations/supabase/types.ts)",
-      "Bash(npm run build:*)"
+      "Bash(npm run build:*)",
+      "Bash(npm run build:dev:*)"
     ],
     "deny": [],
     "ask": []
