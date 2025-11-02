@@ -1,16 +1,19 @@
 import { useState, useEffect } from 'react';
 import { useNavigate, Link } from 'react-router-dom';
+import { useTheme } from 'next-themes';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { ThemeToggle } from '@/components/ui/theme-toggle';
 import { toast } from 'sonner';
 import { Vote, Eye, EyeOff, ArrowLeft } from 'lucide-react';
 
 function SignupPage() {
   const navigate = useNavigate();
+  const { resolvedTheme } = useTheme();
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -88,6 +91,10 @@ function SignupPage() {
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-primary/5 to-secondary/5 p-4">
+      <div className="absolute top-4 right-4">
+        <ThemeToggle />
+      </div>
+
       <div className="w-full max-w-md">
         <div className="mb-4">
           <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -95,11 +102,16 @@ function SignupPage() {
             Kembali ke Beranda
           </Link>
         </div>
-        <Card className="w-full">
+        <div className="mb-8 text-center">
+          <img
+            src={resolvedTheme === 'dark' ? "/UniVertexPrimaryWhite.png" : "/UniVertex.png"}
+            alt="UniVertex Logo"
+            className="mx-auto mb-4 h-32 w-auto"
+          />
+        </div>
+
+        <Card className="w-full border-border/50 shadow-lg">
         <CardHeader className="space-y-1 text-center">
-          <div className="mx-auto mb-2 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
-            <Vote className="h-6 w-6 text-primary" />
-          </div>
           <CardTitle className="text-2xl font-bold">Daftar Akun</CardTitle>
           <CardDescription>Buat akun baru untuk menggunakan sistem e-voting</CardDescription>
         </CardHeader>

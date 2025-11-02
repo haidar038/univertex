@@ -62,3 +62,7 @@ supabase/.branches
 # OS files
 .DS_Store
 Desktop.ini
+
+# Claude Files & Folders
+CLAUDE.md
+.claude

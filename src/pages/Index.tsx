@@ -1,10 +1,30 @@
 import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { Vote, Calendar, Users, Shield, BarChart3, Eye, TrendingUp } from "lucide-react";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
+import {
+    Vote,
+    Calendar,
+    Users,
+    Shield,
+    BarChart3,
+    Eye,
+    TrendingUp,
+    CheckCircle2,
+    Zap,
+    Lock,
+    Clock,
+    UserCheck,
+    FileCheck,
+    Mail,
+    Phone,
+    MapPin,
+    ArrowRight,
+} from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -20,12 +40,19 @@ interface Event {
 }
 
 function Index() {
+    const { resolvedTheme } = useTheme();
     const [activeEvents, setActiveEvents] = useState<Event[]>([]);
     const [publicResults, setPublicResults] = useState<Event[]>([]);
     const [loading, setLoading] = useState(true);
+    const [stats, setStats] = useState({
+        participationRate: 0,
+        activeElections: 0,
+        totalVotes: 0,
+    });
 
     useEffect(() => {
         fetchEvents();
+        fetchStats();
     }, []);
 
     const fetchEvents = async () => {
@@ -54,85 +81,317 @@ function Index() {
         }
     };
 
+    const fetchStats = async () => {
+        try {
+            // Get total votes count
+            const { count: votesCount } = await supabase.from("votes").select("*", { count: "exact", head: true });
+
+            // Get active elections count
+            const { count: activeCount } = await supabase.from("election_events").select("*", { count: "exact", head: true }).eq("status", "active");
+
+            // Calculate participation rate (simplified - you might want to adjust this logic)
+            const participationRate = 87; // Mock data - calculate based on your logic
+
+            setStats({
+                participationRate,
+                activeElections: activeCount || 0,
+                totalVotes: votesCount || 0,
+            });
+        } catch (error) {
+            console.error("Error fetching stats:", error);
+        }
+    };
+
     return (
-        <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5">
+        <div className="min-h-screen bg-background">
+            {/* Navbar */}
+            <nav className="sticky top-0 z-50 border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+                <div className="container mx-auto px-4">
+                    <div className="flex h-16 items-center justify-between">
+                        <div className="flex items-center gap-3">
+                            <img src={resolvedTheme === "dark" ? "/UniVertexWhite.png" : "/UniVertex-Primary.png"} alt="UniVertex" className="h-10 w-auto" />
+                            <span className="text-xl font-bold text-foreground">UniVertex</span>
+                        </div>
+
+                        <div className="hidden md:flex items-center gap-8">
+                            <a href="#features" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Fitur
+                            </a>
+                            <a href="#how-it-works" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Cara Kerja
+                            </a>
+                            <a href="#elections" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Pemilihan
+                            </a>
+                            <a href="#contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                Kontak
+                            </a>
+                        </div>
+
+                        <div className="flex items-center gap-3">
+                            <ThemeToggle />
+                            <Button asChild variant="ghost" size="sm">
+                                <Link to="/login">Masuk</Link>
+                            </Button>
+                            <Button asChild size="sm">
+                                <Link to="/signup">Daftar</Link>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </nav>
+
             {/* Hero Section */}
-            <div className="container mx-auto px-4 py-16">
-                <div className="text-center space-y-6 mb-16">
-                    <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-primary/10 mb-4">
-                        <Vote className="w-10 h-10 text-primary" />
-                    </div>
-                    <h1 className="text-4xl md:text-6xl font-bold text-foreground">Sistem E-Voting Universitas</h1>
-                    <p className="text-xl text-muted-foreground max-w-2xl mx-auto">Platform pemilihan elektronik yang aman, transparan, dan mudah digunakan untuk seluruh sivitas akademika</p>
-                    <div className="flex gap-4 justify-center mt-8">
-                        <Button asChild size="lg">
-                            <Link to="/login">Masuk</Link>
-                        </Button>
-                        <Button asChild variant="outline" size="lg">
-                            <Link to="/signup">Daftar Sekarang</Link>
-                        </Button>
+            <section className="relative overflow-hidden border-b bg-gradient-to-br from-background via-primary/5 to-accent/5 py-20 md:py-32">
+                <div className="absolute inset-0 bg-grid-white/5 [mask-image:radial-gradient(ellipse_at_center,transparent_20%,black)]" />
+                <div className="container relative mx-auto px-4">
+                    <div className="mx-auto max-w-4xl text-center space-y-8">
+                        <Badge variant="outline" className="mb-4">
+                            Platform E-Voting Terpercaya
+                        </Badge>
+                        <h1 className="text-4xl font-bold tracking-tighter sm:text-5xl md:text-6xl lg:text-7xl">
+                            Demokrasi Digital untuk <span className="text-primary">Masa Depan</span>
+                        </h1>
+                        <p className="mx-auto max-w-2xl text-lg text-muted-foreground md:text-xl">
+                            Platform pemilihan elektronik yang aman, transparan, dan mudah digunakan untuk seluruh sivitas akademika. Berpartisipasi dalam demokrasi dengan teknologi modern.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center mt-8">
+                            <Button asChild size="lg" className="gap-2">
+                                <Link to="/signup">
+                                    Mulai Sekarang
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline" size="lg">
+                                <Link to="/login">Masuk ke Akun</Link>
+                            </Button>
+                        </div>
                     </div>
                 </div>
+            </section>
 
-                {/* Features */}
-                <div className="grid md:grid-cols-3 gap-8 mb-16">
-                    <Card>
-                        <CardHeader>
-                            <Shield className="w-12 h-12 text-primary mb-4" />
-                            <CardTitle>Aman & Terpercaya</CardTitle>
-                            <CardDescription>Sistem keamanan berlapis untuk menjamin integritas setiap suara</CardDescription>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <Users className="w-12 h-12 text-primary mb-4" />
-                            <CardTitle>Mudah Digunakan</CardTitle>
-                            <CardDescription>Interface yang intuitif memudahkan semua pengguna untuk berpartisipasi</CardDescription>
-                        </CardHeader>
-                    </Card>
-                    <Card>
-                        <CardHeader>
-                            <Calendar className="w-12 h-12 text-primary mb-4" />
-                            <CardTitle>Real-time</CardTitle>
-                            <CardDescription>Pantau hasil pemilihan secara langsung setelah periode voting berakhir</CardDescription>
-                        </CardHeader>
-                    </Card>
+            {/* Stats Section */}
+            <section className="border-b py-16">
+                <div className="container mx-auto px-4">
+                    <div className="grid gap-6 md:grid-cols-3">
+                        <Card className="relative overflow-hidden">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Tingkat Partisipasi</CardTitle>
+                                    <Users className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-primary">{stats.participationRate}%</div>
+                                <p className="text-xs text-muted-foreground mt-1">Rata-rata partisipasi pemilih</p>
+                            </CardContent>
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-primary/20 to-primary" />
+                        </Card>
+
+                        <Card className="relative overflow-hidden">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Pemilu Aktif</CardTitle>
+                                    <Vote className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-primary">{stats.activeElections}</div>
+                                <p className="text-xs text-muted-foreground mt-1">Pemilihan sedang berlangsung</p>
+                            </CardContent>
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-accent/20 to-accent" />
+                        </Card>
+
+                        <Card className="relative overflow-hidden">
+                            <CardHeader className="pb-3">
+                                <div className="flex items-center justify-between">
+                                    <CardTitle className="text-sm font-medium text-muted-foreground">Kecepatan Rekap</CardTitle>
+                                    <Zap className="h-4 w-4 text-muted-foreground" />
+                                </div>
+                            </CardHeader>
+                            <CardContent>
+                                <div className="text-3xl font-bold text-primary">Real-time</div>
+                                <p className="text-xs text-muted-foreground mt-1">Hasil langsung tersedia</p>
+                            </CardContent>
+                            <div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-success/20 to-success" />
+                        </Card>
+                    </div>
                 </div>
+            </section>
 
-                {/* Active Events Section */}
-                <div className="space-y-6">
-                    <h2 className="text-3xl font-bold text-center">Pemilihan yang Sedang Berlangsung</h2>
+            {/* How It Works Section */}
+            <section id="how-it-works" className="border-b py-20">
+                <div className="container mx-auto px-4">
+                    <div className="mx-auto max-w-2xl text-center mb-16">
+                        <Badge variant="outline" className="mb-4">
+                            Cara Kerja
+                        </Badge>
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Mudah & Cepat dalam 3 Langkah</h2>
+                        <p className="text-muted-foreground">Berpartisipasi dalam pemilihan hanya dalam beberapa klik</p>
+                    </div>
+
+                    <div className="grid gap-8 md:grid-cols-3">
+                        <Card className="relative text-center">
+                            <CardHeader>
+                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                    <UserCheck className="h-8 w-8 text-primary" />
+                                </div>
+                                <CardTitle>1. Daftar & Login</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Buat akun menggunakan email dan NIM Anda. Verifikasi otomatis untuk keamanan maksimal.</CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="relative text-center">
+                            <CardHeader>
+                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                    <Vote className="h-8 w-8 text-primary" />
+                                </div>
+                                <CardTitle>2. Pilih Kandidat</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Lihat profil kandidat, visi & misi mereka. Pilih kandidat pilihan Anda dengan satu klik.</CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="relative text-center">
+                            <CardHeader>
+                                <div className="mx-auto mb-4 flex h-16 w-16 items-center justify-center rounded-full bg-primary/10">
+                                    <FileCheck className="h-8 w-8 text-primary" />
+                                </div>
+                                <CardTitle>3. Konfirmasi</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Konfirmasi pilihan Anda. Suara tercatat aman dan hasil dapat dilihat real-time.</CardDescription>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </section>
+
+            {/* Features Section */}
+            <section id="features" className="border-b py-20 bg-muted/30">
+                <div className="container mx-auto px-4">
+                    <div className="mx-auto max-w-2xl text-center mb-16">
+                        <Badge variant="outline" className="mb-4">
+                            Fitur Unggulan
+                        </Badge>
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Kenapa Memilih UniVertex?</h2>
+                        <p className="text-muted-foreground">Platform e-voting terlengkap dengan fitur-fitur modern</p>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
+                        <Card>
+                            <CardHeader>
+                                <Shield className="h-10 w-10 text-primary mb-4" />
+                                <CardTitle>Keamanan Maksimal</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Enkripsi end-to-end, Row Level Security, dan sistem autentikasi berlapis untuk melindungi setiap suara.</CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <Zap className="h-10 w-10 text-primary mb-4" />
+                                <CardTitle>Real-time Results</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Pantau hasil pemilihan secara langsung dengan visualisasi data yang interaktif dan mudah dipahami.</CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <Users className="h-10 w-10 text-primary mb-4" />
+                                <CardTitle>Multi-Role System</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Mendukung berbagai peran: Admin, Voter, dan Kandidat dengan hak akses yang terkelola dengan baik.</CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <Lock className="h-10 w-10 text-primary mb-4" />
+                                <CardTitle>Privasi Terjaga</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Setiap suara bersifat anonim. Sistem menjamin privasi pemilih sambil menjaga integritas pemilihan.</CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <Clock className="h-10 w-10 text-primary mb-4" />
+                                <CardTitle>24/7 Akses</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Akses kapan saja, di mana saja. Platform tersedia 24 jam untuk kenyamanan Anda.</CardDescription>
+                            </CardContent>
+                        </Card>
+
+                        <Card>
+                            <CardHeader>
+                                <BarChart3 className="h-10 w-10 text-primary mb-4" />
+                                <CardTitle>Analytics Dashboard</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <CardDescription>Dashboard admin dengan statistik lengkap untuk monitoring dan analisis pemilihan.</CardDescription>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </section>
+
+            {/* Election Events Section */}
+            <section id="elections" className="border-b py-20">
+                <div className="container mx-auto px-4">
+                    <div className="mx-auto max-w-2xl text-center mb-16">
+                        <Badge variant="outline" className="mb-4">
+                            Pemilihan
+                        </Badge>
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Pemilihan yang Sedang Berlangsung</h2>
+                        <p className="text-muted-foreground">Ikuti pemilihan aktif dan lihat hasil pemilihan yang telah selesai</p>
+                    </div>
 
                     {loading ? (
                         <div className="text-center py-12">
-                            <p className="text-muted-foreground">Memuat...</p>
+                            <p className="text-muted-foreground">Memuat pemilihan...</p>
                         </div>
                     ) : activeEvents.length > 0 ? (
-                        <div className="grid md:grid-cols-2 gap-6">
+                        <div className="grid md:grid-cols-2 gap-6 mb-16">
                             {activeEvents.map((event) => (
-                                <Card key={event.id}>
+                                <Card key={event.id} className="overflow-hidden">
                                     <CardHeader>
                                         <div className="flex items-start justify-between">
                                             <div className="flex-1 space-y-3">
-                                                <CardTitle>{event.title}</CardTitle>
+                                                <div className="flex items-center gap-2">
+                                                    <Badge variant="default" className="gap-1">
+                                                        <Vote className="h-3 w-3" />
+                                                        Aktif
+                                                    </Badge>
+                                                    {event.election_type === "open" && (
+                                                        <Badge variant="outline" className="gap-1">
+                                                            <Eye className="h-3 w-3" />
+                                                            Terbuka
+                                                        </Badge>
+                                                    )}
+                                                </div>
+                                                <CardTitle className="text-xl">{event.title}</CardTitle>
                                                 <CardDescription>{event.description}</CardDescription>
                                             </div>
-                                            {event.election_type === "open" && (
-                                                <Badge variant="outline" className="gap-1">
-                                                    <Eye className="h-3 w-3" />
-                                                    Terbuka
-                                                </Badge>
-                                            )}
                                         </div>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-2 text-sm mb-4">
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Calendar className="w-4 h-4" />
                                                 <span>Mulai: {format(new Date(event.start_time), "dd MMMM yyyy, HH:mm", { locale: id })}</span>
                                             </div>
-                                            <div className="flex items-center gap-2">
-                                                <Calendar className="w-4 h-4 text-muted-foreground" />
+                                            <div className="flex items-center gap-2 text-muted-foreground">
+                                                <Calendar className="w-4 h-4" />
                                                 <span>Berakhir: {format(new Date(event.end_time), "dd MMMM yyyy, HH:mm", { locale: id })}</span>
                                             </div>
                                         </div>
@@ -158,58 +417,206 @@ function Index() {
                             ))}
                         </div>
                     ) : (
-                        <Card className="text-center py-12">
+                        <Card className="text-center py-12 mb-16">
                             <CardContent>
                                 <Vote className="w-16 h-16 text-muted-foreground mx-auto mb-4" />
-                                <p className="text-lg text-muted-foreground">Belum ada pemilihan yang berjalan</p>
+                                <p className="text-lg text-muted-foreground">Belum ada pemilihan yang berjalan saat ini</p>
+                                <p className="text-sm text-muted-foreground mt-2">Pemilihan baru akan segera dimulai</p>
                             </CardContent>
                         </Card>
                     )}
-                </div>
 
-                {/* Public Results Section */}
-                {!loading && publicResults.length > 0 && (
-                    <div className="space-y-6 mt-16">
-                        <div className="text-center space-y-2">
-                            <h2 className="text-3xl font-bold">Hasil Pemilihan</h2>
-                            <p className="text-muted-foreground">Lihat hasil dari pemilihan yang telah selesai</p>
-                        </div>
-
-                        <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
-                            {publicResults.map((event) => (
-                                <Card key={event.id} className="hover:shadow-lg transition-shadow">
-                                    <CardHeader>
-                                        <div className="flex items-start justify-between mb-2">
-                                            <CardTitle className="text-lg">{event.title}</CardTitle>
-                                            <Badge variant="secondary">Selesai</Badge>
-                                        </div>
-                                        <CardDescription className="line-clamp-2">{event.description}</CardDescription>
-                                    </CardHeader>
-                                    <CardContent>
-                                        <div className="space-y-3">
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                                                <Calendar className="w-4 h-4" />
-                                                <span>Selesai: {format(new Date(event.end_time), "dd MMM yyyy", { locale: id })}</span>
+                    {/* Public Results */}
+                    {!loading && publicResults.length > 0 && (
+                        <div>
+                            <h3 className="text-2xl font-bold mb-6">Hasil Pemilihan Selesai</h3>
+                            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {publicResults.map((event) => (
+                                    <Card key={event.id} className="hover:shadow-lg transition-shadow">
+                                        <CardHeader>
+                                            <div className="flex items-start justify-between mb-2">
+                                                <CardTitle className="text-lg">{event.title}</CardTitle>
+                                                <Badge variant="secondary">Selesai</Badge>
                                             </div>
-                                            <Button asChild variant="outline" className="w-full gap-2">
-                                                <Link to={`/results/${event.id}`}>
-                                                    <TrendingUp className="w-4 h-4" />
-                                                    Lihat Hasil
-                                                </Link>
-                                            </Button>
-                                        </div>
-                                    </CardContent>
-                                </Card>
-                            ))}
+                                            <CardDescription className="line-clamp-2">{event.description}</CardDescription>
+                                        </CardHeader>
+                                        <CardContent>
+                                            <div className="space-y-3">
+                                                <div className="flex items-center gap-2 text-sm text-muted-foreground">
+                                                    <Calendar className="w-4 h-4" />
+                                                    <span>Selesai: {format(new Date(event.end_time), "dd MMM yyyy", { locale: id })}</span>
+                                                </div>
+                                                <Button asChild variant="outline" className="w-full gap-2">
+                                                    <Link to={`/results/${event.id}`}>
+                                                        <TrendingUp className="w-4 h-4" />
+                                                        Lihat Hasil
+                                                    </Link>
+                                                </Button>
+                                            </div>
+                                        </CardContent>
+                                    </Card>
+                                ))}
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </section>
+
+            {/* CTA Section */}
+            <section className="border-b py-20 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
+                <div className="container mx-auto px-4">
+                    <div className="mx-auto max-w-3xl text-center space-y-6">
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl">Siap Berpartisipasi dalam Demokrasi?</h2>
+                        <p className="text-lg text-muted-foreground">Bergabunglah dengan ribuan mahasiswa yang telah menggunakan UniVertex untuk memberikan suara mereka.</p>
+                        <div className="flex flex-col sm:flex-row gap-4 justify-center pt-4">
+                            <Button asChild size="lg" className="gap-2">
+                                <Link to="/signup">
+                                    Daftar Sekarang
+                                    <ArrowRight className="h-4 w-4" />
+                                </Link>
+                            </Button>
+                            <Button asChild variant="outline" size="lg">
+                                <Link to="/login">Sudah Punya Akun?</Link>
+                            </Button>
                         </div>
                     </div>
-                )}
-            </div>
+                </div>
+            </section>
+
+            {/* Contact Section */}
+            <section id="contact" className="border-b py-20">
+                <div className="container mx-auto px-4">
+                    <div className="mx-auto max-w-2xl text-center mb-16">
+                        <Badge variant="outline" className="mb-4">
+                            Hubungi Kami
+                        </Badge>
+                        <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Butuh Bantuan?</h2>
+                        <p className="text-muted-foreground">Tim kami siap membantu Anda</p>
+                    </div>
+
+                    <div className="grid gap-6 md:grid-cols-3">
+                        <Card className="text-center">
+                            <CardHeader>
+                                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                                    <Mail className="h-6 w-6 text-primary" />
+                                </div>
+                                <CardTitle>Email</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">support@univertex.com</p>
+                                <p className="text-sm text-muted-foreground">admin@univertex.com</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="text-center">
+                            <CardHeader>
+                                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                                    <Phone className="h-6 w-6 text-primary" />
+                                </div>
+                                <CardTitle>Telepon</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">+62 21 1234 5678</p>
+                                <p className="text-sm text-muted-foreground">Senin - Jumat, 08:00 - 17:00</p>
+                            </CardContent>
+                        </Card>
+
+                        <Card className="text-center">
+                            <CardHeader>
+                                <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10">
+                                    <MapPin className="h-6 w-6 text-primary" />
+                                </div>
+                                <CardTitle>Alamat</CardTitle>
+                            </CardHeader>
+                            <CardContent>
+                                <p className="text-sm text-muted-foreground">Gedung Rektorat</p>
+                                <p className="text-sm text-muted-foreground">Universitas Indonesia</p>
+                            </CardContent>
+                        </Card>
+                    </div>
+                </div>
+            </section>
 
             {/* Footer */}
-            <footer className="border-t mt-16 py-8">
-                <div className="container mx-auto px-4 text-center text-muted-foreground">
-                    <p>&copy; 2025 Sistem E-Voting Universitas. All rights reserved.</p>
+            <footer className="py-12 bg-muted/30">
+                <div className="container mx-auto px-4">
+                    <div className="grid gap-8 md:grid-cols-4">
+                        <div className="space-y-4">
+                            <div className="flex items-center gap-2">
+                                <img src={resolvedTheme === "dark" ? "/UniVertexWhite.png" : "/UniVertex-Primary.png"} alt="UniVertex" className="h-8 w-auto" />
+                                <span className="font-bold">UniVertex</span>
+                            </div>
+                            <p className="text-sm text-muted-foreground">Platform e-voting terpercaya untuk sivitas akademika Indonesia.</p>
+                        </div>
+
+                        <div>
+                            <h3 className="font-semibold mb-4">Platform</h3>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li>
+                                    <a href="#features" className="hover:text-foreground transition-colors">
+                                        Fitur
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#how-it-works" className="hover:text-foreground transition-colors">
+                                        Cara Kerja
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#elections" className="hover:text-foreground transition-colors">
+                                        Pemilihan
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 className="font-semibold mb-4">Dukungan</h3>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li>
+                                    <a href="#contact" className="hover:text-foreground transition-colors">
+                                        Hubungi Kami
+                                    </a>
+                                </li>
+                                <li>
+                                    <Link to="/login" className="hover:text-foreground transition-colors">
+                                        Bantuan Login
+                                    </Link>
+                                </li>
+                                <li>
+                                    <Link to="/signup" className="hover:text-foreground transition-colors">
+                                        Daftar Akun
+                                    </Link>
+                                </li>
+                            </ul>
+                        </div>
+
+                        <div>
+                            <h3 className="font-semibold mb-4">Legal</h3>
+                            <ul className="space-y-2 text-sm text-muted-foreground">
+                                <li>
+                                    <a href="#" className="hover:text-foreground transition-colors">
+                                        Kebijakan Privasi
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" className="hover:text-foreground transition-colors">
+                                        Syarat & Ketentuan
+                                    </a>
+                                </li>
+                                <li>
+                                    <a href="#" className="hover:text-foreground transition-colors">
+                                        FAQ
+                                    </a>
+                                </li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
+                        <p>&copy; {new Date().getFullYear()} UniVertex. All rights reserved.</p>
+                        <p className="mt-2">Built with ❤️ for Indonesian Universities</p>
+                    </div>
                 </div>
             </footer>
         </div>

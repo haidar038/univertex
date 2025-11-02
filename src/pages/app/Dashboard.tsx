@@ -164,7 +164,7 @@ export default function VoterDashboard() {
 
                                             {/* Election Type Badge */}
                                             <div className="mb-3 flex items-center gap-2">
-                                                {event.election_type === 'open' ? (
+                                                {event.election_type === "open" ? (
                                                     <Badge variant="outline" className="gap-1 text-xs">
                                                         <Eye className="h-3 w-3" />
                                                         Pemilihan Terbuka
@@ -182,11 +182,11 @@ export default function VoterDashboard() {
                                                 Berakhir: {format(new Date(event.end_time), "dd MMM yyyy HH:mm", { locale: id })}
                                             </div>
                                             {hasVoted(event.id) ? (
-                                                <div className="space-y-3">
+                                                <div className="flex flex-col space-y-1">
                                                     <div className="rounded-lg bg-success/10 p-3 text-center">
                                                         <p className="text-sm font-medium text-success-foreground">Terima kasih telah memberikan suara!</p>
                                                     </div>
-                                                    {(event.election_type === 'open' || event.show_results_after_voting) && (
+                                                    {(event.election_type === "open" || event.show_results_after_voting) && (
                                                         <Link to={`/app/results/${event.id}`}>
                                                             <Button variant="outline" className="w-full gap-2">
                                                                 <BarChart3 className="h-4 w-4" />
@@ -196,14 +196,14 @@ export default function VoterDashboard() {
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="space-y-3">
+                                                <div className="flex flex-col space-y-1">
                                                     <Link to={`/app/vote/${event.id}`}>
                                                         <Button className="w-full gap-2">
                                                             <Vote className="h-4 w-4" />
                                                             Berikan Suara
                                                         </Button>
                                                     </Link>
-                                                    {event.election_type === 'open' && (
+                                                    {event.election_type === "open" && (
                                                         <Link to={`/app/results/${event.id}`}>
                                                             <Button variant="ghost" className="w-full gap-2">
                                                                 <BarChart3 className="h-4 w-4" />

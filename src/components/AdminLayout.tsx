@@ -1,6 +1,8 @@
 import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
+import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
 import { LayoutDashboard, Calendar, Users, GraduationCap, LogOut, Vote } from "lucide-react";
 
@@ -14,13 +16,18 @@ const navigation = [
 export function AdminLayout() {
     const location = useLocation();
     const { profile, signOut } = useAuth();
+    const { resolvedTheme } = useTheme();
 
     return (
         <div className="flex min-h-screen bg-background">
             {/* Sidebar */}
             <div className="flex w-64 flex-col border-r border-border bg-card">
                 <div className="flex h-16 items-center gap-3 border-b border-border px-6">
-                    <img src="/UniVertex-Primary.png" alt="UniVertex Logo" className=" h-10" />
+                    <img
+                        src={resolvedTheme === 'dark' ? "/UniVertexWhite.png" : "/UniVertex-Primary.png"}
+                        alt="UniVertex Logo"
+                        className="h-10"
+                    />
                     <div>
                         <h1 className="font-bold text-foreground">UniVertex</h1>
                         <p className="text-xs text-muted-foreground">Admin Panel</p>
@@ -52,10 +59,13 @@ export function AdminLayout() {
                         <p className="text-xs text-muted-foreground">{profile?.student_id}</p>
                         <p className="mt-1 text-xs font-medium text-primary">Administrator</p>
                     </div>
-                    <Button variant="outline" className="w-full" onClick={signOut}>
-                        <LogOut className="mr-2 h-4 w-4" />
-                        Keluar
-                    </Button>
+                    <div className="flex gap-2 mb-2">
+                        <ThemeToggle />
+                        <Button variant="outline" className="flex-1" onClick={signOut}>
+                            <LogOut className="mr-2 h-4 w-4" />
+                            Keluar
+                        </Button>
+                    </div>
                 </div>
             </div>
 

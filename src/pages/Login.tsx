@@ -1,16 +1,19 @@
 import { useState, useEffect } from "react";
 import { useNavigate, Link } from "react-router-dom";
+import { useTheme } from "next-themes";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { toast } from "sonner";
 import { Vote, AlertCircle, Eye, EyeOff, ArrowLeft } from "lucide-react";
 
 export default function Login() {
     const navigate = useNavigate();
+    const { resolvedTheme } = useTheme();
     const [email, setEmail] = useState("");
     const [password, setPassword] = useState("");
     const [showPassword, setShowPassword] = useState(false);
@@ -74,6 +77,10 @@ export default function Login() {
 
     return (
         <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background via-muted/30 to-accent/5 p-4">
+            <div className="absolute top-4 right-4">
+                <ThemeToggle />
+            </div>
+
             <div className="w-full max-w-md">
                 <div className="mb-4">
                     <Link to="/" className="inline-flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors">
@@ -82,7 +89,11 @@ export default function Login() {
                     </Link>
                 </div>
                 <div className="mb-8 text-center">
-                    <img src="/UniVertex.png" alt="UniVertex Logo" className="mx-auto mb-4 h-40 w-auto" />
+                    <img
+                        src={resolvedTheme === 'dark' ? "/UniVertexPrimaryWhite.png" : "/UniVertex.png"}
+                        alt="UniVertex Logo"
+                        className="mx-auto mb-4 h-40 w-auto"
+                    />
                 </div>
 
                 <Card className="border-border/50 shadow-lg">
