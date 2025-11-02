@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import {
     Vote,
     Calendar,
@@ -122,6 +123,9 @@ function Index() {
                             </a>
                             <a href="#elections" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                                 Pemilihan
+                            </a>
+                            <a href="#faq" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
+                                FAQ
                             </a>
                             <a href="#contact" className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors">
                                 Kontak
@@ -462,6 +466,134 @@ function Index() {
                 </div>
             </section>
 
+            {/* FAQ Section */}
+            <section id="faq" className="border-b py-20 bg-muted/30">
+                <div className="container mx-auto px-4">
+                    <div className="mx-auto max-w-3xl">
+                        <div className="text-center mb-16">
+                            <Badge variant="outline" className="mb-4">
+                                FAQ
+                            </Badge>
+                            <h2 className="text-3xl font-bold tracking-tight sm:text-4xl mb-4">Pertanyaan yang Sering Diajukan</h2>
+                            <p className="text-muted-foreground">Temukan jawaban untuk pertanyaan umum tentang UniVertex</p>
+                        </div>
+
+                        <Accordion type="single" collapsible className="w-full space-y-4">
+                            <AccordionItem value="item-1" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Apa itu UniVertex?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    UniVertex adalah platform e-voting modern yang dirancang khusus untuk institusi pendidikan tinggi. Platform ini memungkinkan mahasiswa untuk berpartisipasi dalam pemilihan organisasi kampus secara aman, transparan, dan
+                                    efisien dari mana saja dan kapan saja.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-2" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Bagaimana cara mendaftar dan membuat akun?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Untuk mendaftar, klik tombol "Daftar" di halaman utama, lalu isi formulir dengan email institusi Anda (@ui.ac.id atau sejenisnya), NIM, nama lengkap, dan password. Setelah mendaftar, Anda akan langsung dapat
+                                    login dan berpartisipasi dalam pemilihan yang tersedia untuk kelas Anda.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-3" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Apakah suara saya bersifat rahasia?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Ya, mutlak rahasia. UniVertex menggunakan teknologi enkripsi end-to-end dan sistem pemisahan data yang memastikan pilihan voting Anda tidak dapat dikaitkan dengan identitas pribadi Anda. Bahkan administrator
+                                    sistem tidak dapat melihat siapa memilih kandidat tertentu.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-4" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Bisakah saya mengubah pilihan setelah memberikan suara?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Tidak. Setelah Anda mengkonfirmasi pilihan Anda, suara akan langsung tercatat dan tidak dapat diubah. Hal ini untuk menjaga integritas pemilihan dan mencegah manipulasi. Pastikan Anda telah yakin dengan pilihan
+                                    Anda sebelum mengklik tombol konfirmasi.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-5" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Bagaimana cara menjadi kandidat?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Untuk menjadi kandidat, Anda perlu memiliki akun dengan role "kandidat". Setelah login, buka halaman "Pengaturan Kandidat" untuk mengisi informasi seperti visi, misi, dan foto profil Anda. Profil kandidat Anda
+                                    akan ditinjau dan disetujui oleh administrator sebelum dipublikasikan kepada pemilih.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-6" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Kapan saya bisa melihat hasil pemilihan?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Visibilitas hasil pemilihan tergantung pada jenis pemilihan:
+                                    <ul className="list-disc pl-6 mt-2 space-y-1">
+                                        <li>
+                                            <strong>Pemilihan Terbuka:</strong> Hasil dapat dilihat secara real-time bahkan sebelum Anda memberikan suara
+                                        </li>
+                                        <li>
+                                            <strong>Pemilihan Tertutup:</strong> Hasil hanya dapat dilihat setelah pemilihan berakhir, atau setelah Anda memberikan suara (tergantung pengaturan admin)
+                                        </li>
+                                    </ul>
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-7" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Bagaimana jika saya lupa password?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Klik link "Lupa password?" di halaman login, lalu masukkan email Anda. Kami akan mengirimkan link reset password ke email Anda. Ikuti instruksi dalam email untuk membuat password baru. Jika Anda tidak menerima
+                                    email dalam beberapa menit, periksa folder spam Anda.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-8" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Apakah platform ini aman dari kecurangan?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Ya. UniVertex dilengkapi dengan berbagai mekanisme keamanan:
+                                    <ul className="list-disc pl-6 mt-2 space-y-1">
+                                        <li>Sistem one-person-one-vote yang ketat mencegah voting ganda</li>
+                                        <li>Row Level Security (RLS) untuk kontrol akses data yang granular</li>
+                                        <li>Audit logs untuk melacak semua aktivitas penting</li>
+                                        <li>Verifikasi identitas melalui email institusi dan NIM</li>
+                                        <li>Enkripsi data untuk melindungi privasi pemilih</li>
+                                    </ul>
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-9" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Siapa yang dapat melihat data pribadi saya?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Data pribadi Anda (nama, NIM, kelas) hanya dapat diakses oleh administrator untuk keperluan verifikasi dan manajemen akun. Data voting Anda sepenuhnya anonim dan terpisah dari identitas pribadi. Kami tidak pernah
+                                    menjual atau membagikan data pribadi Anda kepada pihak ketiga. Lihat{" "}
+                                    <Link to="/privacy-policy" className="text-primary hover:underline">
+                                        Kebijakan Privasi
+                                    </Link>{" "}
+                                    kami untuk informasi lebih detail.
+                                </AccordionContent>
+                            </AccordionItem>
+
+                            <AccordionItem value="item-10" className="border rounded-lg px-6 bg-background">
+                                <AccordionTrigger className="hover:no-underline">Bagaimana cara menghubungi support jika saya mengalami masalah?</AccordionTrigger>
+                                <AccordionContent className="text-muted-foreground">
+                                    Jika Anda mengalami masalah teknis atau memiliki pertanyaan, Anda dapat menghubungi kami melalui:
+                                    <ul className="list-disc pl-6 mt-2 space-y-1">
+                                        <li>
+                                            Email: <a href="mailto:support@univertex.com" className="text-primary hover:underline">support@univertex.com</a>
+                                        </li>
+                                        <li>Telepon: +62 21 1234 5678 (Senin-Jumat, 08:00-17:00)</li>
+                                        <li>Atau melalui form kontak di bagian bawah halaman ini</li>
+                                    </ul>
+                                    Tim support kami siap membantu Anda sesegera mungkin.
+                                </AccordionContent>
+                            </AccordionItem>
+                        </Accordion>
+
+                        <div className="mt-12 text-center">
+                            <p className="text-muted-foreground mb-4">Masih ada pertanyaan?</p>
+                            <Button asChild variant="outline">
+                                <a href="#contact">Hubungi Kami</a>
+                            </Button>
+                        </div>
+                    </div>
+                </div>
+            </section>
+
             {/* CTA Section */}
             <section className="border-b py-20 bg-gradient-to-br from-primary/10 via-primary/5 to-background">
                 <div className="container mx-auto px-4">
@@ -595,17 +727,17 @@ function Index() {
                             <h3 className="font-semibold mb-4">Legal</h3>
                             <ul className="space-y-2 text-sm text-muted-foreground">
                                 <li>
-                                    <a href="#" className="hover:text-foreground transition-colors">
+                                    <Link to="/privacy-policy" className="hover:text-foreground transition-colors">
                                         Kebijakan Privasi
-                                    </a>
+                                    </Link>
                                 </li>
                                 <li>
-                                    <a href="#" className="hover:text-foreground transition-colors">
+                                    <Link to="/terms-of-service" className="hover:text-foreground transition-colors">
                                         Syarat & Ketentuan
-                                    </a>
+                                    </Link>
                                 </li>
                                 <li>
-                                    <a href="#" className="hover:text-foreground transition-colors">
+                                    <a href="#faq" className="hover:text-foreground transition-colors">
                                         FAQ
                                     </a>
                                 </li>

@@ -11,6 +11,8 @@ import { VoterLayout } from "./components/VoterLayout";
 // Landing page
 import Index from "./pages/Index";
 import PublicResultsPage from "./pages/PublicResultsPage";
+import PrivacyPolicy from "./pages/PrivacyPolicy";
+import TermsOfService from "./pages/TermsOfService";
 
 // Auth pages
 import Login from "./pages/Login";
@@ -48,6 +50,8 @@ const App = () => (
                     <Route path="/login" element={<Login />} />
                     <Route path="/signup" element={<Signup />} />
                     <Route path="/reset-password" element={<ResetPassword />} />
+                    <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+                    <Route path="/terms-of-service" element={<TermsOfService />} />
 
                     {/* Public results page */}
                     <Route path="/results/:eventId" element={<PublicResultsPage />} />
