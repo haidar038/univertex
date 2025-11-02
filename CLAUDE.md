@@ -15,12 +15,22 @@ npm run build        # Production build
 npm run build:dev    # Development build with source maps
 npm run preview      # Preview production build locally
 npm run lint         # Run ESLint on all files
+npm run setup:admin  # Create default admin user
 ```
+
+### Testing
+```bash
+npm run test         # Run tests with Vitest
+npm run test:ui      # Run tests with Vitest UI
+```
+
+Note: Test setup file is configured at `./src/test/setup.ts` with jsdom environment.
 
 ### Database (Supabase)
 The project uses Supabase with migrations stored in `supabase/migrations/`. Database changes are managed through Supabase migrations:
 - Project ID: `oiurjnmpkguyxevdbpbu`
 - Migrations use SQL files with timestamps
+- Generate types: `npx supabase gen types typescript --project-id oiurjnmpkguyxevdbpbu > src/integrations/supabase/types.ts`
 
 ## Architecture
 
@@ -64,16 +74,24 @@ The project uses Supabase with migrations stored in `supabase/migrations/`. Data
 - `profiles` - User profile data (full_name, student_id, department, class_id)
 - `user_roles` - User role assignments (many-to-many)
 - `classes` - Class/faculty data
-- `election_events` - Election events with status (draft, active, closed)
-- `candidates` - Candidate registrations per event (with vision/mission)
+- `election_events` - Election events with status (draft, active, closed), election type (open/closed), and visibility settings
+- `event_voter_groups` - Many-to-many relationship between events and classes
+- `candidates` - Candidate registrations per event (with vision/mission, photo, approval status, admin_notes)
+- `candidate_notifications` - Notifications for candidate status changes
 - `votes` - Vote records (unique constraint on voter_id + event_id)
 
 **Key Relationships:**
 - Users → Profiles (1:1, created via trigger on signup)
 - Users → Roles (many-to-many via user_roles)
+- Events → Voter Groups (many-to-many via event_voter_groups)
 - Events → Candidates (1:many)
 - Candidates → Profiles (many:1)
+- Candidates → Notifications (1:many)
 - Votes → Candidates, Events, Voters (foreign keys with constraints)
+
+**Election Types:**
+- `open` - Results visible in real-time, publicly accessible
+- `closed` - Results only visible after election ends, controlled by `show_results_after_voting` and `public_results` flags
 
 ### UI Components
 
@@ -86,6 +104,11 @@ The project uses Supabase with migrations stored in `supabase/migrations/`. Data
 - `AdminLayout.tsx` - Admin sidebar navigation layout
 - `VoterLayout.tsx` - Voter/candidate navigation layout
 - `ProtectedRoute.tsx` - Authentication wrapper
+
+**Feature-Specific Components (in `src/components/admin/`):**
+- `users/` - User management dialogs (create, edit, delete, reset password, bulk import)
+- `events/` - Event management dialogs (create, edit, delete, status change, candidate approval)
+- `classes/` - Class management dialogs (create, edit, delete, bulk assign users)
 
 ### State Management
 
@@ -147,3 +170,51 @@ Use `react-hook-form` with `zod` for validation via `@hookform/resolvers`.
 - Lovable.dev integration for AI-assisted development
 - Date formatting uses `date-fns` library
 - Indonesian language strings used throughout UI
+- Vercel deployment configured with SPA rewrites and security headers
+
+## Admin Setup
+
+To create the default admin user:
+```bash
+# Set environment variables (use .env.local or export)
+VITE_SUPABASE_URL=https://oiurjnmpkguyxevdbpbu.supabase.co
+SUPABASE_SERVICE_ROLE_KEY=your-service-role-key
+
+# Run setup script
+npm run setup:admin
+```
+
+Default credentials:
+- Email: `admin@univertex.com`
+- Password: `UniVertex.02025`
+- **Important:** Change password after first login
+
+See `docs/SETUP_ADMIN.md` for detailed instructions.
+
+## Key Features
+
+### Candidate Approval System
+- Candidates must be approved by admins before appearing in elections
+- Approval workflow in `src/components/admin/events/ApproveCandidateDialog.tsx`
+- Admin can approve, reject (with reason), or add notes
+- Automatic notifications sent to candidates on status change
+
+### Election Type System
+- **Open Elections**: Results visible in real-time, publicly accessible on landing page
+- **Closed Elections**: Results only visible after event closes, with optional public access
+- Visibility controlled by `election_type`, `show_results_after_voting`, and `public_results` fields
+
+### Voter Eligibility
+- Events can be restricted to specific classes via `event_voter_groups`
+- Voters only see elections they're eligible for (based on their class)
+- Bulk user assignment to classes supported
+
+## Documentation
+
+Comprehensive docs available in `docs/`:
+- `FEATURES_SUMMARY.md` - Complete feature reference
+- `SETUP_ADMIN.md` - Admin user setup guide
+- `CANDIDATE_APPROVAL_SYSTEM.md` - Candidate approval workflow
+- `BULK_IMPORT_USERS_GUIDE.md` - User import instructions
+- `EVENT_RESULTS_GUIDE.md` - Results visibility logic
+- `TROUBLESHOOTING_FIXES.md` - Common issues and solutions
