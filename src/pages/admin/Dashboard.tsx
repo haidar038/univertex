@@ -92,13 +92,13 @@ export default function AdminDashboard() {
     };
 
     return (
-        <div className="p-8">
-            <div className="mb-8">
-                <h1 className="mb-2 text-3xl font-bold text-foreground">Dashboard Admin</h1>
-                <p className="text-muted-foreground">Pantau statistik dan aktivitas pemilihan real-time</p>
+        <div className="p-4 md:p-6 lg:p-8">
+            <div className="mb-6 md:mb-8">
+                <h1 className="mb-2 text-2xl md:text-3xl font-bold text-foreground">Dashboard Admin</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Pantau statistik dan aktivitas pemilihan real-time</p>
             </div>
 
-            <div className="mb-8 grid gap-6 md:grid-cols-2 lg:grid-cols-4">
+            <div className="mb-6 md:mb-8 grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
                         <CardTitle className="text-sm font-medium text-muted-foreground">Total Pemilih</CardTitle>
@@ -145,22 +145,22 @@ export default function AdminDashboard() {
             </div>
 
             {liveVotes.length > 0 && (
-                <div className="space-y-6">
+                <div className="space-y-4 md:space-y-6">
                     <div>
-                        <h2 className="mb-4 text-xl font-bold text-foreground">Live Vote Count</h2>
-                        <div className="grid gap-6 md:grid-cols-2">
+                        <h2 className="mb-4 text-lg md:text-xl font-bold text-foreground">Live Vote Count</h2>
+                        <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
                             {liveVotes.map((event, idx) => (
                                 <Card key={idx}>
                                     <CardHeader>
-                                        <CardTitle className="text-lg">{event?.eventTitle}</CardTitle>
+                                        <CardTitle className="text-base md:text-lg">{event?.eventTitle}</CardTitle>
                                     </CardHeader>
                                     <CardContent>
                                         <div className="space-y-3">
                                             {event?.candidates.map((candidate: any, cIdx: number) => (
-                                                <div key={cIdx} className="flex items-center justify-between">
-                                                    <span className="text-sm font-medium text-foreground">{candidate.name}</span>
-                                                    <div className="flex items-center gap-2">
-                                                        <div className="h-2 w-32 overflow-hidden rounded-full bg-muted">
+                                                <div key={cIdx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
+                                                    <span className="text-sm font-medium text-foreground truncate">{candidate.name}</span>
+                                                    <div className="flex items-center gap-2 w-full sm:w-auto">
+                                                        <div className="h-2 flex-1 sm:w-24 md:w-32 overflow-hidden rounded-full bg-muted">
                                                             <div
                                                                 className="h-full bg-gradient-primary transition-all"
                                                                 style={{
@@ -168,7 +168,7 @@ export default function AdminDashboard() {
                                                                 }}
                                                             />
                                                         </div>
-                                                        <span className="min-w-[3rem] text-sm font-bold text-primary">{candidate.votes} suara</span>
+                                                        <span className="min-w-[3.5rem] text-xs sm:text-sm font-bold text-primary whitespace-nowrap">{candidate.votes} suara</span>
                                                     </div>
                                                 </div>
                                             ))}

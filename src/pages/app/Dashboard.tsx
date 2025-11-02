@@ -108,34 +108,34 @@ export default function VoterDashboard() {
     const hasVoted = (eventId: string) => votedEvents.has(eventId);
 
     return (
-        <div className="p-8">
-            <div className="mb-8">
-                <h1 className="mb-2 text-3xl font-bold text-foreground">Selamat datang, {profile?.full_name}</h1>
-                <p className="text-muted-foreground">Lihat pemilihan yang tersedia dan berikan suara Anda</p>
+        <div className="p-4 md:p-6 lg:p-8">
+            <div className="mb-6 md:mb-8">
+                <h1 className="mb-2 text-xl sm:text-2xl md:text-3xl font-bold text-foreground">Selamat datang, {profile?.full_name}</h1>
+                <p className="text-sm md:text-base text-muted-foreground">Lihat pemilihan yang tersedia dan berikan suara Anda</p>
             </div>
 
             {loading ? (
-                <div className="text-center text-muted-foreground">Memuat...</div>
+                <div className="text-center text-sm md:text-base text-muted-foreground">Memuat...</div>
             ) : (
-                <div className="space-y-8">
+                <div className="space-y-6 md:space-y-8">
                     {/* Active Elections */}
                     <div>
-                        <h2 className="mb-4 text-xl font-bold text-foreground">Pemilihan Aktif</h2>
+                        <h2 className="mb-4 text-lg md:text-xl font-bold text-foreground">Pemilihan Aktif</h2>
                         {activeEvents.length === 0 ? (
                             <Card>
-                                <CardContent className="flex min-h-[200px] flex-col items-center justify-center py-12">
-                                    <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
-                                    <p className="text-sm text-muted-foreground">Tidak ada pemilihan aktif saat ini</p>
+                                <CardContent className="flex min-h-[200px] flex-col items-center justify-center py-8 md:py-12 px-4">
+                                    <Calendar className="mb-4 h-10 w-10 md:h-12 md:w-12 text-muted-foreground" />
+                                    <p className="text-sm text-muted-foreground text-center">Tidak ada pemilihan aktif saat ini</p>
                                     {!profile?.class_id && (
-                                        <div className="mt-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-4 max-w-md">
-                                            <p className="text-xs text-yellow-800 dark:text-yellow-200">
+                                        <div className="mt-4 rounded-lg bg-yellow-50 dark:bg-yellow-900/20 p-3 md:p-4 w-full max-w-md">
+                                            <p className="text-xs md:text-sm text-yellow-800 dark:text-yellow-200">
                                                 <strong>Perhatian:</strong> Anda belum di-assign ke kelas. Hubungi admin untuk mendaftarkan Anda ke kelas.
                                             </p>
                                         </div>
                                     )}
                                     {profile?.class_id && (
-                                        <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-4 max-w-md">
-                                            <p className="text-xs text-blue-800 dark:text-blue-200">
+                                        <div className="mt-4 rounded-lg bg-blue-50 dark:bg-blue-900/20 p-3 md:p-4 w-full max-w-md">
+                                            <p className="text-xs md:text-sm text-blue-800 dark:text-blue-200">
                                                 <strong>Info:</strong> Kelas Anda: <em>{className || "Unknown"}</em>. Jika ada pemilihan aktif namun tidak muncul, hubungi admin untuk mengaktifkan pemilihan untuk kelas Anda.
                                             </p>
                                         </div>
@@ -143,70 +143,70 @@ export default function VoterDashboard() {
                                 </CardContent>
                             </Card>
                         ) : (
-                            <div className="grid gap-6 md:grid-cols-2">
+                            <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
                                 {activeEvents.map((event) => (
                                     <Card key={event.id} className="border-primary/20 bg-gradient-to-br from-card to-primary/5">
                                         <CardHeader>
-                                            <div className="flex items-start justify-between">
-                                                <CardTitle className="text-lg">{event.title}</CardTitle>
+                                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                                <CardTitle className="text-base md:text-lg pr-2">{event.title}</CardTitle>
                                                 {hasVoted(event.id) ? (
-                                                    <Badge className="bg-success gap-1">
+                                                    <Badge className="bg-success gap-1 w-fit text-xs">
                                                         <CheckCircle2 className="h-3 w-3" />
                                                         Sudah Memilih
                                                     </Badge>
                                                 ) : (
-                                                    <Badge className="bg-primary">Aktif</Badge>
+                                                    <Badge className="bg-primary w-fit text-xs">Aktif</Badge>
                                                 )}
                                             </div>
                                         </CardHeader>
                                         <CardContent>
-                                            <p className="text-sm text-muted-foreground mb-3">{event.description}</p>
+                                            <p className="text-xs md:text-sm text-muted-foreground mb-3 line-clamp-2">{event.description}</p>
 
                                             {/* Election Type Badge */}
                                             <div className="mb-3 flex items-center gap-2">
                                                 {event.election_type === "open" ? (
                                                     <Badge variant="outline" className="gap-1 text-xs">
                                                         <Eye className="h-3 w-3" />
-                                                        Pemilihan Terbuka
+                                                        <span className="hidden xs:inline">Pemilihan </span>Terbuka
                                                     </Badge>
                                                 ) : (
                                                     <Badge variant="outline" className="gap-1 text-xs">
                                                         <EyeOff className="h-3 w-3" />
-                                                        Pemilihan Tertutup
+                                                        <span className="hidden xs:inline">Pemilihan </span>Tertutup
                                                     </Badge>
                                                 )}
                                             </div>
 
-                                            <div className="flex items-center gap-2 text-sm text-muted-foreground mb-4">
-                                                <Clock className="h-4 w-4" />
-                                                Berakhir: {format(new Date(event.end_time), "dd MMM yyyy HH:mm", { locale: id })}
+                                            <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-4">
+                                                <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                                                <span className="truncate">Berakhir: {format(new Date(event.end_time), "dd MMM yyyy HH:mm", { locale: id })}</span>
                                             </div>
                                             {hasVoted(event.id) ? (
-                                                <div className="flex flex-col space-y-1">
-                                                    <div className="rounded-lg bg-success/10 p-3 text-center">
-                                                        <p className="text-sm font-medium text-success-foreground">Terima kasih telah memberikan suara!</p>
+                                                <div className="flex flex-col space-y-2">
+                                                    <div className="rounded-lg bg-success/10 p-2.5 md:p-3 text-center">
+                                                        <p className="text-xs md:text-sm font-medium text-success-foreground">Terima kasih telah memberikan suara!</p>
                                                     </div>
                                                     {(event.election_type === "open" || event.show_results_after_voting) && (
                                                         <Link to={`/app/results/${event.id}`}>
-                                                            <Button variant="outline" className="w-full gap-2">
-                                                                <BarChart3 className="h-4 w-4" />
+                                                            <Button variant="outline" className="w-full gap-2 text-xs md:text-sm h-9 md:h-10">
+                                                                <BarChart3 className="h-3 w-3 md:h-4 md:w-4" />
                                                                 Lihat Hasil Sementara
                                                             </Button>
                                                         </Link>
                                                     )}
                                                 </div>
                                             ) : (
-                                                <div className="flex flex-col space-y-1">
+                                                <div className="flex flex-col space-y-2">
                                                     <Link to={`/app/vote/${event.id}`}>
-                                                        <Button className="w-full gap-2">
-                                                            <Vote className="h-4 w-4" />
+                                                        <Button className="w-full gap-2 text-xs md:text-sm h-9 md:h-10">
+                                                            <Vote className="h-3 w-3 md:h-4 md:w-4" />
                                                             Berikan Suara
                                                         </Button>
                                                     </Link>
                                                     {event.election_type === "open" && (
                                                         <Link to={`/app/results/${event.id}`}>
-                                                            <Button variant="ghost" className="w-full gap-2">
-                                                                <BarChart3 className="h-4 w-4" />
+                                                            <Button variant="ghost" className="w-full gap-2 text-xs md:text-sm h-9 md:h-10">
+                                                                <BarChart3 className="h-3 w-3 md:h-4 md:w-4" />
                                                                 Lihat Hasil Real-time
                                                             </Button>
                                                         </Link>
@@ -223,19 +223,19 @@ export default function VoterDashboard() {
                     {/* Closed Elections */}
                     {closedEvents.length > 0 && (
                         <div>
-                            <h2 className="mb-4 text-xl font-bold text-foreground">Hasil Pemilihan</h2>
-                            <div className="grid gap-6 md:grid-cols-2">
+                            <h2 className="mb-4 text-lg md:text-xl font-bold text-foreground">Hasil Pemilihan</h2>
+                            <div className="grid gap-4 md:gap-6 grid-cols-1 lg:grid-cols-2">
                                 {closedEvents.map((event) => (
                                     <Card key={event.id}>
                                         <CardHeader>
-                                            <div className="flex items-start justify-between">
-                                                <CardTitle className="text-lg">{event.title}</CardTitle>
-                                                <Badge variant="secondary">Selesai</Badge>
+                                            <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2">
+                                                <CardTitle className="text-base md:text-lg pr-2">{event.title}</CardTitle>
+                                                <Badge variant="secondary" className="w-fit text-xs">Selesai</Badge>
                                             </div>
                                         </CardHeader>
                                         <CardContent>
                                             <Link to={`/app/results/${event.id}`}>
-                                                <Button variant="outline" className="w-full">
+                                                <Button variant="outline" className="w-full text-xs md:text-sm h-9 md:h-10">
                                                     Lihat Hasil
                                                 </Button>
                                             </Link>
