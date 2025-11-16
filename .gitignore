@@ -66,3 +66,9 @@ Desktop.ini
 # Claude Files & Folders
 CLAUDE.md
 .claude
+
+# Documents
+docs
+
+# Temp Testing Files
+*.timestamp-*.mjs
