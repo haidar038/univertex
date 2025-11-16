@@ -72,3 +72,4 @@ docs
 
 # Temp Testing Files
 *.timestamp-*.mjs
+*.config.ts.timestamp-*.mjs
