@@ -62,8 +62,8 @@ export default function PrivacyPolicy() {
                             </CardHeader>
                             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
                                 <p>
-                                    UniVertex ("kami", "kita", atau "milik kami") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami mengumpulkan, menggunakan, dan melindungi informasi pribadi Anda saat
-                                    Anda menggunakan platform e-voting kami.
+                                    UniVertex ("kami", "kita", atau "milik kami") berkomitmen untuk melindungi privasi Anda. Kebijakan Privasi ini menjelaskan bagaimana kami mengumpulkan, menggunakan, dan melindungi informasi pribadi Anda
+                                    saat Anda menggunakan platform e-voting kami.
                                 </p>
                                 <p>Dengan menggunakan layanan UniVertex, Anda menyetujui pengumpulan dan penggunaan informasi sesuai dengan kebijakan ini.</p>
                             </CardContent>
@@ -283,7 +283,7 @@ export default function PrivacyPolicy() {
                                         <strong>Data Protection Officer:</strong> <a href="mailto:dpo@univertex.com">dpo@univertex.com</a>
                                     </li>
                                     <li>
-                                        <strong>Alamat:</strong> Gedung Rektorat, Universitas Indonesia
+                                        <strong>Alamat:</strong> Gedung Rektorat, Universitas X
                                     </li>
                                     <li>
                                         <strong>Telepon:</strong> +62 21 1234 5678
@@ -294,9 +294,7 @@ export default function PrivacyPolicy() {
                     </div>
 
                     <div className="mt-12 p-6 bg-muted/30 rounded-lg">
-                        <p className="text-sm text-muted-foreground text-center">
-                            Dengan menggunakan UniVertex, Anda menyatakan bahwa Anda telah membaca, memahami, dan menyetujui Kebijakan Privasi ini.
-                        </p>
+                        <p className="text-sm text-muted-foreground text-center">Dengan menggunakan UniVertex, Anda menyatakan bahwa Anda telah membaca, memahami, dan menyetujui Kebijakan Privasi ini.</p>
                     </div>
                 </div>
             </div>

@@ -62,8 +62,8 @@ export default function TermsOfService() {
                             </CardHeader>
                             <CardContent className="prose prose-slate dark:prose-invert max-w-none">
                                 <p>
-                                    Selamat datang di UniVertex. Dengan mengakses dan menggunakan platform e-voting ini, Anda setuju untuk terikat oleh Syarat dan Ketentuan berikut. Jika Anda tidak setuju dengan syarat ini, mohon untuk tidak
-                                    menggunakan layanan kami.
+                                    Selamat datang di UniVertex. Dengan mengakses dan menggunakan platform e-voting ini, Anda setuju untuk terikat oleh Syarat dan Ketentuan berikut. Jika Anda tidak setuju dengan syarat ini, mohon untuk
+                                    tidak menggunakan layanan kami.
                                 </p>
                                 <p>Syarat dan Ketentuan ini berlaku untuk semua pengguna platform, termasuk tetapi tidak terbatas pada admin, pemilih (voters), dan kandidat.</p>
                             </CardContent>
@@ -85,9 +85,7 @@ export default function TermsOfService() {
                                     <li>Memiliki Nomor Induk Mahasiswa (NIM) yang valid</li>
                                     <li>Tidak sedang dalam status sanksi akademik atau administratif yang melarang partisipasi dalam pemilihan</li>
                                 </ul>
-                                <p>
-                                    Kami berhak untuk memverifikasi kelayakan Anda dan menolak atau membatalkan akun jika informasi yang diberikan tidak akurat atau jika Anda tidak memenuhi kriteria kelayakan.
-                                </p>
+                                <p>Kami berhak untuk memverifikasi kelayakan Anda dan menolak atau membatalkan akun jika informasi yang diberikan tidak akurat atau jika Anda tidak memenuhi kriteria kelayakan.</p>
                             </CardContent>
                         </Card>
 
@@ -336,7 +334,7 @@ export default function TermsOfService() {
                                         <strong>Support:</strong> <a href="mailto:support@univertex.com">support@univertex.com</a>
                                     </li>
                                     <li>
-                                        <strong>Alamat:</strong> Gedung Rektorat, Universitas Indonesia
+                                        <strong>Alamat:</strong> Gedung Rektorat, Universitas X
                                     </li>
                                     <li>
                                         <strong>Telepon:</strong> +62 21 1234 5678
@@ -347,9 +345,7 @@ export default function TermsOfService() {
                     </div>
 
                     <div className="mt-12 p-6 bg-muted/30 rounded-lg">
-                        <p className="text-sm text-muted-foreground text-center">
-                            Dengan menggunakan UniVertex, Anda mengakui bahwa Anda telah membaca, memahami, dan menyetujui untuk terikat oleh Syarat dan Ketentuan ini.
-                        </p>
+                        <p className="text-sm text-muted-foreground text-center">Dengan menggunakan UniVertex, Anda mengakui bahwa Anda telah membaca, memahami, dan menyetujui untuk terikat oleh Syarat dan Ketentuan ini.</p>
                     </div>
                 </div>
             </div>

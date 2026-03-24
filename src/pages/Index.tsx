@@ -7,27 +7,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
-import {
-    Vote,
-    Calendar,
-    Users,
-    Shield,
-    BarChart3,
-    Eye,
-    TrendingUp,
-    CheckCircle2,
-    Zap,
-    Lock,
-    Clock,
-    UserCheck,
-    FileCheck,
-    Mail,
-    Phone,
-    MapPin,
-    ArrowRight,
-    Menu,
-    X,
-} from "lucide-react";
+import { Vote, Calendar, Users, Shield, BarChart3, Eye, TrendingUp, CheckCircle2, Zap, Lock, Clock, UserCheck, FileCheck, Mail, Phone, MapPin, ArrowRight, Menu, X } from "lucide-react";
 import { format } from "date-fns";
 import { id } from "date-fns/locale";
 
@@ -113,10 +93,12 @@ function Index() {
                 <div className="container mx-auto px-4">
                     <div className="flex h-16 items-center justify-between">
                         {/* Logo */}
-                        <div className="flex items-center gap-3">
-                            <img src={resolvedTheme === "dark" ? "/UniVertexWhite.png" : "/UniVertex-Primary.png"} alt="UniVertex" className="h-10 w-auto" />
-                            <span className="text-xl font-bold text-foreground">UniVertex</span>
-                        </div>
+                        <a href="/">
+                            <div className="flex items-center gap-3">
+                                <img src={resolvedTheme === "dark" ? "/UniVertexWhite.png" : "/UniVertex-Primary.png"} alt="UniVertex" className="h-10 w-auto" />
+                                <span className="text-xl font-bold text-foreground">UniVertex</span>
+                            </div>
+                        </a>
 
                         {/* Desktop Navigation */}
                         <div className="hidden md:flex items-center gap-8">
@@ -151,12 +133,7 @@ function Index() {
                         {/* Mobile Menu Button */}
                         <div className="flex md:hidden items-center gap-2">
                             <ThemeToggle />
-                            <Button
-                                variant="ghost"
-                                size="sm"
-                                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                                className="p-2"
-                            >
+                            <Button variant="ghost" size="sm" onClick={() => setMobileMenuOpen(!mobileMenuOpen)} className="p-2">
                                 {mobileMenuOpen ? <X className="h-5 w-5" /> : <Menu className="h-5 w-5" />}
                             </Button>
                         </div>
@@ -167,39 +144,19 @@ function Index() {
                         <div className="md:hidden border-t py-4 space-y-4 animate-in slide-in-from-top-5">
                             {/* Mobile Navigation Links */}
                             <div className="flex flex-col space-y-3">
-                                <a
-                                    href="#features"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
-                                >
+                                <a href="#features" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted">
                                     Fitur
                                 </a>
-                                <a
-                                    href="#how-it-works"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
-                                >
+                                <a href="#how-it-works" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted">
                                     Cara Kerja
                                 </a>
-                                <a
-                                    href="#elections"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
-                                >
+                                <a href="#elections" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted">
                                     Pemilihan
                                 </a>
-                                <a
-                                    href="#faq"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
-                                >
+                                <a href="#faq" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted">
                                     FAQ
                                 </a>
-                                <a
-                                    href="#contact"
-                                    onClick={() => setMobileMenuOpen(false)}
-                                    className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted"
-                                >
+                                <a href="#contact" onClick={() => setMobileMenuOpen(false)} className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors px-2 py-2 rounded-md hover:bg-muted">
                                     Kontak
                                 </a>
                             </div>
@@ -207,10 +164,14 @@ function Index() {
                             {/* Mobile Action Buttons */}
                             <div className="flex flex-col gap-2 pt-4 border-t">
                                 <Button asChild variant="ghost" size="sm" className="w-full justify-start">
-                                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>Masuk</Link>
+                                    <Link to="/login" onClick={() => setMobileMenuOpen(false)}>
+                                        Masuk
+                                    </Link>
                                 </Button>
                                 <Button asChild size="sm" className="w-full">
-                                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>Daftar</Link>
+                                    <Link to="/signup" onClick={() => setMobileMenuOpen(false)}>
+                                        Daftar
+                                    </Link>
                                 </Button>
                             </div>
                         </div>
@@ -555,40 +516,40 @@ function Index() {
                             <AccordionItem value="item-1" className="border rounded-lg px-6 bg-background">
                                 <AccordionTrigger className="hover:no-underline">Apa itu UniVertex?</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
-                                    UniVertex adalah platform e-voting modern yang dirancang khusus untuk institusi pendidikan tinggi. Platform ini memungkinkan mahasiswa untuk berpartisipasi dalam pemilihan organisasi kampus secara aman, transparan, dan
-                                    efisien dari mana saja dan kapan saja.
+                                    UniVertex adalah platform e-voting modern yang dirancang khusus untuk institusi pendidikan tinggi. Platform ini memungkinkan mahasiswa untuk berpartisipasi dalam pemilihan organisasi kampus secara aman,
+                                    transparan, dan efisien dari mana saja dan kapan saja.
                                 </AccordionContent>
                             </AccordionItem>
 
                             <AccordionItem value="item-2" className="border rounded-lg px-6 bg-background">
                                 <AccordionTrigger className="hover:no-underline">Bagaimana cara mendaftar dan membuat akun?</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
-                                    Untuk mendaftar, klik tombol "Daftar" di halaman utama, lalu isi formulir dengan email institusi Anda (@ui.ac.id atau sejenisnya), NIM, nama lengkap, dan password. Setelah mendaftar, Anda akan langsung dapat
-                                    login dan berpartisipasi dalam pemilihan yang tersedia untuk kelas Anda.
+                                    Untuk mendaftar, klik tombol "Daftar" di halaman utama, lalu isi formulir dengan email institusi Anda (@ui.ac.id atau sejenisnya), NIM, nama lengkap, dan password. Setelah mendaftar, Anda akan langsung
+                                    dapat login dan berpartisipasi dalam pemilihan yang tersedia untuk kelas Anda.
                                 </AccordionContent>
                             </AccordionItem>
 
                             <AccordionItem value="item-3" className="border rounded-lg px-6 bg-background">
                                 <AccordionTrigger className="hover:no-underline">Apakah suara saya bersifat rahasia?</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
-                                    Ya, mutlak rahasia. UniVertex menggunakan teknologi enkripsi end-to-end dan sistem pemisahan data yang memastikan pilihan voting Anda tidak dapat dikaitkan dengan identitas pribadi Anda. Bahkan administrator
-                                    sistem tidak dapat melihat siapa memilih kandidat tertentu.
+                                    Ya, mutlak rahasia. UniVertex menggunakan teknologi enkripsi end-to-end dan sistem pemisahan data yang memastikan pilihan voting Anda tidak dapat dikaitkan dengan identitas pribadi Anda. Bahkan
+                                    administrator sistem tidak dapat melihat siapa memilih kandidat tertentu.
                                 </AccordionContent>
                             </AccordionItem>
 
                             <AccordionItem value="item-4" className="border rounded-lg px-6 bg-background">
                                 <AccordionTrigger className="hover:no-underline">Bisakah saya mengubah pilihan setelah memberikan suara?</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
-                                    Tidak. Setelah Anda mengkonfirmasi pilihan Anda, suara akan langsung tercatat dan tidak dapat diubah. Hal ini untuk menjaga integritas pemilihan dan mencegah manipulasi. Pastikan Anda telah yakin dengan pilihan
-                                    Anda sebelum mengklik tombol konfirmasi.
+                                    Tidak. Setelah Anda mengkonfirmasi pilihan Anda, suara akan langsung tercatat dan tidak dapat diubah. Hal ini untuk menjaga integritas pemilihan dan mencegah manipulasi. Pastikan Anda telah yakin dengan
+                                    pilihan Anda sebelum mengklik tombol konfirmasi.
                                 </AccordionContent>
                             </AccordionItem>
 
                             <AccordionItem value="item-5" className="border rounded-lg px-6 bg-background">
                                 <AccordionTrigger className="hover:no-underline">Bagaimana cara menjadi kandidat?</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
-                                    Untuk menjadi kandidat, Anda perlu memiliki akun dengan role "kandidat". Setelah login, buka halaman "Pengaturan Kandidat" untuk mengisi informasi seperti visi, misi, dan foto profil Anda. Profil kandidat Anda
-                                    akan ditinjau dan disetujui oleh administrator sebelum dipublikasikan kepada pemilih.
+                                    Untuk menjadi kandidat, Anda perlu memiliki akun dengan role "kandidat". Setelah login, buka halaman "Pengaturan Kandidat" untuk mengisi informasi seperti visi, misi, dan foto profil Anda. Profil kandidat
+                                    Anda akan ditinjau dan disetujui oleh administrator sebelum dipublikasikan kepada pemilih.
                                 </AccordionContent>
                             </AccordionItem>
 
@@ -610,8 +571,8 @@ function Index() {
                             <AccordionItem value="item-7" className="border rounded-lg px-6 bg-background">
                                 <AccordionTrigger className="hover:no-underline">Bagaimana jika saya lupa password?</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
-                                    Klik link "Lupa password?" di halaman login, lalu masukkan email Anda. Kami akan mengirimkan link reset password ke email Anda. Ikuti instruksi dalam email untuk membuat password baru. Jika Anda tidak menerima
-                                    email dalam beberapa menit, periksa folder spam Anda.
+                                    Klik link "Lupa password?" di halaman login, lalu masukkan email Anda. Kami akan mengirimkan link reset password ke email Anda. Ikuti instruksi dalam email untuk membuat password baru. Jika Anda tidak
+                                    menerima email dalam beberapa menit, periksa folder spam Anda.
                                 </AccordionContent>
                             </AccordionItem>
 
@@ -632,8 +593,8 @@ function Index() {
                             <AccordionItem value="item-9" className="border rounded-lg px-6 bg-background">
                                 <AccordionTrigger className="hover:no-underline">Siapa yang dapat melihat data pribadi saya?</AccordionTrigger>
                                 <AccordionContent className="text-muted-foreground">
-                                    Data pribadi Anda (nama, NIM, kelas) hanya dapat diakses oleh administrator untuk keperluan verifikasi dan manajemen akun. Data voting Anda sepenuhnya anonim dan terpisah dari identitas pribadi. Kami tidak pernah
-                                    menjual atau membagikan data pribadi Anda kepada pihak ketiga. Lihat{" "}
+                                    Data pribadi Anda (nama, NIM, kelas) hanya dapat diakses oleh administrator untuk keperluan verifikasi dan manajemen akun. Data voting Anda sepenuhnya anonim dan terpisah dari identitas pribadi. Kami
+                                    tidak pernah menjual atau membagikan data pribadi Anda kepada pihak ketiga. Lihat{" "}
                                     <Link to="/privacy-policy" className="text-primary hover:underline">
                                         Kebijakan Privasi
                                     </Link>{" "}
@@ -647,7 +608,10 @@ function Index() {
                                     Jika Anda mengalami masalah teknis atau memiliki pertanyaan, Anda dapat menghubungi kami melalui:
                                     <ul className="list-disc pl-6 mt-2 space-y-1">
                                         <li>
-                                            Email: <a href="mailto:support@univertex.com" className="text-primary hover:underline">support@univertex.com</a>
+                                            Email:{" "}
+                                            <a href="mailto:support@univertex.com" className="text-primary hover:underline">
+                                                support@univertex.com
+                                            </a>
                                         </li>
                                         <li>Telepon: +62 21 1234 5678 (Senin-Jumat, 08:00-17:00)</li>
                                         <li>Atau melalui form kontak di bagian bawah halaman ini</li>
@@ -735,7 +699,7 @@ function Index() {
                             </CardHeader>
                             <CardContent>
                                 <p className="text-sm text-muted-foreground">Gedung Rektorat</p>
-                                <p className="text-sm text-muted-foreground">Universitas Indonesia</p>
+                                <p className="text-sm text-muted-foreground">Universitas X</p>
                             </CardContent>
                         </Card>
                     </div>
@@ -743,7 +707,7 @@ function Index() {
             </section>
 
             {/* Footer */}
-            <footer className="py-12 bg-muted/30">
+            <footer className="pt-12 pb-6 bg-muted/30">
                 <div className="container mx-auto px-4">
                     <div className="grid gap-8 md:grid-cols-4">
                         <div className="space-y-4">
@@ -820,7 +784,7 @@ function Index() {
 
                     <div className="mt-12 pt-8 border-t text-center text-sm text-muted-foreground">
                         <p>&copy; {new Date().getFullYear()} UniVertex. All rights reserved.</p>
-                        <p className="mt-2">Built with ❤️ for Indonesian Universities</p>
+                        <p className="mt-2">Built with integrity for Indonesian Universities</p>
                     </div>
                 </div>
             </footer>
