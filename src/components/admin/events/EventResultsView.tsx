@@ -7,6 +7,7 @@ import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 import { Download, FileText, Trophy, Users, Vote, TrendingUp } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { toast } from 'sonner';
+import { fetchPairsWithMembers, getPairDisplayName } from '@/lib/candidate-pair-helpers';
 
 interface EventResultsViewProps {
   eventId: string;
@@ -50,35 +51,67 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
     try {
       setLoading(true);
 
-      // Fetch candidates with vote counts
-      const { data: candidatesData, error: candidatesError } = await supabase
-        .from('candidates')
-        .select('id, user_id, vision, mission, photo_url, profiles(full_name, student_id)')
-        .eq('event_id', eventId);
+      // Determine the ballot mode (pairs vs single candidates)
+      const { data: eventData, error: eventError } = await supabase
+        .from('election_events')
+        .select('use_pairs')
+        .eq('id', eventId)
+        .single();
+      if (eventError) throw eventError;
+      const usePairs = !!eventData?.use_pairs;
 
-      if (candidatesError) throw candidatesError;
+      // Single aggregated RPC instead of N+1 per-candidate count queries
+      const { data: tally, error: tallyError } = await supabase.rpc('get_election_tally', {
+        p_event_id: eventId,
+      });
+      if (tallyError) throw tallyError;
 
-      // Fetch vote counts for each candidate
-      const candidateResults: CandidateResult[] = await Promise.all(
-        (candidatesData || []).map(async (candidate) => {
-          const { count, error } = await supabase
-            .from('votes')
-            .select('*', { count: 'exact', head: true })
-            .eq('candidate_id', candidate.id)
-            .eq('event_id', eventId);
+      let candidateResults: CandidateResult[] = [];
 
-          if (error) console.error('Error counting votes:', error);
+      if (usePairs) {
+        // Mode pasangan: satu baris per pasangan (nama = ketua & wakil)
+        const pairs = await fetchPairsWithMembers(eventId);
 
-          return {
-            id: candidate.id,
-            name: (candidate.profiles as any).full_name,
-            student_id: (candidate.profiles as any).student_id,
-            votes: count || 0,
-            percentage: 0, // will calculate later
-            photo_url: candidate.photo_url,
-          };
-        })
-      );
+        const votesByPair = new Map<string, number>();
+        (tally || []).forEach((row: any) => {
+          if (row.pair_id) {
+            votesByPair.set(row.pair_id, Number(row.total_votes) || 0);
+          }
+        });
+
+        candidateResults = pairs.map((p) => ({
+          id: p.id,
+          name: getPairDisplayName(p),
+          student_id: p.members
+            .map((m) => m.candidates?.profiles?.full_name || 'Tanpa nama')
+            .join(' • '),
+          votes: votesByPair.get(p.id) ?? 0,
+          percentage: 0, // will calculate later
+        }));
+      } else {
+        const { data: candidatesData, error: candidatesError } = await supabase
+          .from('candidates')
+          .select('id, user_id, vision, mission, photo_url, profiles(full_name, student_id)')
+          .eq('event_id', eventId);
+
+        if (candidatesError) throw candidatesError;
+
+        const votesByCandidate = new Map<string, number>();
+        (tally || []).forEach((row: any) => {
+          if (row.candidate_id) {
+            votesByCandidate.set(row.candidate_id, Number(row.total_votes) || 0);
+          }
+        });
+
+        candidateResults = (candidatesData || []).map((candidate) => ({
+          id: candidate.id,
+          name: (candidate.profiles as any).full_name,
+          student_id: (candidate.profiles as any).student_id,
+          votes: votesByCandidate.get(candidate.id) ?? 0,
+          percentage: 0, // will calculate later
+          photo_url: candidate.photo_url,
+        }));
+      }
 
       // Calculate total votes
       const totalVotes = candidateResults.reduce((sum, c) => sum + c.votes, 0);
@@ -233,7 +266,7 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
       <body>
         <h1>Hasil Pemilihan</h1>
         <h2>${eventTitle}</h2>
-        <p><strong>Status:</strong> ${eventStatus === 'closed' ? 'Selesai' : eventStatus === 'active' ? 'Aktif' : 'Draft'}</p>
+        <p><strong>Status:</strong> ${['counting', 'published', 'archived'].includes(eventStatus) ? 'Selesai' : eventStatus === 'voting' ? 'Aktif' : 'Draft'}</p>
 
         <div class="stats">
           <div class="stat-card">
@@ -250,17 +283,16 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
           </div>
         </div>
 
-        ${
-          stats.winner
-            ? `
+        ${stats.winner
+        ? `
         <div class="winner-card">
           <h3 style="margin: 0 0 10px 0; font-size: 14px; opacity: 0.9;">🏆 PEMENANG PEMILIHAN</h3>
           <h2 style="margin: 0; font-size: 28px;">${stats.winner.name}</h2>
           <p style="margin: 5px 0 0 0; opacity: 0.9;">${stats.winner.student_id} - ${stats.winner.votes} suara (${stats.winner.percentage.toFixed(1)}%)</p>
         </div>
         `
-            : ''
-        }
+        : ''
+      }
 
         <h3>Perolehan Suara per Kandidat</h3>
         <table>
@@ -275,8 +307,8 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
           </thead>
           <tbody>
             ${results
-              .map(
-                (candidate, index) => `
+        .map(
+          (candidate, index) => `
               <tr>
                 <td>${index + 1}</td>
                 <td>${candidate.name}</td>
@@ -285,8 +317,8 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
                 <td>${candidate.percentage.toFixed(2)}%</td>
               </tr>
             `
-              )
-              .join('')}
+        )
+        .join('')}
           </tbody>
         </table>
 

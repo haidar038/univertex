@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -13,6 +13,7 @@ import {
 } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { AlertTriangle, Users, Vote, GraduationCap } from 'lucide-react';
+import { logAudit } from '@/lib/audit';
 
 interface DeleteEventDialogProps {
   open: boolean;
@@ -37,40 +38,26 @@ export function DeleteEventDialog({
   });
   const [loading, setLoading] = useState(false);
 
-  // Fetch event statistics
   useEffect(() => {
-    if (open && eventId) {
-      fetchEventStats();
-    }
+    if (open && eventId) fetchEventStats();
   }, [open, eventId]);
 
   const fetchEventStats = async () => {
     if (!eventId) return;
-
     setLoading(true);
     try {
-      const [candidatesResult, votesResult, voterGroupsResult] = await Promise.all([
-        supabase
-          .from('candidates')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', eventId),
-        supabase
-          .from('votes')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', eventId),
-        supabase
-          .from('event_voter_groups')
-          .select('*', { count: 'exact', head: true })
-          .eq('event_id', eventId),
+      const [c, v, g] = await Promise.all([
+        supabase.from('candidates').select('*', { count: 'exact', head: true }).eq('event_id', eventId),
+        supabase.from('votes').select('*', { count: 'exact', head: true }).eq('event_id', eventId),
+        supabase.from('event_voter_groups').select('*', { count: 'exact', head: true }).eq('event_id', eventId),
       ]);
-
       setStats({
-        candidatesCount: candidatesResult.count || 0,
-        votesCount: votesResult.count || 0,
-        voterGroupsCount: voterGroupsResult.count || 0,
+        candidatesCount: c.count || 0,
+        votesCount: v.count || 0,
+        voterGroupsCount: g.count || 0,
       });
-    } catch (error) {
-      console.error('Error fetching event stats:', error);
+    } catch (e) {
+      console.error(e);
     } finally {
       setLoading(false);
     }
@@ -78,22 +65,27 @@ export function DeleteEventDialog({
 
   const handleDelete = async () => {
     if (!eventId) return;
-
     setIsDeleting(true);
     try {
-      const { error } = await supabase
-        .from('election_events')
-        .delete()
-        .eq('id', eventId);
-
+      const { error } = await supabase.from('election_events').delete().eq('id', eventId);
       if (error) throw error;
+
+      await logAudit({
+        action: 'event.delete',
+        description: `Deleted election event "${eventTitle}"`,
+        category: 'election',
+        targetType: 'election_events',
+        targetId: eventId,
+        severity: 'warning',
+        metadata: { candidates: stats.candidatesCount, votes: stats.votesCount, voter_groups: stats.voterGroupsCount },
+      });
 
       toast.success('Acara berhasil dihapus!');
       onOpenChange(false);
       onSuccess?.();
-    } catch (error: any) {
-      console.error('Error deleting event:', error);
-      toast.error(error.message || 'Gagal menghapus acara');
+    } catch (e: unknown) {
+      console.error(e);
+      toast.error(e instanceof Error ? e.message : 'Gagal menghapus acara');
     } finally {
       setIsDeleting(false);
     }
@@ -110,8 +102,7 @@ export function DeleteEventDialog({
             Hapus Acara Pemilihan?
           </AlertDialogTitle>
           <AlertDialogDescription>
-            Anda akan menghapus acara <strong>{eventTitle}</strong>. Tindakan ini tidak dapat
-            dibatalkan.
+            Anda akan menghapus acara <strong>{eventTitle}</strong>. Tindakan ini tidak dapat dibatalkan.
           </AlertDialogDescription>
         </AlertDialogHeader>
 
@@ -123,48 +114,26 @@ export function DeleteEventDialog({
               <Alert variant="destructive">
                 <AlertTriangle className="h-4 w-4" />
                 <AlertDescription>
-                  <strong>Peringatan!</strong> Menghapus acara ini akan menghapus semua data
-                  terkait:
+                  <strong>Peringatan!</strong> Menghapus acara ini akan menghapus semua data terkait:
                 </AlertDescription>
               </Alert>
 
               <div className="space-y-2 rounded-lg border border-destructive/50 bg-destructive/10 p-4">
-                <div className="flex items-center gap-3 text-sm">
-                  <Users className="h-4 w-4 text-destructive" />
-                  <span>
-                    <strong>{stats.candidatesCount}</strong> kandidat akan dihapus
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <Vote className="h-4 w-4 text-destructive" />
-                  <span>
-                    <strong>{stats.votesCount}</strong> suara akan dihapus
-                  </span>
-                </div>
-                <div className="flex items-center gap-3 text-sm">
-                  <GraduationCap className="h-4 w-4 text-destructive" />
-                  <span>
-                    <strong>{stats.voterGroupsCount}</strong> grup pemilih akan dihapus
-                  </span>
-                </div>
+                <div className="flex items-center gap-3 text-sm"><Users className="h-4 w-4 text-destructive" /><span><strong>{stats.candidatesCount}</strong> kandidat akan dihapus</span></div>
+                <div className="flex items-center gap-3 text-sm"><Vote className="h-4 w-4 text-destructive" /><span><strong>{stats.votesCount}</strong> suara akan dihapus</span></div>
+                <div className="flex items-center gap-3 text-sm"><GraduationCap className="h-4 w-4 text-destructive" /><span><strong>{stats.voterGroupsCount}</strong> grup pemilih akan dihapus</span></div>
               </div>
             </>
           ) : (
             <Alert>
-              <AlertDescription className="text-sm">
-                Acara ini belum memiliki data. Aman untuk dihapus.
-              </AlertDescription>
+              <AlertDescription className="text-sm">Acara ini belum memiliki data. Aman untuk dihapus.</AlertDescription>
             </Alert>
           )}
         </div>
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
-          <AlertDialogAction
-            onClick={handleDelete}
-            disabled={isDeleting || loading}
-            className="bg-destructive hover:bg-destructive/90"
-          >
+          <AlertDialogAction onClick={handleDelete} disabled={isDeleting || loading} className="bg-destructive hover:bg-destructive/90">
             {isDeleting ? 'Menghapus...' : 'Hapus Acara'}
           </AlertDialogAction>
         </AlertDialogFooter>

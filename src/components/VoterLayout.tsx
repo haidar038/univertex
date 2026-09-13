@@ -1,10 +1,10 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+﻿import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, User, Vote, LogOut, Settings, Trophy, Menu, X } from "lucide-react";
+import { LayoutDashboard, User, Vote, LogOut, Settings, Trophy, Menu, X, Shield } from "lucide-react";
 import { useState } from "react";
 
 export function VoterLayout() {
@@ -15,6 +15,7 @@ export function VoterLayout() {
 
     const navigation = [
         { name: "Dashboard", href: "/app/dashboard", icon: LayoutDashboard },
+        { name: "Perangkat Saya", href: "/app/my-sessions", icon: Shield },
         { name: "Profil", href: "/app/profile", icon: User },
     ];
 
@@ -60,10 +61,10 @@ export function VoterLayout() {
 
             {/* Sidebar */}
             <div className={cn(
-                "fixed lg:static inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0",
+                "fixed lg:sticky inset lg:top-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 lg:h-screen",
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                <div className="flex h-16 items-center justify-center gap-3 border-b border-border px-6">
+                <div className="flex h-16 items-center justify-center gap-3 border-b border-border px-6 flex-shrink-0">
                     <img
                         src={resolvedTheme === 'dark' ? "/UniVertexWhiteHorizontal.png" : "/UniVertex-Horizontal.png"}
                         alt="UniVertex Logo"
@@ -71,7 +72,7 @@ export function VoterLayout() {
                     />
                 </div>
 
-                <nav className="flex-1 space-y-1 p-4">
+                <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
                     {navigation.map((item) => {
                         const isActive = location.pathname === item.href;
                         return (
@@ -91,7 +92,7 @@ export function VoterLayout() {
                     })}
                 </nav>
 
-                <div className="border-t border-border p-4">
+                <div className="border-t border-border p-4 flex-shrink-0">
                     <div className="mb-4 rounded-lg bg-muted p-3">
                         <p className="text-sm font-medium text-foreground">{profile?.full_name}</p>
                         <p className="text-xs text-muted-foreground">{profile?.student_id}</p>
@@ -108,7 +109,7 @@ export function VoterLayout() {
             </div>
 
             {/* Main content */}
-            <div className="flex-1 pt-16 lg:pt-0">
+            <div className="flex-1 pt-16 lg:pt-0 min-w-0">
                 <Outlet />
             </div>
         </div>

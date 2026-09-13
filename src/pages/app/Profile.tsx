@@ -8,7 +8,23 @@ import { Button } from '@/components/ui/button';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { toast } from 'sonner';
-import { User, Lock, Edit, Mail } from 'lucide-react';
+import { User, Lock, Edit, Mail, Eye, EyeOff } from 'lucide-react';
+
+const validatePasswordChange = (newPassword: string, confirmPassword: string): string | null => {
+  if (!newPassword || !confirmPassword) {
+    return 'Password baru dan konfirmasi password harus diisi';
+  }
+
+  if (newPassword.length < 6) {
+    return 'Password minimal 6 karakter';
+  }
+
+  if (newPassword !== confirmPassword) {
+    return 'Password baru tidak cocok';
+  }
+
+  return null;
+};
 
 interface UserProfile {
   id: string;
@@ -37,6 +53,8 @@ export default function ProfilePage() {
   const [passwordDialogOpen, setPasswordDialogOpen] = useState(false);
   const [newPassword, setNewPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showNewPassword, setShowNewPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [passwordLoading, setPasswordLoading] = useState(false);
 
   useEffect(() => {
@@ -125,11 +143,52 @@ export default function ProfilePage() {
     }
   };
 
+  const getPasswordConfirmHelper = () => {
+    if (!confirmPassword) {
+      return {
+        tone: 'muted',
+        text: 'Konfirmasi password masih kosong',
+      };
+    }
+
+    if (newPassword.length < 6) {
+      return {
+        tone: 'error',
+        text: 'Password minimal 6 karakter',
+      };
+    }
+
+    if (newPassword !== confirmPassword) {
+      return {
+        tone: 'error',
+        text: 'Password belum cocok',
+      };
+    }
+
+    return {
+      tone: 'success',
+      text: 'Password cocok',
+    };
+  };
+
+  const resetPasswordDialogState = () => {
+    setNewPassword('');
+    setConfirmPassword('');
+    setShowNewPassword(false);
+    setShowConfirmPassword(false);
+  };
+
+  const closePasswordDialog = () => {
+    setPasswordDialogOpen(false);
+    resetPasswordDialogState();
+  };
+
   const handleChangePassword = async (e: React.FormEvent) => {
     e.preventDefault();
 
-    if (newPassword.length < 6) {
-      toast.error('Password minimal 6 karakter');
+    const validationError = validatePasswordChange(newPassword, confirmPassword);
+    if (validationError) {
+      toast.error(validationError);
       return;
     }
 
@@ -147,12 +206,10 @@ export default function ProfilePage() {
       if (error) throw error;
 
       toast.success('Password berhasil diubah');
-      setPasswordDialogOpen(false);
-      setNewPassword('');
-      setConfirmPassword('');
+      closePasswordDialog();
     } catch (error: any) {
       console.error('Error changing password:', error);
-      toast.error('Gagal mengubah password');
+      toast.error(error?.message || 'Gagal mengubah password');
     } finally {
       setPasswordLoading(false);
     }
@@ -227,8 +284,8 @@ export default function ProfilePage() {
                 {profile?.roles
                   .map(role =>
                     role === 'admin' ? 'Administrator' :
-                    role === 'candidate' ? 'Kandidat' :
-                    role === 'voter' ? 'Pemilih' : role
+                      role === 'candidate' ? 'Kandidat' :
+                        role === 'voter' ? 'Pemilih' : role
                   )
                   .join(', ') || '-'}
               </span>
@@ -331,39 +388,76 @@ export default function ProfilePage() {
               <div className="space-y-4 py-4">
                 <div className="space-y-2">
                   <Label htmlFor="newPassword">Password Baru</Label>
-                  <Input
-                    id="newPassword"
-                    type="password"
-                    value={newPassword}
-                    onChange={(e) => setNewPassword(e.target.value)}
-                    disabled={passwordLoading}
-                    placeholder="Minimal 6 karakter"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="newPassword"
+                      type={showNewPassword ? 'text' : 'password'}
+                      value={newPassword}
+                      onChange={(e) => setNewPassword(e.target.value)}
+                      disabled={passwordLoading}
+                      placeholder="Minimal 6 karakter"
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowNewPassword((value) => !value)}
+                      aria-label={showNewPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      disabled={passwordLoading}
+                    >
+                      {showNewPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
                 </div>
 
                 <div className="space-y-2">
                   <Label htmlFor="confirmPassword">Konfirmasi Password Baru</Label>
-                  <Input
-                    id="confirmPassword"
-                    type="password"
-                    value={confirmPassword}
-                    onChange={(e) => setConfirmPassword(e.target.value)}
-                    disabled={passwordLoading}
-                    placeholder="Ketik ulang password baru"
-                    required
-                  />
+                  <div className="relative">
+                    <Input
+                      id="confirmPassword"
+                      type={showConfirmPassword ? 'text' : 'password'}
+                      value={confirmPassword}
+                      onChange={(e) => setConfirmPassword(e.target.value)}
+                      disabled={passwordLoading}
+                      placeholder="Ketik ulang password baru"
+                      required
+                      className="pr-10"
+                    />
+                    <button
+                      type="button"
+                      tabIndex={-1}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground"
+                      onClick={() => setShowConfirmPassword((value) => !value)}
+                      aria-label={showConfirmPassword ? 'Sembunyikan password' : 'Tampilkan password'}
+                      disabled={passwordLoading}
+                    >
+                      {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+                    </button>
+                  </div>
+
+                  <div className="min-h-[20px]">
+                    <span
+                      aria-live="polite"
+                      className={
+                        getPasswordConfirmHelper().tone === 'success'
+                          ? 'text-xs text-green-600 dark:text-green-400'
+                          : getPasswordConfirmHelper().tone === 'error'
+                            ? 'text-xs text-red-600 dark:text-red-400'
+                            : 'text-xs text-muted-foreground'
+                      }
+                    >
+                      {getPasswordConfirmHelper().text}
+                    </span>
+                  </div>
                 </div>
               </div>
               <DialogFooter>
                 <Button
                   type="button"
                   variant="outline"
-                  onClick={() => {
-                    setPasswordDialogOpen(false);
-                    setNewPassword('');
-                    setConfirmPassword('');
-                  }}
+                  onClick={closePasswordDialog}
                   disabled={passwordLoading}
                 >
                   Batal

@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Trophy, Users, ArrowLeft, Lock, Eye, Clock } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { fetchPairsWithMembers, getPairDisplayName } from '@/lib/candidate-pair-helpers';
 
 export default function PublicResultsPage() {
   const { eventId } = useParams();
@@ -36,16 +37,16 @@ export default function PublicResultsPage() {
       setEvent(eventData);
 
       // Check access permissions
-      const isActive = eventData.status === 'active';
-      const isClosed = eventData.status === 'closed';
+      const isVoting = eventData.status === 'voting';
+      const isPublished = eventData.status === 'published';
+      const isCounting = eventData.status === 'counting';
       const isOpen = eventData.election_type === 'open';
       const hasPublicResults = eventData.public_results;
 
       // Determine if user can view results
-      // For public page:
-      // - Can view if election is open (active)
-      // - Can view if election is closed AND has public_results = true
-      const canView = (isActive && isOpen) || (isClosed && hasPublicResults);
+      // - Can view if election is voting AND open type
+      // - Can view if published/counting AND has public_results
+      const canView = (isVoting && isOpen) || ((isPublished || isCounting) && hasPublicResults);
       setCanViewResults(canView);
 
       if (!canView) {
@@ -53,7 +54,39 @@ export default function PublicResultsPage() {
         return;
       }
 
-      // Fetch candidates and votes
+      // Aggregate tally via the secure RPC. Per-row votes SELECT is blocked by
+      // RLS for anonymous visitors, so direct count queries always returned 0
+      // for the public page — the RPC is the sanctioned aggregation path.
+      const { data: tally, error: tallyError } = await supabase.rpc('get_election_tally', {
+        p_event_id: eventId,
+      });
+      if (tallyError) throw tallyError;
+
+      if (eventData.use_pairs) {
+        // Mode pasangan: hasil per pasangan (ketua & wakil)
+        const pairs = await fetchPairsWithMembers(eventId, { approvedOnly: true });
+
+        const votesByPair = new Map<string, number>();
+        (tally || []).forEach((row: any) => {
+          if (row.pair_id) {
+            votesByPair.set(row.pair_id, Number(row.total_votes) || 0);
+          }
+        });
+
+        const pairResults = pairs.map((p) => ({
+          id: p.id,
+          name: getPairDisplayName(p),
+          studentId: p.members.map((m) => m.candidates?.profiles?.full_name || 'Tanpa nama').join(' • '),
+          department: null as string | null,
+          votes: votesByPair.get(p.id) ?? 0,
+        }));
+
+        pairResults.sort((a, b) => b.votes - a.votes);
+        setResults(pairResults);
+        return;
+      }
+
+      // Fetch approved candidates
       const { data: candidates } = await supabase
         .from('candidates')
         .select('id, vision, mission, photo_storage_path, photo_url, profiles(full_name, student_id, department)')
@@ -62,22 +95,20 @@ export default function PublicResultsPage() {
 
       if (!candidates) return;
 
-      const resultsWithVotes = await Promise.all(
-        candidates.map(async (candidate) => {
-          const { count } = await supabase
-            .from('votes')
-            .select('*', { count: 'exact', head: true })
-            .eq('candidate_id', candidate.id);
+      const votesByCandidate = new Map<string, number>();
+      (tally || []).forEach((row: any) => {
+        if (row.candidate_id) {
+          votesByCandidate.set(row.candidate_id, Number(row.total_votes) || 0);
+        }
+      });
 
-          return {
-            id: candidate.id,
-            name: (candidate.profiles as any).full_name,
-            studentId: (candidate.profiles as any).student_id,
-            department: (candidate.profiles as any).department,
-            votes: count || 0,
-          };
-        })
-      );
+      const resultsWithVotes = candidates.map((candidate) => ({
+        id: candidate.id,
+        name: (candidate.profiles as any).full_name,
+        studentId: (candidate.profiles as any).student_id,
+        department: (candidate.profiles as any).department,
+        votes: votesByCandidate.get(candidate.id) ?? 0,
+      }));
 
       resultsWithVotes.sort((a, b) => b.votes - a.votes);
 
@@ -113,8 +144,8 @@ export default function PublicResultsPage() {
   }
 
   if (!canViewResults) {
-    const isActive = event.status === 'active';
-    const isClosed = event.status === 'closed';
+    const isActive = event.status === 'voting';
+    const isClosed = ['counting', 'published', 'archived'].includes(event.status);
 
     return (
       <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5">
@@ -145,8 +176,8 @@ export default function PublicResultsPage() {
                     {isActive && event.election_type === 'closed'
                       ? 'Hasil pemilihan ini tidak ditampilkan secara publik selama pemilihan berlangsung. Hasil akan tersedia setelah pemilihan ditutup.'
                       : isClosed && !event.public_results
-                      ? 'Hasil pemilihan ini bersifat privat dan hanya dapat dilihat oleh peserta yang terdaftar.'
-                      : 'Hasil pemilihan ini tidak tersedia untuk umum.'}
+                        ? 'Hasil pemilihan ini bersifat privat dan hanya dapat dilihat oleh peserta yang terdaftar.'
+                        : 'Hasil pemilihan ini tidak tersedia untuk umum.'}
                   </p>
                   <div className="pt-4">
                     <Button asChild>
@@ -178,7 +209,7 @@ export default function PublicResultsPage() {
 
   const totalVotes = results.reduce((sum, r) => sum + r.votes, 0);
   const winner = results[0];
-  const isActive = event.status === 'active';
+  const isActive = event.status === 'voting';
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-background via-primary/5 to-secondary/5">

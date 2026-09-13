@@ -1,10 +1,10 @@
-import { Link, Outlet, useLocation } from "react-router-dom";
+﻿import { Link, Outlet, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Calendar, Users, GraduationCap, LogOut, Vote, Menu, X } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, GraduationCap, LogOut, Menu, X, MailPlus, ScrollText, Shield, FileDown } from "lucide-react";
 import { useState } from "react";
 
 const navigation = [
@@ -12,6 +12,10 @@ const navigation = [
     { name: "Acara Pemilihan", href: "/admin/events", icon: Calendar },
     { name: "Manajemen Pengguna", href: "/admin/users", icon: Users },
     { name: "Manajemen Kelas", href: "/admin/classes", icon: GraduationCap },
+    { name: "Undangan", href: "/admin/invitations", icon: MailPlus },
+    { name: "Sesi Perangkat", href: "/admin/sessions", icon: Shield },
+    { name: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
+    { name: "Audit Export", href: "/admin/audit-export", icon: FileDown },
 ];
 
 export function AdminLayout() {
@@ -55,10 +59,10 @@ export function AdminLayout() {
 
             {/* Sidebar */}
             <div className={cn(
-                "fixed lg:static inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0",
+                "fixed lg:sticky inset lg:top-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 lg:h-screen",
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                <div className="flex h-16 items-center gap-3 border-b border-border px-6">
+                <div className="flex h-16 items-center gap-3 border-b border-border px-6 flex-shrink-0">
                     <img
                         src={resolvedTheme === 'dark' ? "/UniVertexWhite.png" : "/UniVertex-Primary.png"}
                         alt="UniVertex Logo"
@@ -70,7 +74,7 @@ export function AdminLayout() {
                     </div>
                 </div>
 
-                <nav className="flex-1 space-y-1 p-4">
+                <nav className="flex-1 space-y-1 p-4 overflow-y-auto">
                     {navigation.map((item) => {
                         const isActive = location.pathname === item.href || location.pathname.startsWith(item.href + "/");
                         return (
@@ -90,7 +94,7 @@ export function AdminLayout() {
                     })}
                 </nav>
 
-                <div className="border-t border-border p-4">
+                <div className="border-t border-border p-4 flex-shrink-0">
                     <div className="mb-4 rounded-lg bg-muted p-3">
                         <p className="text-sm font-medium text-foreground">{profile?.full_name}</p>
                         <p className="text-xs text-muted-foreground">{profile?.student_id}</p>
@@ -107,7 +111,7 @@ export function AdminLayout() {
             </div>
 
             {/* Main content */}
-            <div className="flex-1 pt-16 lg:pt-0">
+            <div className="flex-1 pt-16 lg:pt-0 min-w-0">
                 <Outlet />
             </div>
         </div>

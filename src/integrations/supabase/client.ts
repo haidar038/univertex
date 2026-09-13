@@ -2,8 +2,12 @@
 import { createClient } from '@supabase/supabase-js';
 import type { Database } from './types';
 
-const SUPABASE_URL = "https://oiurjnmpkguyxevdbpbu.supabase.co";
-const SUPABASE_PUBLISHABLE_KEY = "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im9pdXJqbm1wa2d1eXhldmRicGJ1Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjE4NDU2MzksImV4cCI6MjA3NzQyMTYzOX0.r05RyxkHjbmsnmFwp0kgkfzlusxyLLWAcmEnyiQZkdA";
+// Env vars take precedence; the hardcoded fallbacks keep the build working
+// when the environment has not been configured yet.
+const SUPABASE_URL =
+  import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_PUBLISHABLE_KEY =
+  import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 // Import the supabase client like this:
 // import { supabase } from "@/integrations/supabase/client";
@@ -13,5 +17,9 @@ export const supabase = createClient<Database>(SUPABASE_URL, SUPABASE_PUBLISHABL
     storage: localStorage,
     persistSession: true,
     autoRefreshToken: true,
+    // Required for Supabase confirmation and recovery URLs.  Keeping this
+    // explicit prevents a future client-option change from silently sending
+    // users back to the landing page without creating a session.
+    detectSessionInUrl: true,
   }
 });

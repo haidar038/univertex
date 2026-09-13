@@ -1,4 +1,4 @@
-import '@testing-library/jest-dom';
+﻿import '@testing-library/jest-dom';
 import { cleanup } from '@testing-library/react';
 import { afterEach, vi } from 'vitest';
 
@@ -37,8 +37,6 @@ global.IntersectionObserver = class IntersectionObserver {
 global.ResizeObserver = class ResizeObserver {
   constructor() {}
   disconnect() {}
-  observe() {}
-  unobserve() {}
 } as any;
 
 // Mock Supabase client
@@ -51,30 +49,34 @@ vi.mock('@/integrations/supabase/client', () => ({
         data: { subscription: { unsubscribe: vi.fn() } },
       }),
       signIn: vi.fn(),
+      signInWithPassword: vi.fn(),
       signUp: vi.fn(),
       signOut: vi.fn(),
+      updateUser: vi.fn(),
+      resetPasswordForEmail: vi.fn(),
     },
+    // NOTE: rpc added so tests can vi.mocked(supabase.rpc) it.
+    rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
     from: vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       insert: vi.fn().mockReturnThis(),
       update: vi.fn().mockReturnThis(),
       delete: vi.fn().mockReturnThis(),
+      upsert: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
+      neq: vi.fn().mockReturnThis(),
+      in: vi.fn().mockReturnThis(),
+      order: vi.fn().mockReturnThis(),
+      limit: vi.fn().mockReturnThis(),
+      ilike: vi.fn().mockReturnThis(),
+      not: vi.fn().mockReturnThis(),
       single: vi.fn().mockResolvedValue({ data: null, error: null }),
+      maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
     })),
+    channel: vi.fn().mockReturnThis(),
+    removeChannel: vi.fn(),
   },
 }));
-
-// Mock react-router-dom
-vi.mock('react-router-dom', async () => {
-  const actual = await vi.importActual('react-router-dom');
-  return {
-    ...actual,
-    useNavigate: () => vi.fn(),
-    useLocation: () => ({ pathname: '/' }),
-    useParams: () => ({}),
-  };
-});
 
 // Mock toast notifications
 vi.mock('sonner', () => ({

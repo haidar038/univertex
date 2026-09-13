@@ -13,7 +13,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Copy, RefreshCw, Mail, Eye, EyeOff, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Copy, RefreshCw, Mail, Eye, EyeOff, AlertTriangle, CheckCircle2, KeyRound } from 'lucide-react';
 
 interface ResetPasswordDialogProps {
   open: boolean;
@@ -23,6 +23,9 @@ interface ResetPasswordDialogProps {
   userName: string | null;
   onSuccess?: () => void;
 }
+
+type Step = 'choose' | 'confirm' | 'complete';
+type CompleteMode = 'email' | 'manual';
 
 export function ResetPasswordDialog({
   open,
@@ -35,7 +38,8 @@ export function ResetPasswordDialog({
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [generatedPassword, setGeneratedPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
-  const [step, setStep] = useState<'generate' | 'confirm' | 'complete'>('generate');
+  const [step, setStep] = useState<Step>('choose');
+  const [completeMode, setCompleteMode] = useState<CompleteMode>('manual');
   const [copySuccess, setCopySuccess] = useState(false);
   const [actualEmail, setActualEmail] = useState<string | null>(null);
   const [isLoadingEmail, setIsLoadingEmail] = useState(false);
@@ -44,6 +48,14 @@ export function ResetPasswordDialog({
   useEffect(() => {
     const fetchUserEmail = async () => {
       if (!userId || !open) return;
+
+      // The user directory already obtained the email via its authorised,
+      // batched admin RPC.  Reuse it and avoid another auth.users lookup.
+      if (userEmail) {
+        setActualEmail(userEmail);
+        setIsLoadingEmail(false);
+        return;
+      }
 
       setIsLoadingEmail(true);
       try {
@@ -66,7 +78,19 @@ export function ResetPasswordDialog({
     };
 
     fetchUserEmail();
-  }, [userId, open]);
+  }, [userId, userEmail, open]);
+
+  // Cryptographically secure random integer in [0, max)
+  const secureRandomInt = (max: number): number => {
+    const array = new Uint32Array(1);
+    const limit = Math.floor(0xFFFFFFFF / max) * max;
+    let value = 0;
+    do {
+      crypto.getRandomValues(array);
+      value = array[0];
+    } while (value >= limit);
+    return value % max;
+  };
 
   const generateStrongPassword = () => {
     const length = 12;
@@ -74,26 +98,29 @@ export function ResetPasswordDialog({
     let password = '';
 
     // Ensure at least one of each type
-    password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[Math.floor(Math.random() * 26)]; // Uppercase
-    password += 'abcdefghijklmnopqrstuvwxyz'[Math.floor(Math.random() * 26)]; // Lowercase
-    password += '0123456789'[Math.floor(Math.random() * 10)]; // Number
-    password += '!@#$%^&*'[Math.floor(Math.random() * 8)]; // Special
+    password += 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'[secureRandomInt(26)]; // Uppercase
+    password += 'abcdefghijklmnopqrstuvwxyz'[secureRandomInt(26)]; // Lowercase
+    password += '0123456789'[secureRandomInt(10)]; // Number
+    password += '!@#$%^&*'[secureRandomInt(8)]; // Special
 
     // Fill the rest
     for (let i = password.length; i < length; i++) {
-      password += charset[Math.floor(Math.random() * charset.length)];
+      password += charset[secureRandomInt(charset.length)];
     }
 
-    // Shuffle the password
-    return password
-      .split('')
-      .sort(() => Math.random() - 0.5)
-      .join('');
+    // Shuffle with Fisher-Yates using secure randomness
+    const chars = password.split('');
+    for (let i = chars.length - 1; i > 0; i--) {
+      const j = secureRandomInt(i + 1);
+      [chars[i], chars[j]] = [chars[j], chars[i]];
+    }
+    return chars.join('');
   };
 
-  const handleGenerate = () => {
-    const newPassword = generateStrongPassword();
-    setGeneratedPassword(newPassword);
+  const handleStartManual = () => {
+    // Generate locally first; nothing is persisted until the admin confirms
+    // with "Simpan Password" so a cancelled dialog never changes the account.
+    setGeneratedPassword(generateStrongPassword());
     setStep('confirm');
   };
 
@@ -109,9 +136,10 @@ export function ResetPasswordDialog({
     }
   };
 
-  const handleResetPassword = async () => {
-    if (!userId || !generatedPassword) return;
-
+  // Email-based path: Supabase sends the user a recovery link and the user
+  // sets their own new password on /reset-password. The locally generated
+  // password is never used or persisted in this path.
+  const handleSendResetEmail = async () => {
     const emailToUse = actualEmail || userEmail;
     if (!emailToUse) {
       toast.error('Email pengguna tidak ditemukan');
@@ -120,50 +148,57 @@ export function ResetPasswordDialog({
 
     setIsSubmitting(true);
     try {
-      // Note: Supabase tidak menyediakan API untuk admin mengubah password user lain
-      // dari client-side karena alasan keamanan.
-      // Solusi alternatif: Kirim reset password email
-
       const { error: resetError } = await supabase.auth.resetPasswordForEmail(emailToUse, {
         redirectTo: `${window.location.origin}/reset-password`,
       });
 
       if (resetError) throw resetError;
 
+      setCompleteMode('email');
       setStep('complete');
       toast.success('Email reset password telah dikirim ke ' + emailToUse);
 
       onSuccess?.();
     } catch (error: any) {
-      console.error('Error resetting password:', error);
-      toast.error(error.message || 'Gagal mereset password');
+      console.error('Error sending reset password email:', error);
+      toast.error(error.message || 'Gagal mengirim email reset password');
     } finally {
       setIsSubmitting(false);
     }
   };
 
-  const handleManualReset = async () => {
+  // Manual path: persist the generated password to the account via the
+  // admin_update_password RPC. Only after this call does the generated
+  // password actually work at login.
+  const handleSavePassword = async () => {
     if (!userId || !generatedPassword) return;
 
     setIsSubmitting(true);
     try {
-      // Alternative: Show password for manual input
-      // Admin can share this password with user manually
+      const { error } = await supabase.rpc('admin_update_password', {
+        p_user_id: userId,
+        p_password: generatedPassword,
+      });
+
+      if (error) throw error;
+
+      setCompleteMode('manual');
       setStep('complete');
-      toast.success('Password berhasil digenerate. Bagikan password ini kepada user.');
+      toast.success('Password berhasil disimpan. Bagikan password ini kepada user.');
 
       onSuccess?.();
     } catch (error: any) {
-      console.error('Error:', error);
-      toast.error('Terjadi kesalahan');
+      console.error('Error saving password:', error);
+      toast.error(error.message || 'Gagal menyimpan password');
     } finally {
       setIsSubmitting(false);
     }
   };
 
   const handleClose = () => {
+    setIsSubmitting(false);
     setGeneratedPassword('');
-    setStep('generate');
+    setStep('choose');
     setShowPassword(false);
     setCopySuccess(false);
     setActualEmail(null);
@@ -172,32 +207,17 @@ export function ResetPasswordDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[500px]">
+      <DialogContent>
         <DialogHeader>
           <DialogTitle>Reset Password Pengguna</DialogTitle>
           <DialogDescription>
-            Generate password baru untuk {userName || 'pengguna ini'}.
+            Atur ulang password untuk {userName || 'pengguna ini'}.
           </DialogDescription>
         </DialogHeader>
 
-        {/* Step 1: Generate */}
-        {step === 'generate' && (
+        {/* Step 1: Choose the reset method */}
+        {step === 'choose' && (
           <div className="space-y-4">
-            <Alert>
-              <AlertTriangle className="h-4 w-4" />
-              <AlertTitle>Peringatan</AlertTitle>
-              <AlertDescription>
-                Password yang digenerate harus dibagikan kepada user secara aman.
-                Pastikan user mengubah password setelah login pertama.
-              </AlertDescription>
-            </Alert>
-
-            <div className="space-y-2">
-              <p className="text-sm text-muted-foreground">
-                Klik tombol di bawah untuk generate password baru yang kuat dan acak.
-              </p>
-            </div>
-
             <div className="rounded-lg border border-border bg-muted/50 p-4">
               {isLoadingEmail ? (
                 <div className="text-sm text-muted-foreground">Memuat email pengguna...</div>
@@ -216,17 +236,63 @@ export function ResetPasswordDialog({
                 </div>
               )}
             </div>
+
+            <div className="grid gap-3">
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto flex-col items-start gap-1 p-4 text-left"
+                onClick={handleSendResetEmail}
+                disabled={isSubmitting || isLoadingEmail || (!actualEmail && !userEmail)}
+              >
+                <span className="flex w-full items-center gap-2 font-medium text-foreground">
+                  <Mail className="h-4 w-4" />
+                  {isSubmitting ? 'Mengirim...' : 'Kirim Email Reset'}
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  User menerima tautan via email dan membuat password barunya sendiri.
+                  Password baru tidak dibuat oleh admin.
+                </span>
+              </Button>
+
+              <Button
+                type="button"
+                variant="outline"
+                className="h-auto flex-col items-start gap-1 p-4 text-left"
+                onClick={handleStartManual}
+                disabled={isSubmitting}
+              >
+                <span className="flex w-full items-center gap-2 font-medium text-foreground">
+                  <KeyRound className="h-4 w-4" />
+                  Generate Password Manual
+                </span>
+                <span className="text-xs font-normal text-muted-foreground">
+                  Buat password acak yang kuat, simpan ke akun user, lalu bagikan
+                  kepada user melalui channel yang aman.
+                </span>
+              </Button>
+            </div>
+
+            <Alert>
+              <AlertTriangle className="h-4 w-4" />
+              <AlertTitle>Peringatan</AlertTitle>
+              <AlertDescription>
+                Pastikan user mengubah password setelah login pertama. Password
+                yang dibagikan secara manual harus disampaikan melalui channel yang aman.
+              </AlertDescription>
+            </Alert>
           </div>
         )}
 
-        {/* Step 2: Confirm */}
+        {/* Step 2: Confirm the generated password (manual path only) */}
         {step === 'confirm' && (
           <div className="space-y-4">
             <Alert>
               <CheckCircle2 className="h-4 w-4 text-green-600" />
               <AlertTitle>Password Berhasil Digenerate</AlertTitle>
               <AlertDescription>
-                Salin password di bawah ini dan bagikan kepada user melalui channel yang aman.
+                Password ini belum disimpan. Klik <strong>Simpan Password</strong> agar
+                password aktif dan dapat digunakan user untuk login.
               </AlertDescription>
             </Alert>
 
@@ -279,7 +345,8 @@ export function ResetPasswordDialog({
                 type="button"
                 variant="outline"
                 className="w-full gap-2"
-                onClick={handleGenerate}
+                onClick={() => setGeneratedPassword(generateStrongPassword())}
+                disabled={isSubmitting}
               >
                 <RefreshCw className="h-4 w-4" />
                 Generate Ulang
@@ -291,34 +358,42 @@ export function ResetPasswordDialog({
               <AlertTitle>Catatan Penting</AlertTitle>
               <AlertDescription className="space-y-2">
                 <p>
-                  Karena keterbatasan Supabase Auth, admin tidak dapat langsung mengubah password user dari aplikasi.
+                  Setelah disimpan, password lama user langsung tidak valid dan semua
+                  sesi aktif akan dikeluarkan.
                 </p>
-                <p className="font-medium">
-                  Pilihan yang tersedia:
-                </p>
-                <ul className="list-disc list-inside text-sm space-y-1">
-                  <li>Kirim email reset password ke user (otomatis)</li>
-                  <li>Bagikan password ini ke user secara manual</li>
-                </ul>
               </AlertDescription>
             </Alert>
           </div>
         )}
 
         {/* Step 3: Complete */}
-        {step === 'complete' && (
+        {step === 'complete' && completeMode === 'email' && (
           <div className="space-y-4">
             <Alert>
               <CheckCircle2 className="h-4 w-4 text-green-600" />
-              <AlertTitle>Selesai</AlertTitle>
+              <AlertTitle>Email Terkirim</AlertTitle>
               <AlertDescription>
-                Password telah digenerate. Pastikan user telah menerima password baru mereka.
+                Tautan reset password telah dikirim ke {actualEmail || userEmail}. User
+                akan mengatur password barunya sendiri melalui tautan tersebut.
+              </AlertDescription>
+            </Alert>
+          </div>
+        )}
+
+        {step === 'complete' && completeMode === 'manual' && (
+          <div className="space-y-4">
+            <Alert>
+              <CheckCircle2 className="h-4 w-4 text-green-600" />
+              <AlertTitle>Password Tersimpan</AlertTitle>
+              <AlertDescription>
+                Password baru telah aktif untuk akun {userName || 'user ini'}. Semua sesi
+                lama telah dikeluarkan.
               </AlertDescription>
             </Alert>
 
-            <div className="rounded-lg border border-green-200 bg-green-50 p-4">
-              <h4 className="font-medium text-green-900 mb-2">Langkah Selanjutnya:</h4>
-              <ol className="list-decimal list-inside space-y-1 text-sm text-green-800">
+            <div className="rounded-lg border border-green-200 bg-green-50 dark:border-green-400 dark:bg-green-900/25 p-4">
+              <h4 className="font-medium text-green-400 mb-2">Langkah Selanjutnya:</h4>
+              <ol className="list-decimal list-inside space-y-1 text-sm text-green-400">
                 <li>Bagikan password kepada user melalui channel yang aman</li>
                 <li>Instruksikan user untuk login dengan password baru</li>
                 <li>Minta user untuk mengubah password setelah login pertama</li>
@@ -328,37 +403,21 @@ export function ResetPasswordDialog({
         )}
 
         <DialogFooter>
-          {step === 'generate' && (
-            <>
-              <Button variant="outline" onClick={handleClose}>
-                Batal
-              </Button>
-              <Button onClick={handleGenerate} className="gap-2">
-                <RefreshCw className="h-4 w-4" />
-                Generate Password
-              </Button>
-            </>
+          {step === 'choose' && (
+            <Button variant="outline" onClick={handleClose}>
+              Batal
+            </Button>
           )}
 
           {step === 'confirm' && (
             <>
-              <Button variant="outline" onClick={handleClose}>
+              <Button variant="outline" onClick={handleClose} disabled={isSubmitting}>
                 Batal
               </Button>
-              <div className="flex gap-2">
-                <Button
-                  variant="outline"
-                  onClick={handleResetPassword}
-                  disabled={isSubmitting}
-                  className="gap-2"
-                >
-                  <Mail className="h-4 w-4" />
-                  {isSubmitting ? 'Mengirim...' : 'Kirim Email Reset'}
-                </Button>
-                <Button onClick={handleManualReset} disabled={isSubmitting}>
-                  Selesai
-                </Button>
-              </div>
+              <Button onClick={handleSavePassword} disabled={isSubmitting} className="gap-2">
+                <KeyRound className="h-4 w-4" />
+                {isSubmitting ? 'Menyimpan...' : 'Simpan Password'}
+              </Button>
             </>
           )}
 

@@ -1,0 +1,39 @@
+-- Fix GoTrue v2.196.0 "Database error querying schema" for password grant.
+--
+-- PROBLEM:
+-- GoTrue v2.196.0 expects an `auth.factors` table when loading user data
+-- during password grant. However, the internal schema migration
+-- 20260625000000 renamed `auth.factors` → `auth.mfa_factors`, breaking
+-- login for all users.
+--
+-- ERROR:
+--   POST /auth/v1/token?grant_type=password → 500
+--   {"code":"unexpected_failure","msg":"Database error querying schema"}
+--
+-- ROOT CAUSE:
+--   to_regclass('auth.factors') → NULL (table does not exist)
+--   to_regclass('auth.mfa_factors') → 'auth.mfa_factors' (exists)
+--
+-- FIX (requires Supabase Support):
+--   Supabase Support must create this compatibility view in the auth schema:
+--
+--     CREATE OR REPLACE VIEW auth.factors AS
+--     SELECT * FROM auth.mfa_factors;
+--     GRANT SELECT, INSERT, UPDATE, DELETE ON auth.factors TO supabase_auth_admin;
+--
+--   Only supabase_auth_admin or a superuser can create objects in the auth schema.
+--   The postgres role lacks CREATE privilege on auth schema.
+--
+-- ALTERNATIVE FIX (Supabase Support ticket):
+--   Ask Support to deploy a GoTrue binary version ≥ v2.197.0 that targets
+--   auth.mfa_factors instead of auth.factors.
+--
+-- Related: https://github.com/supabase/supabase/issues/49880
+--
+-- This migration file documents the issue. The view creation is handled
+-- separately by Supabase Support because user-level migrations cannot
+-- create objects in the auth schema.
+
+-- Verify the issue exists (for diagnostics)
+-- SELECT to_regclass('auth.factors') AS factors_exists,
+--        to_regclass('auth.mfa_factors') AS mfa_factors_exists;

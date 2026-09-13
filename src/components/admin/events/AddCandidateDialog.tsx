@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
@@ -24,6 +24,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { Search } from 'lucide-react';
+import { logAudit } from '@/lib/audit';
 
 const candidateFormSchema = z.object({
   user_id: z.string().min(1, 'Kandidat harus dipilih'),
@@ -211,6 +212,7 @@ export function AddCandidateDialog({
         throw error;
       }
 
+      await logAudit({ action: 'candidate.add', description: 'Added candidate to event', category: 'election', targetType: 'candidates', targetId: insertedData?.[0]?.id, metadata: { user_id: data.user_id, event_id: eventId } });
       toast.success('Kandidat berhasil ditambahkan!');
       reset();
       onOpenChange(false);
@@ -360,3 +362,4 @@ export function AddCandidateDialog({
     </Dialog>
   );
 }
+

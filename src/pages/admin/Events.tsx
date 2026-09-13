@@ -11,6 +11,19 @@ import { CreateEventDialog } from '@/components/admin/events/CreateEventDialog';
 import { EditEventDialog } from '@/components/admin/events/EditEventDialog';
 import { DeleteEventDialog } from '@/components/admin/events/DeleteEventDialog';
 import { EventStatusDialog } from '@/components/admin/events/EventStatusDialog';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import {
+  ELECTION_STATUSES,
+  STATUS_LABEL,
+  type ElectionStatus,
+} from '@/lib/election-state';
+import { RequirePermission } from '@/components/RequirePermission';
 
 export default function AdminEvents() {
   const [events, setEvents] = useState<any[]>([]);
@@ -20,6 +33,7 @@ export default function AdminEvents() {
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [statusDialogOpen, setStatusDialogOpen] = useState(false);
   const [selectedEvent, setSelectedEvent] = useState<any>(null);
+  const [statusFilter, setStatusFilter] = useState<ElectionStatus | 'all'>('all');
 
   useEffect(() => {
     fetchEvents();
@@ -57,17 +71,27 @@ export default function AdminEvents() {
   };
 
   const getStatusBadge = (status: string) => {
-    switch (status) {
-      case 'active':
-        return <Badge className="bg-success">Aktif</Badge>;
-      case 'closed':
-        return <Badge variant="secondary">Selesai</Badge>;
-      default:
-        return <Badge variant="outline">Draft</Badge>;
+    const known = ELECTION_STATUSES.includes(status as ElectionStatus);
+    if (!known) {
+      return <Badge variant="outline">{status}</Badge>;
     }
+    const s = status as ElectionStatus;
+    const colorClass =
+      s === 'voting' ? 'bg-success' :
+      s === 'published' ? 'bg-primary' :
+      s === 'counting' ? 'bg-warning' :
+      s === 'archived' ? 'bg-secondary' :
+      s === 'registration' ? 'bg-info' :
+      'bg-muted';
+    return <Badge className={colorClass}>{STATUS_LABEL[s]}</Badge>;
   };
 
+  const filteredEvents = statusFilter === 'all'
+    ? events
+    : events.filter((e) => e.status === statusFilter);
+
   return (
+    <RequirePermission permission="election.view">
     <div className="p-8">
       <div className="mb-8 flex items-center justify-between">
         <div>
@@ -80,9 +104,30 @@ export default function AdminEvents() {
         </Button>
       </div>
 
+      <div className="mb-6 flex items-center gap-3">
+        <span className="text-sm text-muted-foreground">Filter status:</span>
+        <Select
+          value={statusFilter}
+          onValueChange={(v) => setStatusFilter(v as ElectionStatus | 'all')}
+        >
+          <SelectTrigger className="w-[220px]">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Semua</SelectItem>
+            {ELECTION_STATUSES.map((s) => (
+              <SelectItem key={s} value={s}>{STATUS_LABEL[s]}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <span className="text-xs text-muted-foreground">
+          {filteredEvents.length} dari {events.length} acara
+        </span>
+      </div>
+
       {loading ? (
         <div className="text-center text-muted-foreground">Memuat...</div>
-      ) : events.length === 0 ? (
+      ) : filteredEvents.length === 0 ? (
         <Card>
           <CardContent className="flex min-h-[300px] flex-col items-center justify-center py-12">
             <Calendar className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -98,7 +143,7 @@ export default function AdminEvents() {
         </Card>
       ) : (
         <div className="grid gap-6 md:grid-cols-2 lg:grid-cols-3">
-          {events.map((event) => (
+          {filteredEvents.map((event) => (
             <Card key={event.id} className="hover:shadow-lg transition-shadow">
               <CardContent className="p-6">
                 <div className="mb-4 flex items-start justify-between">
@@ -196,5 +241,6 @@ export default function AdminEvents() {
         onSuccess={fetchEvents}
       />
     </div>
+    </RequirePermission>
   );
 }

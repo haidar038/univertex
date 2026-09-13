@@ -71,9 +71,9 @@ export default function CandidateDashboard() {
 
             setCandidates(data || []);
 
-            // Fetch vote statistics for closed events
+            // Fetch vote statistics for finished events (counting/published/archived)
             if (data) {
-                const closedEvents = data.filter((c) => c.election_events?.status === "closed");
+                const closedEvents = data.filter((c) => ["counting", "published", "archived"].includes(c.election_events?.status));
 
                 for (const candidate of closedEvents) {
                     await fetchVoteStats(candidate.id, candidate.election_events.id);
@@ -266,7 +266,7 @@ export default function CandidateDashboard() {
                                                             <StatusIcon className="h-3 w-3" />
                                                             {statusInfo.label}
                                                         </Badge>
-                                                        <Badge variant="outline">{candidate.election_events.status === "active" ? "Berlangsung" : candidate.election_events.status === "closed" ? "Selesai" : "Draft"}</Badge>
+                                                        <Badge variant="outline">{candidate.election_events.status === "voting" ? "Berlangsung" : ["counting", "published", "archived"].includes(candidate.election_events.status) ? "Selesai" : "Draft"}</Badge>
                                                     </div>
                                                 </div>
                                             </CardHeader>
@@ -286,8 +286,8 @@ export default function CandidateDashboard() {
                                                     </Alert>
                                                 )}
 
-                                                {/* Vote Statistics for closed events */}
-                                                {candidate.election_events.status === "closed" && stats && (
+                {/* Vote Statistics for finished events */}
+                {["counting", "published", "archived"].includes(candidate.election_events.status) && stats && (
                                                     <div className="rounded-lg border bg-muted/50 p-4">
                                                         <div className="flex items-center gap-2 mb-3">
                                                             <BarChart3 className="h-4 w-4 text-muted-foreground" />
@@ -317,7 +317,7 @@ export default function CandidateDashboard() {
                                                             Edit Profil
                                                         </Button>
                                                     </Link>
-                                                    {candidate.election_events.status === "closed" && (
+                                                    {["counting", "published", "archived"].includes(candidate.election_events.status) && (
                                                         <Link to={`/app/results/${candidate.election_events.id}`} className="flex-1">
                                                             <Button variant="default" className="w-full gap-2">
                                                                 <BarChart3 className="h-4 w-4" />

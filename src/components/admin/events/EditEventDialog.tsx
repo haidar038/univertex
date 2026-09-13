@@ -4,7 +4,8 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
+import { EventDateTimeFields } from '@/components/admin/events/EventDateTimeFields';
 import {
   Dialog,
   DialogContent,
@@ -19,26 +20,21 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
+import { cn } from '@/lib/utils';
 
 const eventFormSchema = z.object({
   title: z.string().min(3, 'Judul minimal 3 karakter').max(100, 'Judul maksimal 100 karakter'),
   description: z.string().optional(),
+  start_date: z.string().min(1, 'Tanggal mulai harus diisi'),
   start_time: z.string().min(1, 'Waktu mulai harus diisi'),
+  end_date: z.string().min(1, 'Tanggal selesai harus diisi'),
   end_time: z.string().min(1, 'Waktu selesai harus diisi'),
-  status: z.enum(['draft', 'active', 'closed']),
   election_type: z.enum(['open', 'closed']),
   show_results_after_voting: z.boolean(),
   public_results: z.boolean(),
 }).refine((data) => {
-  const startTime = new Date(data.start_time);
-  const endTime = new Date(data.end_time);
+  const startTime = new Date(`${data.start_date}T${data.start_time}`);
+  const endTime = new Date(`${data.end_date}T${data.end_time}`);
   return endTime > startTime;
 }, {
   message: 'Waktu selesai harus setelah waktu mulai',
@@ -53,7 +49,7 @@ interface Event {
   description: string | null;
   start_time: string;
   end_time: string;
-  status: 'draft' | 'active' | 'closed';
+  status: string;
   election_type?: 'open' | 'closed';
   show_results_after_voting?: boolean;
   public_results?: boolean;
@@ -81,35 +77,40 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
     defaultValues: {
       title: '',
       description: '',
+      start_date: '',
       start_time: '',
+      end_date: '',
       end_time: '',
-      status: 'draft',
       election_type: 'closed',
       show_results_after_voting: false,
       public_results: false,
     },
   });
 
-  const statusValue = watch('status');
   const electionTypeValue = watch('election_type');
   const showResultsAfterVoting = watch('show_results_after_voting');
   const publicResults = watch('public_results');
 
+  const normalizeDateTime = (date: string, time: string) => {
+    if (!date || !time) return '';
+    return `${date}T${time}`;
+  };
+
   // Update form when event changes
   useEffect(() => {
     if (event) {
-      // Format datetime for datetime-local input
-      const formatDateTime = (dateString: string) => {
-        const date = new Date(dateString);
-        return format(date, "yyyy-MM-dd'T'HH:mm");
-      };
+      const startDate = format(parseISO(event.start_time), 'yyyy-MM-dd');
+      const startTime = format(parseISO(event.start_time), 'HH:mm');
+      const endDate = format(parseISO(event.end_time), 'yyyy-MM-dd');
+      const endTime = format(parseISO(event.end_time), 'HH:mm');
 
       reset({
         title: event.title,
         description: event.description || '',
-        start_time: formatDateTime(event.start_time),
-        end_time: formatDateTime(event.end_time),
-        status: event.status,
+        start_date: startDate,
+        start_time: startTime,
+        end_date: endDate,
+        end_time: endTime,
         election_type: event.election_type || 'closed',
         show_results_after_voting: event.show_results_after_voting || false,
         public_results: event.public_results || false,
@@ -122,14 +123,16 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
 
     setIsSubmitting(true);
     try {
+      const startTime = normalizeDateTime(data.start_date, data.start_time);
+      const endTime = normalizeDateTime(data.end_date, data.end_time);
+
       const { error } = await supabase
         .from('election_events')
         .update({
           title: data.title,
           description: data.description || null,
-          start_time: data.start_time,
-          end_time: data.end_time,
-          status: data.status,
+          start_time: startTime,
+          end_time: endTime,
           election_type: data.election_type,
           show_results_after_voting: data.show_results_after_voting,
           public_results: data.public_results,
@@ -193,37 +196,21 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
             )}
           </div>
 
-          <div className="grid gap-4 md:grid-cols-2">
-            <div className="space-y-2">
-              <Label htmlFor="start_time">
-                Waktu Mulai <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="start_time"
-                type="datetime-local"
-                {...register('start_time')}
-                disabled={isSubmitting}
-              />
-              {errors.start_time && (
-                <p className="text-sm text-destructive">{errors.start_time.message}</p>
-              )}
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="end_time">
-                Waktu Selesai <span className="text-destructive">*</span>
-              </Label>
-              <Input
-                id="end_time"
-                type="datetime-local"
-                {...register('end_time')}
-                disabled={isSubmitting}
-              />
-              {errors.end_time && (
-                <p className="text-sm text-destructive">{errors.end_time.message}</p>
-              )}
-            </div>
-          </div>
+          <EventDateTimeFields
+            startDate={watch('start_date')}
+            startTime={watch('start_time')}
+            endDate={watch('end_date')}
+            endTime={watch('end_time')}
+            disabled={isSubmitting}
+            onStartDateChange={(date) => setValue('start_date', date)}
+            onStartTimeChange={(time) => setValue('start_time', time)}
+            onEndDateChange={(date) => setValue('end_date', date)}
+            onEndTimeChange={(time) => setValue('end_time', time)}
+            startDateError={errors.start_date?.message}
+            startTimeError={errors.start_time?.message}
+            endDateError={errors.end_date?.message}
+            endTimeError={errors.end_time?.message}
+          />
 
           {/* Election Type */}
           <div className="space-y-3">
@@ -235,23 +222,41 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
               onValueChange={(value) => setValue('election_type', value as 'open' | 'closed')}
               disabled={isSubmitting}
             >
-              <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+              <div
+                onClick={() => {
+                  if (!isSubmitting) setValue('election_type', 'closed');
+                }}
+                className={cn(
+                  'flex items-start space-x-3 space-y-0 rounded-md border p-4 transition-colors',
+                  isSubmitting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-primary/50 hover:bg-muted/30',
+                  electionTypeValue === 'closed' && 'border-primary bg-primary/5',
+                )}
+              >
                 <RadioGroupItem value="closed" id="edit-closed" />
                 <div className="space-y-1 leading-none">
-                  <Label htmlFor="edit-closed" className="font-medium cursor-pointer">
+                  <span className="font-medium text-sm">
                     Tertutup (Closed)
-                  </Label>
+                  </span>
                   <p className="text-sm text-muted-foreground">
                     Hasil hanya tampil setelah pemilihan ditutup. Lebih netral dan menghindari bandwagon effect.
                   </p>
                 </div>
               </div>
-              <div className="flex items-start space-x-3 space-y-0 rounded-md border p-4">
+              <div
+                onClick={() => {
+                  if (!isSubmitting) setValue('election_type', 'open');
+                }}
+                className={cn(
+                  'flex items-start space-x-3 space-y-0 rounded-md border p-4 transition-colors',
+                  isSubmitting ? 'cursor-not-allowed opacity-60' : 'cursor-pointer hover:border-primary/50 hover:bg-muted/30',
+                  electionTypeValue === 'open' && 'border-primary bg-primary/5',
+                )}
+              >
                 <RadioGroupItem value="open" id="edit-open" />
                 <div className="space-y-1 leading-none">
-                  <Label htmlFor="edit-open" className="font-medium cursor-pointer">
+                  <span className="font-medium text-sm">
                     Terbuka (Open)
-                  </Label>
+                  </span>
                   <p className="text-sm text-muted-foreground">
                     Progress dan hasil visible real-time. Lebih transparan tapi bisa mempengaruhi voter behavior.
                   </p>
@@ -299,28 +304,9 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
             </div>
           </div>
 
-          <div className="space-y-2">
-            <Label htmlFor="status">
-              Status <span className="text-destructive">*</span>
-            </Label>
-            <Select
-              value={statusValue}
-              onValueChange={(value) => setValue('status', value as any)}
-              disabled={isSubmitting}
-            >
-              <SelectTrigger>
-                <SelectValue placeholder="Pilih status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="draft">Draft - Belum dipublikasi</SelectItem>
-                <SelectItem value="active">Aktif - Pemilihan sedang berlangsung</SelectItem>
-                <SelectItem value="closed">Selesai - Pemilihan sudah ditutup</SelectItem>
-              </SelectContent>
-            </Select>
-            {errors.status && (
-              <p className="text-sm text-destructive">{errors.status.message}</p>
-            )}
-          </div>
+          <p className="rounded-md border bg-muted/30 p-3 text-sm text-muted-foreground">
+            Status pemilihan dikelola terpisah melalui tombol <strong>Status</strong> agar selalu mengikuti state machine pemilihan.
+          </p>
 
           <DialogFooter>
             <Button

@@ -145,8 +145,8 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
     if (!user.email || !isValidEmail(user.email)) {
       errors.push('Email tidak valid');
     }
-    if (!user.password || user.password.length < 6) {
-      errors.push('Password minimal 6 karakter');
+    if (!user.password || user.password.length < 8) {
+      errors.push('Password minimal 8 karakter');
     }
     if (!user.roles || user.roles.trim() === '') {
       errors.push('Role tidak boleh kosong');
@@ -189,24 +189,6 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
     for (let i = 0; i < validUsers.length; i++) {
       const user = validUsers[i];
       try {
-        // Create user account
-        const { data: userData, error: authError } = await supabase.auth.signUp({
-          email: user.email,
-          password: user.password,
-          options: {
-            data: {
-              full_name: user.full_name,
-              student_id: user.student_id,
-              department: user.department,
-            },
-          },
-        });
-
-        if (authError) throw authError;
-        if (!userData.user) throw new Error('Gagal membuat user');
-
-        const userId = userData.user.id;
-
         // Find class_id if class_name provided
         let classId = null;
         if (user.class_name) {
@@ -216,21 +198,25 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
           }
         }
 
-        // Update profile with class_id
-        await supabase
-          .from('profiles')
-          .update({
-            full_name: user.full_name,
-            student_id: user.student_id,
-            department: user.department || null,
-            class_id: classId,
-          })
-          .eq('id', userId);
+        // Create the account via the admin_create_user RPC. Never call
+        // supabase.auth.signUp here - that would hijack the admin's own
+        // browser session.
+        const { data: userId, error: rpcError } = await supabase.rpc('admin_create_user', {
+          p_email: user.email,
+          p_full_name: user.full_name,
+          p_password: user.password,
+          p_student_id: user.student_id,
+          p_class_id: classId,
+          p_department: user.department || null,
+          p_skip_confirmation: true,
+        });
 
-        // Parse roles
+        if (rpcError) throw rpcError;
+        if (!userId) throw new Error('Gagal membuat user');
+
+        // Parse roles and adjust on top of the default 'voter' role
         const roles = user.roles.split('|').map(r => r.trim());
 
-        // Delete default voter role if not in roles list
         if (!roles.includes('voter')) {
           await supabase
             .from('user_roles')
@@ -239,7 +225,6 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
             .eq('role', 'voter');
         }
 
-        // Add candidate role if specified
         if (roles.includes('candidate')) {
           await supabase
             .from('user_roles')
@@ -253,10 +238,12 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
       } catch (error: any) {
         console.error(`Error importing user ${user.email}:`, error);
         let errorMessage = error.message || 'Unknown error';
-        if (error.message?.includes('already registered')) {
+        if (error.code === '23505' || /sudah terdaftar/i.test(errorMessage || '')) {
           errorMessage = 'Email sudah terdaftar';
-        } else if (error.code === '23505') {
+        } else if (/sudah digunakan/i.test(errorMessage || '')) {
           errorMessage = 'NIM sudah digunakan';
+        } else if (/password minimal/i.test(errorMessage || '')) {
+          errorMessage = 'Password minimal 8 karakter';
         }
         results.push({ success: false, user, error: errorMessage });
       }

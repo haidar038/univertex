@@ -14,7 +14,8 @@ export default function AdminDashboard() {
 
     useEffect(() => {
         fetchStats();
-        setupRealtimeVotes();
+        const cleanupRealtime = setupRealtimeVotes();
+        return cleanupRealtime;
     }, []);
 
     const fetchStats = async () => {
@@ -22,7 +23,7 @@ export default function AdminDashboard() {
             const [votersResult, eventsResult, activeEventsResult, votesResult] = await Promise.all([
                 supabase.from("user_roles").select("*", { count: "exact", head: true }).eq("role", "voter"),
                 supabase.from("election_events").select("*", { count: "exact", head: true }),
-                supabase.from("election_events").select("*", { count: "exact", head: true }).eq("status", "active"),
+                supabase.from("election_events").select("*", { count: "exact", head: true }).eq("status", "voting"),
                 supabase.from("votes").select("*", { count: "exact", head: true }),
             ]);
 
@@ -33,27 +34,38 @@ export default function AdminDashboard() {
                 totalVotes: votesResult.count || 0,
             });
 
-            // Fetch live vote counts for active events
+            // Fetch live vote counts for active events.
+            // N+1 fix: per event we now run exactly 2 queries (candidates +
+            // get_election_tally RPC) instead of 1 + N (one count query per
+            // candidate). The RPC is SECURITY DEFINER and admins always pass
+            // its access guard.
             if (activeEventsResult.count && activeEventsResult.count > 0) {
-                const { data: activeEvents } = await supabase.from("election_events").select("id, title").eq("status", "active");
+                const { data: activeEvents } = await supabase.from("election_events").select("id, title").eq("status", "voting");
 
                 if (activeEvents) {
                     const voteCounts = await Promise.all(
                         activeEvents.map(async (event) => {
-                            const { data: candidates } = await supabase.from("candidates").select("id, user_id, profiles(full_name)").eq("event_id", event.id);
+                            const [candRes, tallyRes] = await Promise.all([
+                                supabase.from("candidates")
+                                    .select("id, user_id, profiles(full_name)")
+                                    .eq("event_id", event.id),
+                                supabase.rpc("get_election_tally", { p_event_id: event.id }),
+                            ]);
 
+                            const candidates = candRes.data;
                             if (!candidates) return null;
 
-                            const candidatesWithVotes = await Promise.all(
-                                candidates.map(async (candidate) => {
-                                    const { count } = await supabase.from("votes").select("*", { count: "exact", head: true }).eq("candidate_id", candidate.id);
+                            const votesByCandidate = new Map<string, number>();
+                            ((tallyRes.data || []) as Array<{ candidate_id: string | null; total_votes: number | string }>).forEach((row) => {
+                                if (row.candidate_id) {
+                                    votesByCandidate.set(row.candidate_id, Number(row.total_votes) || 0);
+                                }
+                            });
 
-                                    return {
-                                        name: (candidate.profiles as any).full_name,
-                                        votes: count || 0,
-                                    };
-                                })
-                            );
+                            const candidatesWithVotes = candidates.map((candidate: any) => ({
+                                name: (candidate.profiles as any).full_name,
+                                votes: votesByCandidate.get(candidate.id) ?? 0,
+                            }));
 
                             return {
                                 eventTitle: event.title,

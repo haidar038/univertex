@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+﻿import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import {
@@ -15,6 +15,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Search, GraduationCap, Users } from 'lucide-react';
+import { logAudit } from '@/lib/audit';
 
 interface Class {
   id: string;
@@ -136,6 +137,7 @@ export function AssignVoterGroupsDialog({
         if (insertError) throw insertError;
       }
 
+      await logAudit({ action: 'event.assign_voter_groups', description: 'Updated voter groups for event', category: 'election', targetType: 'election_events', targetId: eventId, metadata: { class_count: selectedClassIds.length, total_voters: totalVoters } });
       toast.success('Grup pemilih berhasil diperbarui!');
       onOpenChange(false);
       onSuccess?.();
@@ -282,3 +284,4 @@ export function AssignVoterGroupsDialog({
     </Dialog>
   );
 }
+

@@ -1,12 +1,13 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+﻿import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { renderHook, waitFor } from '@testing-library/react';
-import { useAuth } from '../useAuth';
+import { useAuth, dashboardPathFor } from '../useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
 // Mock react-router-dom
 const mockNavigate = vi.fn();
 vi.mock('react-router-dom', () => ({
   useNavigate: () => mockNavigate,
+  useLocation: () => ({ pathname: '/' }),
 }));
 
 describe('useAuth Hook', () => {
@@ -23,10 +24,7 @@ describe('useAuth Hook', () => {
   });
 
   it('should set user and profile when session exists', async () => {
-    const mockUser = {
-      id: 'user-123',
-      email: 'test@example.com',
-    };
+    const mockUser = { id: 'user-123', email: 'test@example.com' };
 
     const mockProfile = {
       id: 'user-123',
@@ -38,33 +36,23 @@ describe('useAuth Hook', () => {
 
     const mockRoles = [{ role: 'voter' }, { role: 'admin' }];
 
-    // Mock getSession
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: { session: { user: mockUser } as any },
       error: null,
     });
 
-    // Mock profile fetch
     const mockFrom = vi.fn(() => ({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
-      single: vi.fn().mockResolvedValue({
-        data: mockProfile,
-        error: null,
-      }),
+      single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
     }));
 
     vi.mocked(supabase.from).mockImplementation((table: string) => {
-      if (table === 'profiles') {
-        return mockFrom(table) as any;
-      }
+      if (table === 'profiles') return mockFrom(table) as any;
       if (table === 'user_roles') {
         return {
           select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockResolvedValue({
-            data: mockRoles,
-            error: null,
-          }),
+          eq: vi.fn().mockResolvedValue({ data: mockRoles, error: null }),
         } as any;
       }
       return mockFrom(table) as any;
@@ -114,6 +102,12 @@ describe('useAuth Hook', () => {
       error: null,
     });
 
+    // Stub window.location
+    const originalLocation = window.location;
+    // @ts-expect-error - jsdom allows deleting then reassigning location
+    delete (window as any).location;
+    (window as any).location = { href: '' };
+
     const { result } = renderHook(() => useAuth());
 
     await waitFor(() => {
@@ -123,23 +117,75 @@ describe('useAuth Hook', () => {
     await result.current.signOut();
 
     expect(mockSignOut).toHaveBeenCalled();
-    expect(mockNavigate).toHaveBeenCalledWith('/login');
     expect(result.current.user).toBeNull();
     expect(result.current.profile).toBeNull();
+
+    (window as any).location = originalLocation;
+  });
+
+  it('signOut: audit + revoke-by-hash happen BEFORE auth.signOut, in that order', async () => {
+    const callOrder: string[] = [];
+    const mockSignOut = vi.fn().mockImplementation(async () => {
+      callOrder.push('auth.signOut');
+      return { error: null };
+    });
+    vi.mocked(supabase.auth.signOut).mockImplementation(mockSignOut);
+
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: null },
+      error: null,
+    });
+
+    // log_audit_event RPC -> audit
+    vi.mocked(supabase.rpc).mockImplementation((fn: string) => {
+      if (fn === 'log_audit_event') {
+        callOrder.push('log_audit_event');
+      }
+      if (fn === 'revoke_user_session_by_hash') {
+        callOrder.push('revoke_user_session_by_hash');
+      }
+      return Promise.resolve({ data: null, error: null }) as any;
+    });
+
+    const originalLocation = window.location;
+    // @ts-expect-error - jsdom allows deleting then reassigning location
+    delete (window as any).location;
+    (window as any).location = { href: '' };
+
+    const { result } = renderHook(() => useAuth());
+
+    await waitFor(() => {
+      expect(result.current.loading).toBe(false);
+    });
+
+    await result.current.signOut();
+
+    // auth.logout audit must be recorded while the session token is still
+    // valid, i.e. BEFORE supabase.auth.signOut() destroys it.
+    expect(callOrder.indexOf('log_audit_event')).toBeGreaterThanOrEqual(0);
+    expect(callOrder.indexOf('auth.signOut')).toBeGreaterThan(callOrder.indexOf('log_audit_event'));
+
+    // The device session is revoked via the BY-HASH RPC (the old code sent
+    // the hash to the by-id RPC which matched 0 rows).
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'revoke_user_session_by_hash',
+      expect.objectContaining({
+        p_refresh_token_hash: expect.any(String),
+        p_revoked_reason: 'user_logout',
+      })
+    );
+
+    (window as any).location = originalLocation;
   });
 
   it('should handle profile fetch error gracefully', async () => {
-    const mockUser = {
-      id: 'user-123',
-      email: 'test@example.com',
-    };
+    const mockUser = { id: 'user-123', email: 'test@example.com' };
 
     vi.mocked(supabase.auth.getSession).mockResolvedValue({
       data: { session: { user: mockUser } as any },
       error: null,
     });
 
-    // Mock profile fetch with error
     vi.mocked(supabase.from).mockReturnValue({
       select: vi.fn().mockReturnThis(),
       eq: vi.fn().mockReturnThis(),
@@ -167,10 +213,7 @@ describe('useAuth Hook', () => {
   });
 
   it('should correctly identify candidate role', async () => {
-    const mockUser = {
-      id: 'user-123',
-      email: 'candidate@example.com',
-    };
+    const mockUser = { id: 'user-123', email: 'candidate@example.com' };
 
     const mockProfile = {
       id: 'user-123',
@@ -192,19 +235,13 @@ describe('useAuth Hook', () => {
         return {
           select: vi.fn().mockReturnThis(),
           eq: vi.fn().mockReturnThis(),
-          single: vi.fn().mockResolvedValue({
-            data: mockProfile,
-            error: null,
-          }),
+          single: vi.fn().mockResolvedValue({ data: mockProfile, error: null }),
         } as any;
       }
       if (table === 'user_roles') {
         return {
           select: vi.fn().mockReturnThis(),
-          eq: vi.fn().mockResolvedValue({
-            data: mockRoles,
-            error: null,
-          }),
+          eq: vi.fn().mockResolvedValue({ data: mockRoles, error: null }),
         } as any;
       }
       return {} as any;
@@ -219,5 +256,31 @@ describe('useAuth Hook', () => {
     expect(result.current.isCandidate).toBe(true);
     expect(result.current.isVoter).toBe(true);
     expect(result.current.isAdmin).toBe(false);
+  });
+});
+
+describe('dashboardPathFor - role routing', () => {
+  it('returns /login for null profile', () => {
+    expect(dashboardPathFor(null)).toBe('/login');
+  });
+
+  it('returns /admin/dashboard for admin', () => {
+    expect(dashboardPathFor({ id: 'u', full_name: 'A', student_id: 'S', department: null, class_id: null, roles: ['admin'] })).toBe('/admin/dashboard');
+  });
+
+  it('returns /committee for committee', () => {
+    expect(dashboardPathFor({ id: 'u', full_name: 'C', student_id: 'S', department: null, class_id: null, roles: ['committee'] })).toBe('/committee');
+  });
+
+  it('returns /observer for observer', () => {
+    expect(dashboardPathFor({ id: 'u', full_name: 'O', student_id: 'S', department: null, class_id: null, roles: ['observer'] })).toBe('/observer');
+  });
+
+  it('admin beats committee for users with multiple roles', () => {
+    expect(dashboardPathFor({ id: 'u', full_name: 'X', student_id: 'S', department: null, class_id: null, roles: ['committee', 'admin'] })).toBe('/admin/dashboard');
+  });
+
+  it('falls back to /app/dashboard for voter-only', () => {
+    expect(dashboardPathFor({ id: 'u', full_name: 'V', student_id: 'S', department: null, class_id: null, roles: ['voter'] })).toBe('/app/dashboard');
   });
 });

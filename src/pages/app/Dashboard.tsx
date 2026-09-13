@@ -73,15 +73,15 @@ export default function VoterDashboard() {
 
             console.log("Eligible event IDs:", eligibleEventIds);
 
-            // Fetch active events
-            const { data: activeData, error: activeError } = await supabase.from("election_events").select("*").eq("status", "active").in("id", eligibleEventIds);
+            // Fetch active (voting) events
+            const { data: activeData, error: activeError } = await supabase.from("election_events").select("*").eq("status", "voting").in("id", eligibleEventIds);
 
             if (activeError) {
                 console.error("Error fetching active events:", activeError);
             }
 
-            // Fetch closed events
-            const { data: closedData, error: closedError } = await supabase.from("election_events").select("*").eq("status", "closed").in("id", eligibleEventIds);
+            // Fetch finished events (results available once counted/published)
+            const { data: closedData, error: closedError } = await supabase.from("election_events").select("*").in("status", ["counting", "published", "archived"]).in("id", eligibleEventIds);
 
             if (closedError) {
                 console.error("Error fetching closed events:", closedError);
