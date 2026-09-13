@@ -1,4 +1,4 @@
-import { test as base, expect, Page } from '@playwright/test';
+import { test as base, expect } from '@playwright/test';
 
 /** Env helper — kembalikan string atau undefined bila kosong. */
 export function env(name: string): string | undefined {
@@ -15,13 +15,24 @@ export async function login(page: Page, email: string, password: string) {
   await page.getByRole('button', { name: /masuk|login/i }).click();
 }
 
-/** Skip test tulis bila TEST_EVENT_ID tidak diset (lindungi event asli). */
-export const test = base.extend({});
-export function skipWithoutTestEvent(testRef: typeof base) {
-  testRef.beforeEach(async ({}, testInfo) => {
-    if (!TEST_EVENT_ID) {
-      testInfo.skip(true, 'TEST_EVENT_ID tidak diset — spec tulis di-skip agar event asli aman.');
+/**
+ * Prod-safe guard: tanpa TEST_EVENT_ID semua spec TULIS di-skip (jangan
+ * arahkan write ke event asli). Test reference: `test` import di spec.
+ */
+export function skipWithoutTestEvent(): void {
+  base.beforeEach(() => {
+    base.skip(!TEST_EVENT_ID, 'TEST_EVENT_ID tidak diset — spec tulis di-skip (lindungi event asli).');
+  });
+}
+
+/** Skip bila kredensial test tidak diset (bukan failure infrastructure). */
+export function skipWithoutCreds(testRef: typeof base, ...names: string[]): void {
+  testRef.beforeEach(() => {
+    const missing = names.filter((n) => !env(n));
+    if (missing.length > 0) {
+      testRef.skip(true, `Kredensial env belum diset: ${missing.join(', ')} — di-skip.`);
     }
   });
 }
+
 export { expect };

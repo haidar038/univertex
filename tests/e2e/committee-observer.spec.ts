@@ -1,7 +1,14 @@
 /**
  * P1-01 skenario 4–5 (committee + observer) — aman, tanpa tulis ke event asli.
  */
-import { test, expect, login, env, TEST_EVENT_ID } from './helpers';
+import { test, expect } from '@playwright/test';
+import { login, env, skipWithoutTestEvent, skipWithoutCreds, TEST_EVENT_ID } from './helpers';
+
+const COMMITTEE_CREDS = ['E2E_COMMITTEE_EMAIL', 'E2E_COMMITTEE_PASSWORD'];
+const OBSERVER_CREDS = ['E2E_OBSERVER_EMAIL', 'E2E_OBSERVER_PASSWORD'];
+
+skipWithoutTestEvent();
+skipWithoutCreds(test, ...COMMITTEE_CREDS);
 
 test.describe('committee & observer', () => {
   test('4. committee login → /committee → tally + submit observation tersimpan (event isolasi)', async ({ page }) => {

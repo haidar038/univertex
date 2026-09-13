@@ -4,7 +4,13 @@
  * - Revoke: HANYA sesi milik akun test, bukan akun asli.
  * - Invite: akun sintetis p1test+* saja, langsung cleanup setelah accept.
  */
-import { test, expect, login, env, TEST_EVENT_ID } from './helpers';
+import { test, expect } from '@playwright/test';
+import { login, env, skipWithoutTestEvent, skipWithoutCreds, TEST_EVENT_ID } from './helpers';
+
+const ADMIN_CREDS = ['E2E_ADMIN_EMAIL', 'E2E_ADMIN_PASSWORD'];
+
+skipWithoutCreds(test, ...ADMIN_CREDS);
+skipWithoutTestEvent();
 
 test.describe('admin export/revoke + invite', () => {
   test('6. admin export audit JSON + revoke sesi test → logout ≤5 mnt', async ({ page }) => {

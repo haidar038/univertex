@@ -2,9 +2,14 @@
  * P1-01 skenario 1–3 (voter + timeline + non-DPT) — prod-direct aman.
  * Semua aksi TULIS hanya ke TEST_EVENT_ID (event isolasi [P1-TEST]).
  */
-import { test, expect, login, env, skipWithoutTestEvent, TEST_EVENT_ID } from './helpers';
+import { test, expect } from '@playwright/test';
+import { login, env, skipWithoutTestEvent, skipWithoutCreds, TEST_EVENT_ID } from './helpers';
 
-skipWithoutTestEvent(test);
+const VOTER_CREDS = ['E2E_VOTER_EMAIL', 'E2E_VOTER_PASSWORD'];
+const NON_DPT_CREDS = ['E2E_NON_DPT_EMAIL', 'E2E_NON_DPT_PASSWORD'];
+
+skipWithoutTestEvent();
+skipWithoutCreds(test, ...VOTER_CREDS);
 
 test.describe('voter vote + double-vote + non-DPT (event isolasi)', () => {
   test('1. voter eligible vote → toast sukses → banner sudah-vote → vote ke-2 ditolak 23505', async ({ page }) => {
@@ -29,6 +34,7 @@ test.describe('voter vote + double-vote + non-DPT (event isolasi)', () => {
   });
 
   test('2. non-DPT → banner DPT + tombol disabled', async ({ page }) => {
+    test.skip(!env('E2E_NON_DPT_EMAIL') || !env('E2E_NON_DPT_PASSWORD'), 'Kredensial non-DPT belum diset.');
     const email = env('E2E_NON_DPT_EMAIL')!;
     const password = env('E2E_NON_DPT_PASSWORD')!;
     await login(page, email, password);
