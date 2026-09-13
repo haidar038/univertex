@@ -52,7 +52,7 @@ export function ObserverLayout() {
                 "fixed lg:sticky inset lg:top-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 lg:h-screen",
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
-                <div className="flex h-16 items-center justify-center gap-3 border-b border-border px-6 flex-shrink-0">
+                <div className="flex h-16 items-center justify-center gap-3 border-b border-border px-6 shrink-0">
                     <img
                         src={resolvedTheme === 'dark' ? "/UniVertexWhiteHorizontal.png" : "/UniVertex-Horizontal.png"}
                         alt="UniVertex Logo"
@@ -80,7 +80,7 @@ export function ObserverLayout() {
                     })}
                 </nav>
 
-                <div className="border-t border-border p-4 flex-shrink-0">
+                <div className="border-t border-border p-4 shrink-0">
                     <div className="mb-4 rounded-lg bg-muted p-3">
                         <div className="flex items-center gap-2 mb-1">
                             <Eye className="h-4 w-4 text-primary" />

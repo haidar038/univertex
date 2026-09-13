@@ -178,7 +178,7 @@ export default function VoterDashboard() {
                                             </div>
 
                                             <div className="flex items-center gap-2 text-xs md:text-sm text-muted-foreground mb-4">
-                                                <Clock className="h-3 w-3 md:h-4 md:w-4 flex-shrink-0" />
+                                                <Clock className="h-3 w-3 md:h-4 md:w-4 shrink-0" />
                                                 <span className="truncate">Berakhir: {format(new Date(event.end_time), "dd MMM yyyy HH:mm", { locale: id })}</span>
                                             </div>
                                             {hasVoted(event.id) ? (

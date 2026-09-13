@@ -146,7 +146,7 @@ export function ClassDetailsDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-175">
         <DialogHeader>
           <DialogTitle>Detail Kelas: {className}</DialogTitle>
           <DialogDescription>
@@ -195,7 +195,7 @@ export function ClassDetailsDialog({
             </AlertDescription>
           </Alert>
         ) : (
-          <ScrollArea className="h-[400px] border rounded-lg">
+          <ScrollArea className="h-100 border rounded-lg">
             <div className="p-4">
               <table className="w-full">
                 <thead className="border-b border-border bg-muted/50 sticky top-0">

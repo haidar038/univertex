@@ -301,7 +301,7 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-175">
         <DialogHeader>
           <DialogTitle>Import Pengguna dari CSV</DialogTitle>
           <DialogDescription>
@@ -381,11 +381,10 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
                 {parsedUsers.map((user) => (
                   <div
                     key={user.rowNumber}
-                    className={`p-3 rounded-lg border ${
-                      user.valid
+                    className={`p-3 rounded-lg border ${user.valid
                         ? 'bg-green-50 border-green-200'
                         : 'bg-red-50 border-red-200'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-start justify-between">
                       <div className="flex-1">

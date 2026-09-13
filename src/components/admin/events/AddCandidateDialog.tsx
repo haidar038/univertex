@@ -238,7 +238,7 @@ export function AddCandidateDialog({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-150">
         <DialogHeader>
           <DialogTitle>Tambah Kandidat</DialogTitle>
           <DialogDescription>
@@ -276,8 +276,8 @@ export function AddCandidateDialog({
                       {loadingUsers
                         ? 'Memuat...'
                         : searchQuery
-                        ? 'Tidak ada kandidat yang cocok'
-                        : 'Tidak ada kandidat tersedia'}
+                          ? 'Tidak ada kandidat yang cocok'
+                          : 'Tidak ada kandidat tersedia'}
                     </div>
                   ) : (
                     filteredUsers.map((user) => (

@@ -408,7 +408,7 @@ export default function AdminEventDetail() {
                     <CardHeader>
                       <div className="flex items-start gap-3">
                         {/* Photo */}
-                        <div className="flex h-16 w-16 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
+                        <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
                           {photoUrl ? (
                             <img src={photoUrl} alt="Foto kandidat" className="h-full w-full object-cover" />
                           ) : (

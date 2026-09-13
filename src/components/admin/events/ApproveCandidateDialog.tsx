@@ -131,7 +131,7 @@ export function ApproveCandidateDialog({ open, onOpenChange, candidate, onSucces
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="sm:max-w-[600px]">
+      <DialogContent className="sm:max-w-150">
         <DialogHeader>
           <DialogTitle>Persetujuan Kandidat</DialogTitle>
           <DialogDescription>Tinjau profil kandidat dan tentukan apakah akan menyetujui atau menolak</DialogDescription>
@@ -145,7 +145,7 @@ export function ApproveCandidateDialog({ open, onOpenChange, candidate, onSucces
 
           <div className="rounded-lg border p-4">
             <div className="flex gap-4">
-              <div className="flex h-24 w-24 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
+              <div className="flex h-24 w-24 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
                 {photoUrl ? <img src={photoUrl} alt="Foto kandidat" className="h-full w-full object-cover" /> : <User className="h-12 w-12 text-muted-foreground" />}
               </div>
               <div className="flex-1 space-y-2">

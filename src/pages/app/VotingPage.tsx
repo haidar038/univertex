@@ -307,7 +307,7 @@ export default function VotingPage() {
         {event.use_pairs ? (
           pairs.length === 0 ? (
             <Card>
-              <CardContent className="flex min-h-[200px] items-center justify-center">
+              <CardContent className="flex min-h-50 items-center justify-center">
                 <p className="text-muted-foreground">Belum ada pasangan kandidat yang disetujui untuk pemilihan ini.</p>
               </CardContent>
             </Card>
@@ -359,7 +359,7 @@ export default function VotingPage() {
                           );
                           return (
                             <div key={member.id} className="flex items-start gap-3 rounded-lg border p-3">
-                              <div className="flex h-14 w-14 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
+                              <div className="flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
                                 {photoUrl ? (
                                   <img
                                     src={photoUrl}
@@ -403,7 +403,7 @@ export default function VotingPage() {
           )
         ) : candidates.length === 0 ? (
           <Card>
-            <CardContent className="flex min-h-[200px] items-center justify-center">
+            <CardContent className="flex min-h-50 items-center justify-center">
               <p className="text-muted-foreground">Belum ada kandidat yang disetujui untuk pemilihan ini.</p>
             </CardContent>
           </Card>
@@ -427,7 +427,7 @@ export default function VotingPage() {
                 >
                   <CardHeader>
                     <div className="flex items-start gap-4">
-                      <div className="flex h-20 w-20 flex-shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
+                      <div className="flex h-20 w-20 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
                         {photoUrl ? (
                           <img
                             src={photoUrl}

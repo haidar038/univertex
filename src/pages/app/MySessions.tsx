@@ -111,7 +111,7 @@ export default function MySessionsPage() {
                 return (
                   <div key={s.id} className="p-4 flex items-center justify-between gap-4">
                     <div className="flex items-start gap-3 flex-1 min-w-0">
-                      <Icon className="h-8 w-8 text-muted-foreground flex-shrink-0 mt-1" />
+                      <Icon className="h-8 w-8 text-muted-foreground shrink-0 mt-1" />
                       <div className="min-w-0">
                         <div className="flex items-center gap-2 flex-wrap">
                           <p className="font-medium text-foreground truncate">

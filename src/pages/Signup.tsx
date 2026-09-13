@@ -63,21 +63,21 @@ export default function SignupPage() {
           <CardContent className="space-y-4">
             <div className="rounded-lg border bg-muted/30 p-4 text-sm space-y-2">
               <p className="flex items-start gap-2">
-                <Info className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <Info className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                 <span>
                   Pendaftaran publik <strong>dinonaktifkan</strong>. Akun hanya dapat
                   dibuat oleh admin/panitia melalui tautan undangan.
                 </span>
               </p>
               <p className="flex items-start gap-2">
-                <Mail className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <Mail className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                 <span>
                   Jika Anda seorang mahasiswa, hubungi admin/panitia untuk menerima
                   tautan undangan yang berisi instruksi pendaftaran.
                 </span>
               </p>
               <p className="flex items-start gap-2">
-                <Vote className="h-4 w-4 mt-0.5 text-muted-foreground flex-shrink-0" />
+                <Vote className="h-4 w-4 mt-0.5 text-muted-foreground shrink-0" />
                 <span>
                   Anda akan diminta untuk <strong>login</strong> dengan email yang
                   sesuai saat menerima undangan.

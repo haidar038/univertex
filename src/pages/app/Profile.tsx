@@ -311,7 +311,7 @@ export default function ProfilePage() {
 
         {/* Edit Profile Dialog */}
         <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-125">
             <DialogHeader>
               <DialogTitle>Edit Profil</DialogTitle>
               <DialogDescription>
@@ -377,7 +377,7 @@ export default function ProfilePage() {
 
         {/* Change Password Dialog */}
         <Dialog open={passwordDialogOpen} onOpenChange={setPasswordDialogOpen}>
-          <DialogContent className="sm:max-w-[500px]">
+          <DialogContent className="sm:max-w-125">
             <DialogHeader>
               <DialogTitle>Ubah Password</DialogTitle>
               <DialogDescription>
@@ -437,7 +437,7 @@ export default function ProfilePage() {
                     </button>
                   </div>
 
-                  <div className="min-h-[20px]">
+                  <div className="min-h-5">
                     <span
                       aria-live="polite"
                       className={

@@ -70,7 +70,7 @@ export function EventDateTimeFields({
                                 <span>{startDate ? format(parseISO(startDate), 'dd MMM yyyy', { locale: id }) : 'Pilih tanggal'}</span>
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="start" side="bottom" className="w-auto p-0 z-[60]">
+                        <PopoverContent align="start" side="bottom" className="w-auto p-0 z-60">
                             <Calendar
                                 mode="single"
                                 selected={startCalendarDate}
@@ -117,7 +117,7 @@ export function EventDateTimeFields({
                                 <span>{endDate ? format(parseISO(endDate), 'dd MMM yyyy', { locale: id }) : 'Pilih tanggal'}</span>
                             </Button>
                         </PopoverTrigger>
-                        <PopoverContent align="start" side="bottom" className="w-auto p-0 z-[60]">
+                        <PopoverContent align="start" side="bottom" className="w-auto p-0 z-60">
                             <Calendar
                                 mode="single"
                                 selected={endCalendarDate}

@@ -291,7 +291,7 @@ export default function AdminInvitations() {
       </Card>
 
       <Dialog open={createOpen} onOpenChange={(o) => { setCreateOpen(o); if (!o) setLastCreatedLink(null); }}>
-        <DialogContent className="sm:max-w-[600px]">
+        <DialogContent className="sm:max-w-150">
           <DialogHeader>
             <DialogTitle>Buat Undangan Baru</DialogTitle>
             <DialogDescription>

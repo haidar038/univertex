@@ -419,10 +419,10 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
 
       {/* Winner Announcement */}
       {stats.winner && stats.totalVotes > 0 && (
-        <Card className="bg-gradient-to-r from-yellow-50 to-orange-50 border-yellow-200">
+        <Card className="bg-linear-to-r from-yellow-50 to-orange-50 border-yellow-200">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
-              <Trophy className="h-12 w-12 text-yellow-500 flex-shrink-0" />
+              <Trophy className="h-12 w-12 text-yellow-500 shrink-0" />
               <div className="flex-1">
                 <h3 className="text-sm font-medium text-yellow-800 mb-1">
                   🎉 PEMENANG PEMILIHAN
@@ -533,13 +533,13 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
                     </td>
                     <td className="p-4">
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-[120px]">
+                        <div className="flex-1 bg-gray-200 rounded-full h-2 max-w-30">
                           <div
                             className="bg-primary h-2 rounded-full transition-all"
                             style={{ width: `${candidate.percentage}%` }}
                           />
                         </div>
-                        <span className="text-sm font-medium text-foreground min-w-[50px]">
+                        <span className="text-sm font-medium text-foreground min-w-12">
                           {candidate.percentage.toFixed(1)}%
                         </span>
                       </div>

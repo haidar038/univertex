@@ -163,7 +163,7 @@ export function BulkAssignUsersDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-[700px]">
+      <DialogContent className="sm:max-w-175">
         <DialogHeader>
           <DialogTitle>Assign Users ke Kelas: {className}</DialogTitle>
           <DialogDescription>
@@ -214,16 +214,15 @@ export function BulkAssignUsersDialog({
             </AlertDescription>
           </Alert>
         ) : (
-          <ScrollArea className="h-[400px] border rounded-lg">
+          <ScrollArea className="h-100 border rounded-lg">
             <div className="p-4 space-y-2">
               {filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${
-                    selectedUserIds.has(user.id)
-                      ? 'border-primary bg-primary/5'
-                      : 'border-border hover:bg-muted/50'
-                  }`}
+                  className={`flex items-start gap-3 rounded-lg border p-3 transition-colors ${selectedUserIds.has(user.id)
+                    ? 'border-primary bg-primary/5'
+                    : 'border-border hover:bg-muted/50'
+                    }`}
                 >
                   <Checkbox
                     id={`user-${user.id}`}
