@@ -39,6 +39,11 @@ jobs:
       - name: Unit tests
         run: npx vitest --run
 
+      - name: Coverage gate (P1 scope, baseline 2026-09-13)
+        # Threshold di vitest.config.ts (lines>=50 dst). Shadow
+        # whole-app baseline 15.66% + target ≥70% per area: CHANGELOG [P1 Pilot].
+        run: npx vitest run --coverage
+
       - name: Lint
         run: npm run lint
 

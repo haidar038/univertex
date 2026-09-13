@@ -4,39 +4,59 @@ All notable changes to UniVertex are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com), versioning follows
 [SemVer](https://semver.org).
 
-## [P1 Pilot] — Planned 2026-09-13 (BLOCKED: staging belum ada — E2E/k6/ZAP/UAT staging dilarang sentuh prod)
+## [P1 Pilot] — In Progress 2026-09-13 (prod-direct scoped: staging tidak dibuat, 2/2 slot terpakai)
 
-> Baseline P1 2026-09-13 (commit `8caf144`, working tree tracked bersih):
-> `npm run test -- --run` **20 files / 155 tests passed** (~45s),
-> `npx tsc --noEmit` **0 error**, `npm run build` **sukses** (~30s).
-> MCP 2026-09-13: satu-satunya project adalah prod
-> `oiurjnmpkguyxevdbpbu` (`UniVertex`, `ap-southeast-1`,
-> `ACTIVE_HEALTHY`); 2 migrasi P0
-> (`20260913121150_enforce_eligibility_on_vote`,
-> `20260913121201_session_revoke_check`) + 3 fungsi
-> (`assert_event_is_votable(uuid)`, `(uuid,uuid)`,
-> `is_session_revoked(text)`) + 3 index DPT terverifikasi ada di prod.
-> Mesin ini tanpa Supabase CLI; MCP tanpa create-project → staging dibuat
-> manual via dashboard.
-> Handoff staging: `docs/P1-Staging-Handoff.md` (langkah A–E + verifikasi MCP).
-> Sisa gate P0 (T2 42501 di staging, drill restore, H1 revoke ≤5 mnt,
-> H5 email 4 provider, dashboard Auth/SMTP, Peraturan panitia) TETAP
-> menghalangi pilot di prod — P1 hanya jalan di staging.
-> Catatan: `vote.cast` audit SUDAH ada di
-> `src/pages/app/VotingPage.tsx:185-192` (metadata hanya `event_id`).
-> Best-effort non-gate 2026-09-13: commit `8caf144` Tailwind v4 codemod
-> (hapus `postcss.config.js`/`tailwind.config.ts` v3, update utilities) —
-> mengembalikan `npm run build` hijau setelah `autoprefixer` hilang.
+> **Keputusan 2026-09-13:** slot project penuh → staging TIDAK dibuat.
+> P1 jalan **prod-direct scoped** — semua uji tulis hanya ke event isolasi
+> `[P1-TEST]` (belum dibuat, butuh kredensial + jendela maintenance);
+> event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
+> Rincian: `docs/P1-Proddirect-Notes.md`.
 
-### Gate pilot final — status 2026-09-13 (semua BLOCKED/OPEN)
+### Selesai (bukti lokal 2026-09-13)
+- Baseline: `npm run test -- --run` **20 files / 156 tests passed** (~45s),
+  `npx tsc --noEmit` **0 error**, `npm run build` **sukses (~1m9s)**.
+- **P1-01 (scaffold + harness):** `npm i -D @playwright/test@1.63.0`
+  + `playwright.config.ts` (1 worker; trace `on-first-retry`; baseURL via env) +
+  `tests/e2e/{helpers,vote,committee-observer,admin}.spec.ts` (7 skenario
+  §4C.1). `npx playwright test --list` = 7 tests terdaftar; run rill sukses
+  launch Chromium + login + video; prod-safe SKIP aktif tanpa kredensial.
+  [ ] `npx playwright test` penuh hijau — butuh akun sintetis
+  (`p1-voter`/`p1-nonDPT`/`p1-committee`/`p1-observer`/`p1-admin`) +
+  `TEST_EVENT_ID` event `[P1-TEST]` di prod (buat manual via dashboard,
+  DILARANG pakai event asli).
+- **P1-02 (scaffold):** `tests/load/election-day.js` (k6, smoke READ-ONLY,
+  VUS/DURATION via env, threshold p95<500/p99<1000/errors<1%) +
+  `tests/load/README.md`. `k6 run` belum dijalankan — binary k6 tidak ada
+  di mesin ini. **SLO 200-VU + stretch 2000-user = NOT RUN ON PROD** (butuh
+  env isolasi; catat bottleneck tidak berlaku).
+- **P1-03 (sebagian):**
+  - `@vitest/coverage-v8@4.0.6` + `vitest.config.ts` coverage gate
+    (P1 scope: `src/lib`+`src/hooks`+`VotingPage.tsx`; threshold
+    lines≥50/funcs≥45/branches≥35/stmts≥50) + CI job. Baseline scope:
+    **All 67.47% lines | lib 68.94 | hooks 51.41 (ditarik oleh
+    `use-toast`/`use-mobile` 0%) | VotingPage 81.25 | sessions 85.71** —
+    whole-app shadow 15.66% dicatat sebagai backlog P2 (admin/UI belum
+    ber-table). Target ≥70% per area = paper target, threshold CI =
+    under-baseline agar stabil.
+  - `docs/PANDUAN_ADMIN.md`, `PANDUAN_PANITIA.md`, `PANDUAN_VOTER.md`,
+    `PANDUAN_OBSERVER.md` (template phase4-5 §5A.2).
+  - `vote.cast` audit: verifikasi test `VotingPage ("mencatat audit
+    vote.cast ...")` HIJAU (metadata `{event_id}` tanpa candidate) — kode
+    sudah ada sejak P0 (`VotingPage.tsx:185-192`).
+  - [ ] UAT 15/15 (butuh 2-3 tester + jendela) · [ ] ZAP (0 high — butuh
+    jendela scan; agresif dilarang di prod) · [ ] pentest 6/6 (read-only
+    via SQL console, tulis hanya ke event test).
 
-- [ ] P0 gates lolos (lihat `[P0 Go-Live]` §Gate pilot).
-- [ ] P1-01: `npx playwright test` hijau di staging (7 skenario) + trace.
-- [ ] P1-02: k6 200-VU lolos SLO + 1x 2000-stretch + `tests/load/README.md`.
-- [ ] P1-03: UAT 15/15 + ZAP (0 high) + pentest 6/6 + coverage CI +
-      4 PANDUAN_* + `vote.cast` audit (sudah ada — tinggal verifikasi).
-- [ ] vitest hijau, tsc 0 error, build sukses.
-- Satu DoD merah → NO-GO + backlog, jangan paksa pilot.
+### Gate pilot final — status 2026-09-13
+- [ ] P0 gates sisa (T2 42501, drill restore, H1 revoke ≤5 mnt, H5 email
+      4 provider, dashboard Auth/SMTP, Peraturan panitia) — tetap open.
+- [ ] P1-01 penuh hijau (kredensial + `[P1-TEST]`).
+- [ ] P1-02 k6 smoke + README (SLO penuh NOT-PROVEN).
+- [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI
+      (**PANDUAN_* + coverage CI + vote.cast DONE**).
+- [ ] vitest hijau ✓, tsc 0 ✓, build ✓.
+- One DoD merah → NO-GO pilot nyata + backlog (item berbahaya di prod
+  ditunda eksplisit, bukan dipaksa).
 
 
 ## [P0 Go-Live] — Done 2026-09-13 (code + migrasi ter-push ke prod; drill/dashboard menunggu manual)

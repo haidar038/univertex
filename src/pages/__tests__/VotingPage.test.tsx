@@ -401,6 +401,30 @@ describe('VotingPage - Success Flow', () => {
       expect(toast.success).toHaveBeenCalledWith('Suara Anda berhasil tercatat!');
     });
   });
+
+  it('mencatat audit vote.cast dengan metadata event_id saja (tanpa candidate)', async () => {
+    const audit = await import('@/lib/audit');
+    const spy = vi.spyOn(audit, 'logAudit').mockResolvedValue(undefined);
+    mockFrom({ insertVote: { error: null } });
+
+    renderPage();
+
+    await castVoteFlow();
+
+    await waitFor(() => {
+      expect(spy).toHaveBeenCalledWith(
+        expect.objectContaining({
+          action: 'vote.cast',
+          metadata: { event_id: 'event-1' },
+        })
+      );
+    });
+    // Jaga anonimitas: metadata TIDAK boleh berisi candidate/pair.
+    const payload = spy.mock.calls[0][0] as { metadata?: Record<string, unknown> };
+    expect(payload.metadata).not.toHaveProperty('candidate_id');
+    expect(payload.metadata).not.toHaveProperty('pair_id');
+    spy.mockRestore();
+  });
 });
 
 describe('VotingPage - Not Found', () => {

@@ -73,3 +73,8 @@ CLAUDE.md
 # Temp Testing Files
 *.timestamp-*.mjs
 *.config.ts.timestamp-*.mjs
+test-results/
+playwright-report/
+coverage/
+dev-server.log
+
