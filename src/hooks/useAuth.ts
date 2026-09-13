@@ -3,7 +3,7 @@ import { User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { buildDeviceFingerprint } from '@/lib/device';
-import { revokeSessionByHash } from '@/lib/sessions';
+import { revokeSessionByHash, isCurrentSessionRevoked } from '@/lib/sessions';
 import { logAudit } from '@/lib/audit';
 
 // Keep the local role type narrow. We only enumerate the values we already
@@ -177,6 +177,19 @@ export function useAuth() {
   const refresh = async (): Promise<Profile | null> => {
     const { data: { session } } = await supabase.auth.getSession();
     if (session?.user) {
+      // P0-03: cek revoke dulu sebelum fetch profile. Best-effort: false jika
+      // RPC belum ada (migration belum apply) -> lanjut normal.
+      try {
+        if (await isCurrentSessionRevoked()) {
+          setUser(null);
+          setProfile(null);
+          setLoading(false);
+          navigate('/login', { replace: true });
+          return null;
+        }
+      } catch {
+        // ignore -> lanjut fetch profile normal
+      }
       profileInflightRef.current = false;
       setLoading(true);
       const { data: { subscription } } = supabase.auth.onAuthStateChange(() => {});

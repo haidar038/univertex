@@ -165,6 +165,12 @@ export default function VotingPage() {
           // Timeline enforcement trigger
           toast.error('Waktu pemilihan sudah berakhir atau belum dimulai');
           await fetchEventAndCandidates();
+        } else if (error.code === '42501') {
+          // P0-01: DB menolak non-DPT (trigger tg_enforce_vote_timeline).
+          // Jangan refetch eligibility di sini: query cepat UI (event_voter_groups)
+          // bisa bilang eligible sementara DB (is_eligible_voter) menolak — DB menang.
+          toast.error('Anda tidak terdaftar di DPT pemilihan ini. Hubungi panitia.');
+          setNotEligible(true);
         } else {
           toast.error(error.message || 'Gagal memberikan suara');
         }

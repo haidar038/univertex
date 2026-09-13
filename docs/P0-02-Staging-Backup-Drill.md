@@ -1,6 +1,8 @@
 # P0-02 — Staging Separation + Backup Drill Terbukti
 
-> **Status:** PLANNED. Parent: `docs/P0-Golive-Readiness-Plan.md`
+> **Status:** CODE/DOCS DONE 2026-09-13 (env split + RUNBOOK; infra dashboard menunggu).
+> Parent: `docs/P0-Golive-Readiness-Plan.md`
+> Sisa: buat `univertex-staging` + `db push` 50 migrasi + Vercel split + PITR + drill restore.
 > **Masalah:** `docs/RUNBOOK.md §0` mengakui prod = dev di project `oiurjnmpkguyxevdbpbu`. Belum ada project staging, Vercel env belum split, PITR + `scripts/snapshot-db.mjs` belum pernah drill restore.
 
 ## 1. Langkah Infra (butuh akses dashboard Supabase + Vercel)

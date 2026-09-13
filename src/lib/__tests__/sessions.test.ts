@@ -6,7 +6,7 @@
  * - Semua best-effort: tidak throw walau DB belum ada RPC-nya (404 handling)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import { registerCurrentDeviceSession, touchCurrentDeviceSession, revokeSession, revokeSessionByHash, listMySessions, listUserSessions } from '../sessions';
+import { registerCurrentDeviceSession, touchCurrentDeviceSession, revokeSession, revokeSessionByHash, isCurrentSessionRevoked, revokeAllMySessions, listMySessions, listUserSessions } from '../sessions';
 import { supabase } from '@/integrations/supabase/client';
 
 const realCrypto = global.crypto;
@@ -152,6 +152,88 @@ describe('revokeSessionByHash', () => {
     expect(ok).toBe(false);
   });
 });
+describe('isCurrentSessionRevoked (P0-03)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('true ketika RPC is_session_revoked return true', async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: true, error: null } as any);
+
+    await expect(isCurrentSessionRevoked()).resolves.toBe(true);
+    expect(supabase.rpc).toHaveBeenCalledWith(
+      'is_session_revoked',
+      expect.objectContaining({ p_hash: expect.any(String) })
+    );
+  });
+
+  it('false ketika RPC return false', async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({ data: false, error: null } as any);
+
+    await expect(isCurrentSessionRevoked()).resolves.toBe(false);
+  });
+
+  it('false (best-effort) ketika RPC 404 / error — jangan crash', async () => {
+    vi.mocked(supabase.rpc).mockResolvedValue({
+      data: null,
+      error: { message: 'Could not find the function public.is_session_revoked' },
+    } as any);
+
+    await expect(isCurrentSessionRevoked()).resolves.toBe(false);
+  });
+
+  it('false ketika rpc throw (network)', async () => {
+    vi.mocked(supabase.rpc).mockRejectedValue(new Error('network') as any);
+
+    await expect(isCurrentSessionRevoked()).resolves.toBe(false);
+  });
+});
+
+describe('revokeAllMySessions (P0-03)', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('revoke semua sesi aktif kecuali sesi device ini', async () => {
+    const currentHashCall = vi.mocked(supabase.rpc).mockResolvedValue({ data: null, error: null } as any);
+    // listMySessions via supabase.from; revoke via supabase.rpc.
+    const rows = [
+      { id: 's-current', refresh_token_hash: 'CURRENT', revoked_at: null },
+      { id: 's-other-1', refresh_token_hash: 'OTHER1', revoked_at: null },
+      { id: 's-revoked', refresh_token_hash: 'OTHER2', revoked_at: '2026-09-01T00:00:00Z' },
+    ];
+    vi.mocked(supabase.from).mockReturnValue({
+      select: vi.fn().mockReturnValue({
+        order: vi.fn().mockResolvedValue({ data: rows, error: null }),
+      }),
+    } as any);
+    // buildDeviceFingerprint: stub dengan mengubah navigator — lebih mudah:
+    // revokeAllMySessions panggil buildDeviceFingerprint real (hash 64 hex di
+    // jsdom mungkin fallback). Kita override rpc agar revoke sukses, lalu
+    // verifikasi sesi revoked & current TIDAK ikut hanya bila hash cocok.
+    // Karena hash real tidak sama dengan 'CURRENT', mock device module:
+    const device = await import('../device');
+    vi.spyOn(device, 'buildDeviceFingerprint').mockResolvedValue({
+      hash: 'CURRENT',
+      label: 'Chrome on Windows (Desktop)',
+      userAgent: 'test',
+    });
+
+    const n = await revokeAllMySessions();
+
+    expect(n).toBe(1);
+    expect(supabase.rpc).toHaveBeenCalledWith('revoke_user_session', {
+      p_session_id: 's-other-1',
+      p_revoked_reason: 'user_logout',
+    });
+    expect(currentHashCall).not.toHaveBeenCalledWith(
+      'revoke_user_session',
+      expect.objectContaining({ p_session_id: 's-current' })
+    );
+  });
+});
+
+
 
 describe('listMySessions / listUserSessions', () => {
   beforeEach(() => {

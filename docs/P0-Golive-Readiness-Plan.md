@@ -1,6 +1,7 @@
 # P0 Go-Live Readiness Plan — UniVertex
 
-> **Status:** PLANNED — belum dikerjakan. Dikerjakan di new session (Act mode).
+> **Status:** CODE DONE 2026-09-13 — code+migrasi lokal selesai, infra dashboard menunggu.
+> Lihat `CHANGELOG.md [P0 Go-Live]` untuk bukti uji lokal (155 tests, tsc 0, build sukses).
 > **Tanggal dibuat:** 13 September 2026
 > **Tujuan:** 3 aksi wajib sebelum pilot nyata pertama (<200 voter, 1 event).
 > **Hubungan:** Melanjutkan `docs/RUNBOOK.md`, `docs/Update_Kritis_Fixes_September_2026.md`, `CHANGELOG.md [Unreleased]`.

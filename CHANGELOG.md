@@ -4,38 +4,83 @@ All notable changes to UniVertex are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com), versioning follows
 [SemVer](https://semver.org).
 
-## [P0 Go-Live] — Planned (belum dikerjakan, target pilot pertama)
+## [P0 Go-Live] — Done 2026-09-13 (code + migrasi lokal; infra dashboard menunggu eksekusi manual)
 
-> Rencana kerja: `docs/P0-Golive-Readiness-Plan.md`. Jangan centang sebelum DoD tiap P0 terpenuhi + bukti terlampir di PR.
+> Rencana kerja: `docs/P0-Golive-Readiness-Plan.md`.
+> Baseline: commit `6f94290` (pre-P0 snapshot Fase0-3 + tsconfig TS5095 fix).
+> Bukti uji lokal 2026-09-13: `vitest --run` **20 files / 155 tests passed**,
+> `tsc --noEmit` **0 error** (fix: `tsconfig.json` root tambah `"module":"ESNext"`),
+> `vite build` **sukses** (~1m52s).
+> Supabase CLI tidak tersedia di mesin ini → `migration list` / `db push`
+> staging+prod + drill restore + setting dashboard Auth/SMTP **menunggu eksekusi
+> manual** (lihat status parsial tiap P0 di bawah). JANGAN pilot sebelum gate §Gate lolos.
 
-### Planned — P0-01 Eligibility Enforcement di DB
+### Done — P0-01 Eligibility Enforcement di DB (code + migrasi lokal selesai; bukti SQL manual menunggu staging)
 
-- `assert_event_is_votable(event, voter)` + `tg_enforce_vote_timeline` validasi `is_eligible_voter()` — non-DPT ditolak `42501` di level DB.
-- Index `event_voter_groups(event_id, class_id)`, `profiles(class_id)`.
-- `VotingPage` bedakan pesan `23505` (sudah vote) / `P0001` (timeline) / `42501` (non-DPT).
+- Migrasi `supabase/migrations/20260913000000_enforce_eligibility_on_vote.sql`:
+  `assert_event_is_votable(UUID, UUID DEFAULT NULL)` (timeline + `is_eligible_voter()`
+  → `42501`), wrapper 1-arg lama (timeline only), `tg_enforce_vote_timeline()`
+  (cek `voter_id = auth.uid()` → `42501`), trigger dijamin ada, 3 index
+  (`idx_evg_event_class`, `idx_profiles_class`, `idx_rules_election`). Rollback copy
+  versi 20260912 ada di komentar migrasi.
+- `VotingPage.handleVote` bedakan `23505` (sudah vote) / `P0001` (timeline) /
+  `42501` (non-DPT → toast + banner DPT; DB menang, tanpa refetch agar tidak tertimpa).
+- Test: `VotingPage.test.tsx` +2 case P0-01 (42501 non-DPT → banner + insert kirim
+  `voter_id+event_id`; 42501 mismatch) — lokal **12/12 hijau**.
 - Spec + matriks uji: `docs/P0-01-Eligibility-Enforcement.md`.
+- [x] Code + test lokal hijau. [ ] `db push` staging+prod. [ ] Bukti manual T2
+  (SQL console non-DPT → `42501`) ditempel di PR.
 
-### Planned — P0-02 Staging Separation + Backup Drill
+### Partial — P0-02 Staging Separation + Backup Drill (code/docs selesai; infra menunggu dashboard)
 
-- Project `univertex-staging` terpisah, Vercel env split (production vs preview/staging).
-- PITR aktif + snapshot manual + drill restore <1 jam terdokumentasi.
+- Selesai (code): `.env.example` split prod/staging placeholder, `docs/RUNBOOK.md §0`
+  (tabel env baru, hapus "masih share database") + `§4 H-1` (hash SHA-256 + 2 lokasi + gate P0).
+- Menunggu manual (butuh akses dashboard Supabase + Vercel): buat project
+  `univertex-staging` (region = prod), `supabase db push --dry-run` lalu `push`
+  50 migrasi, Vercel env split, PITR on, snapshot manual + drill restore <1 jam.
+  Saat ini 50 file migrasi lokal (48 baseline + 2 P0).
 - Prosedur: `docs/P0-02-Staging-Backup-Drill.md` (melengkapi `docs/RUNBOOK.md §0-§2`).
+- [x] Code/docs. [ ] Staging online + migrasi hijau. [ ] Vercel preview → staging.
+  [ ] Drill restore log (mulai/selesai/durasi/RTO) + hash backup.
 
-### Planned — P0-03 Auth & Session Hardening
+### Done (code) / Partial (dashboard) — P0-03 Auth & Session Hardening
 
-- RPC `is_session_revoked(hash)` + `AppBootstrap`/`useAuth` paksa logout ≤5 mnt setelah revoke.
-- MFA wajib `admin/committee`, JWT expiry 1 jam, CAPTCHA login/invite, SMTP produksi.
+- Migrasi `supabase/migrations/20260913000100_session_revoke_check.sql`:
+  RPC `is_session_revoked(p_hash TEXT) RETURNS BOOLEAN` (SECURITY DEFINER,
+  GRANT `authenticated`).
+- `src/lib/sessions.ts`: `+ isCurrentSessionRevoked()` (best-effort, false jika 404)
+  + `revokeAllMySessions()` (lewati sesi device ini).
+- `src/components/AppBootstrap.tsx`: cek revoke saat mount + interval 5 mnt →
+  revoke paksa logout + toast "Sesi dicabut" (≤5 mnt enforcement).
+- `src/hooks/useAuth.ts refresh()`: cek revoke dulu sebelum fetch profile →
+  clear state + redirect `/login`.
+- `src/pages/app/MySessions.tsx`: tombol "Keluar dari semua device lain".
+- Test: `sessions.test.ts` +5 case P0-03 (revoked true/false/404/throw, revoke-all
+  lewati sesi ini) — lokal hijau (sessions 16 tests, total 155).
+- Setting dashboard + SMTP: terdokumentasi di `docs/supabase-auth-redirects.md`
+  §P0-03 (JWT 3600, MFA TOTP admin/committee, leaked-password + rate-limit,
+  CAPTCHA login/invite, SMTP + uji 4 provider) — [ ] menunggu eksekusi + bukti
+  H1 (2-browser ≤5 mnt) + H5 (email 4 provider) ditempel di PR.
 - Setting + matriks uji: `docs/P0-03-Auth-Session-Hardening.md`, `docs/supabase-auth-redirects.md`.
 
-### Planned — Docs Operasional
+### Done — Docs Operasional (template tersedia; pengisian oleh panitia)
 
 - `docs/Peraturan-Pemilihan-Template.md` (tie-break, masa sanggah, 2-approvals publish, retensi UU PDP).
 - `docs/SOP-Helpdesk-HariH.md` (reset manual, sengketa "sudah memilih", internet down).
 
-### Security (setelah P0 selesai)
+### Security (code selesai; verifikasi prod menunggu push + drill)
 
-- Non-DPT tidak bisa insert suara walau bypass UI.
-- Sesi revoke benar-benar mati di client; brute-force tercatat tanpa enumerasi email.
+- Non-DPT tidak bisa insert suara walau bypass UI (trigger 42501; RLS Fase 2 + pesan eksplisit).
+- Sesi revoke benar-benar mati di client ≤5 mnt; brute-force tercatat tanpa enumerasi email.
+
+### Gate pilot (Go / No-Go H-1) — status 2026-09-13
+
+- [x] `vitest --run` hijau (20/155), `tsc --noEmit` 0 error, `vite build` sukses.
+- [ ] P0-01: T2 manual non-DPT → `42501` di staging (log di PR).
+- [ ] P0-02: staging ≠ prod + drill restore tercatat (tanggal, durasi, RTO).
+- [ ] P0-03: H1 2-browser revoke ≤5 mnt; email invite/reset 4 provider (bukan spam); setting dashboard terdokumentasi.
+- [ ] `docs/Peraturan-Pemilihan-Template.md` diisi panitia; Helpdesk H-H siap.
+- Satu saja merah → **postpone election**.
 
 ## [Unreleased] — Fase 0–3 + Hardening
 

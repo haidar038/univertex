@@ -112,3 +112,36 @@ export async function revokeSessionByHash(
   });
   return !error;
 }
+
+/**
+ * P0-03: cek apakah sesi device ini sudah dicabut (via RPC is_session_revoked).
+ * Best-effort: return false jika RPC belum ada (404) atau network gagal —
+ * jangan crash AppBootstrap/useAuth karena migration belum apply.
+ */
+export async function isCurrentSessionRevoked(): Promise<boolean> {
+  try {
+    const fp = await buildDeviceFingerprint();
+    const { data, error } = await supabase.rpc('is_session_revoked', {
+      p_hash: fp.hash,
+    } as never);
+    if (error) return false;
+    return data === true;
+  } catch {
+    return false;
+  }
+}
+
+/** Keluar dari semua device lain: revoke tiap sesi aktif kecuali sesi ini. */
+export async function revokeAllMySessions(): Promise<number> {
+  const fp = await buildDeviceFingerprint().catch(() => null);
+  const rows = await listMySessions();
+  let revoked = 0;
+  for (const row of rows) {
+    if (row.revoked_at) continue;
+    // Jangan cabut sesi device ini — user tetap login di sini.
+    if (fp && row.refresh_token_hash === fp.hash) continue;
+    const ok = await revokeSession(row.id, 'user_logout');
+    if (ok) revoked += 1;
+  }
+  return revoked;
+}

@@ -1,9 +1,9 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { revokeSession, UserSessionRow, listMySessions } from '@/lib/sessions';
+import { revokeSession, revokeAllMySessions, UserSessionRow, listMySessions } from '@/lib/sessions';
 import { buildDeviceFingerprint } from '@/lib/device';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
@@ -21,6 +21,7 @@ export default function MySessionsPage() {
   const [rows, setRows] = useState<UserSessionRow[]>([]);
   const [loading, setLoading] = useState(true);
   const [currentHash, setCurrentHash] = useState('');
+  const [revokingAll, setRevokingAll] = useState(false);
 
   useEffect(() => {
     refresh();
@@ -41,6 +42,17 @@ export default function MySessionsPage() {
       refresh();
     } else {
       toast.error('Gagal mencabut sesi.');
+    }
+  };
+
+  const handleRevokeAll = async () => {
+    setRevokingAll(true);
+    try {
+      const n = await revokeAllMySessions();
+      toast.success(n > 0 ? n + ' sesi lain dicabut.' : 'Tidak ada sesi lain.');
+      refresh();
+    } finally {
+      setRevokingAll(false);
     }
   };
 
@@ -72,6 +84,18 @@ export default function MySessionsPage() {
           </CardTitle>
           <CardDescription>
             Setiap baris mewakili satu perangkat atau browser yang sedang login ke akun Anda.
+            {active.filter((r) => r.refresh_token_hash !== currentHash).length > 0 && (
+              <span className="mt-3 block">
+                <Button
+                  variant="destructive"
+                  size="sm"
+                  onClick={handleRevokeAll}
+                  disabled={revokingAll}
+                >
+                  {revokingAll ? 'Mencabut...' : 'Keluar dari semua device lain'}
+                </Button>
+              </span>
+            )}
           </CardDescription>
         </CardHeader>
         <CardContent className="p-0">

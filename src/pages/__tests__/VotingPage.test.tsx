@@ -289,6 +289,99 @@ describe('VotingPage - Double Vote Prevention', () => {
     });
   });
 });
+describe('VotingPage - P0-01 Eligibility DB enforcement', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseAuth();
+  });
+
+  it('menangani error 42501 non-DPT dengan banner DPT + insert kirim voter_id', async () => {
+    const { toast } = await import('sonner');
+    const insertMock = vi.fn().mockResolvedValue({
+      error: { code: '42501', message: 'Voter voter-1 is not eligible for election event event-1' },
+    });
+    vi.mocked(supabase.from).mockImplementation(((table: string) => {
+      if (table === 'votes') {
+        const votes = chainable();
+        votes.select = vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: null, error: null }),
+            }),
+          }),
+        });
+        votes.insert = insertMock;
+        return votes;
+      }
+      if (table === 'election_events') {
+        const ev = chainable();
+        ev.select = vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            maybeSingle: vi.fn().mockResolvedValue({ data: activeEvent, error: null }),
+          }),
+        });
+        return ev;
+      }
+      if (table === 'event_voter_groups') {
+        const eg = chainable();
+        eg.select = vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockReturnValue({
+              maybeSingle: vi.fn().mockResolvedValue({ data: { event_id: 'event-1' }, error: null }),
+            }),
+          }),
+        });
+        return eg;
+      }
+      if (table === 'candidates') {
+        const cd = chainable();
+        cd.select = vi.fn().mockReturnValue({
+          eq: vi.fn().mockReturnValue({
+            eq: vi.fn().mockResolvedValue({
+              data: [
+                { id: 'cand-1', vision: 'v1', mission: 'm1', photo_url: null, photo_storage_path: null, status: 'approved', profiles: { full_name: 'Kandidat A', student_id: 'NIM-A' } },
+              ],
+              error: null,
+            }),
+          }),
+        });
+        return cd;
+      }
+      return chainable();
+    }) as never);
+
+    renderPage();
+
+    await castVoteFlow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Anda tidak terdaftar di DPT pemilihan ini. Hubungi panitia.');
+    });
+    expect(insertMock).toHaveBeenCalledWith(
+      expect.objectContaining({ voter_id: 'voter-1', event_id: 'event-1' })
+    );
+    await waitFor(() => {
+      expect(screen.getByText(/tidak termasuk dalam Daftar Pemilih Tetap/i)).toBeInTheDocument();
+    });
+  });
+
+  it('menangani error 42501 voter_id mismatch dengan pesan DPT', async () => {
+    const { toast } = await import('sonner');
+    mockFrom({
+      insertVote: { error: { code: '42501', message: 'voter_id must equal authenticated user' } },
+    });
+
+    renderPage();
+
+    await castVoteFlow();
+
+    await waitFor(() => {
+      expect(toast.error).toHaveBeenCalledWith('Anda tidak terdaftar di DPT pemilihan ini. Hubungi panitia.');
+    });
+  });
+});
+
+
 
 describe('VotingPage - Success Flow', () => {
   beforeEach(() => {

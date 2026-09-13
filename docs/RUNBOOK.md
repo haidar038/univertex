@@ -8,12 +8,16 @@
 
 ## 0. Environment
 
+> **P0-02 (2026-09-13):** staging dipisah. Prod tetap `oiurjnmpkguyxevdbpbu`;
+> staging = project `univertex-staging` (ref diisi setelah dibuat di dashboard).
+> Vercel: `production` → URL+anon PROD; `preview`/branch `staging` → URL+anon STAGING
+> (lihat `.env.example`). Sebelum `db push`, selalu `supabase migration list` +
+> cek `--project-ref` agar tidak tertukar.
+
 | Env | Supabase Project | URL |
 |---|---|---|
-| Production | UniVertex (prod) | `https://oiurjnmpkguyxevdbpbu.supabase.co` (saat ini — gantilah saat sudah ada project prod terpisah) |
-| Staging | UniVertex (staging) | (akan dibuat — lihat Fase 0.3) |
-
-> Saat ini production dan development **masih share database** yang sama (`oiurjnmpkguyxevdbpbu`). Pemisahan ini adalah Fase 0.3 dari `production-readiness.md` dan **WAJIB** sebelum go-live.
+| Production | UniVertex (prod) | `https://oiurjnmpkguyxevdbpbu.supabase.co` |
+| Staging | univertex-staging | `https://<staging-ref>.supabase.co` (isi setelah P0-02 infra) |
 
 ---
 
@@ -199,7 +203,8 @@ Distribusikan ke:
 
 Wajib dijalankan 1 hari sebelum election:
 
-- [ ] **Snapshot DB** (lihat §1.2)
+- [ ] **Snapshot DB** (lihat §1.2) — snapshot diambil + hash SHA-256 dicatat + tersimpan di 2 lokasi
+- [ ] **P0 gate**: T2 non-DPT → `42501`, H1 revoke → logout ≤5 mnt, drill restore tercatat
 - [ ] **Test voting** dengan 2-3 akun berbeda (voter, committee, admin)
 - [ ] **Cek tally** match dengan jumlah suara yang masuk
 - [ ] **Cek audit log** recent entries normal (no suspicious activity)

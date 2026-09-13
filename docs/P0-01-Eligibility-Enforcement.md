@@ -1,6 +1,8 @@
 # P0-01 — Eligibility Enforcement di Level Database
 
-> **Status:** PLANNED. Parent: `docs/P0-Golive-Readiness-Plan.md`
+> **Status:** CODE DONE 2026-09-13 (migrasi lokal + frontend + test hijau).
+> Parent: `docs/P0-Golive-Readiness-Plan.md`
+> Sisa: `db push` staging+prod + bukti manual T2 (`42501` via SQL console non-DPT) di PR.
 > **Masalah:** `assert_event_is_votable(UUID)` (lihat `supabase/migrations/20260912000000_fix_vote_timeline_and_tally_statuses.sql:25-60`) hanya memvalidasi `status='voting'` + `start_time/end_time`. Tidak memanggil `is_eligible_voter()` (`20251108000000_phase2_state_machine_and_scope.sql:255-288`). UI `src/pages/app/VotingPage.tsx:86-93` cek DPT, tapi penyerang bisa bypass via `supabase.from('votes').insert(...)` langsung.
 
 ## 1. Desain Migrasi Baru

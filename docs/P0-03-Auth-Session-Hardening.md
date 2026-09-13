@@ -1,6 +1,8 @@
 # P0-03 — Auth & Session Hardening
 
-> **Status:** PLANNED. Parent: `docs/P0-Golive-Readiness-Plan.md`
+> **Status:** CODE DONE 2026-09-13 (migrasi + frontend + test hijau; setting dashboard menunggu).
+> Parent: `docs/P0-Golive-Readiness-Plan.md`
+> Sisa: `db push` migrasi + setting dashboard (JWT/MFA/captcha/SMTP) + bukti H1/H5 di PR.
 > **Masalah:** `revoke_user_session_by_hash` hanya set `revoked_at` — JWT di device tetap valid. `src/components/AppBootstrap.tsx` + `src/hooks/useAuth.ts` tidak pernah cek revoke. Tanpa MFA/captcha/SMTP produksi.
 
 ## 1. Perubahan DB (kecil, 1 migrasi)
