@@ -4,18 +4,22 @@ All notable changes to UniVertex are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com), versioning follows
 [SemVer](https://semver.org).
 
-## [P0 Go-Live] — Done 2026-09-13 (code + migrasi lokal; infra dashboard menunggu eksekusi manual)
+## [P0 Go-Live] — Done 2026-09-13 (code + migrasi ter-push ke prod; drill/dashboard menunggu manual)
 
 > Rencana kerja: `docs/P0-Golive-Readiness-Plan.md`.
 > Baseline: commit `6f94290` (pre-P0 snapshot Fase0-3 + tsconfig TS5095 fix).
 > Bukti uji lokal 2026-09-13: `vitest --run` **20 files / 155 tests passed**,
 > `tsc --noEmit` **0 error** (fix: `tsconfig.json` root tambah `"module":"ESNext"`),
 > `vite build` **sukses** (~1m52s).
-> Supabase CLI tidak tersedia di mesin ini → `migration list` / `db push`
-> staging+prod + drill restore + setting dashboard Auth/SMTP **menunggu eksekusi
-> manual** (lihat status parsial tiap P0 di bawah). JANGAN pilot sebelum gate §Gate lolos.
+> Push DB prod `oiurjnmpkguyxevdbpbu` via MCP 2026-09-13:
+> `20260913121150_enforce_eligibility_on_vote` + `20260913121201_session_revoke_check`
+> tercatat di `schema_migrations`; verifikasi fungsi
+> `assert_event_is_votable(uuid)`, `assert_event_is_votable(uuid,uuid)`,
+> `is_session_revoked(text)` ada + 3 index DPT ada.
+> Sisa manual: drill restore staging, setting dashboard Auth/SMTP, bukti T2/H1/H5.
+> JANGAN pilot sebelum gate §Gate lolos.
 
-### Done — P0-01 Eligibility Enforcement di DB (code + migrasi lokal selesai; bukti SQL manual menunggu staging)
+### Done — P0-01 Eligibility Enforcement di DB (ter-push prod 2026-09-13; bukti SQL manual T2 menunggu staging)
 
 - Migrasi `supabase/migrations/20260913000000_enforce_eligibility_on_vote.sql`:
   `assert_event_is_votable(UUID, UUID DEFAULT NULL)` (timeline + `is_eligible_voter()`
@@ -28,7 +32,7 @@ All notable changes to UniVertex are documented here. Format follows
 - Test: `VotingPage.test.tsx` +2 case P0-01 (42501 non-DPT → banner + insert kirim
   `voter_id+event_id`; 42501 mismatch) — lokal **12/12 hijau**.
 - Spec + matriks uji: `docs/P0-01-Eligibility-Enforcement.md`.
-- [x] Code + test lokal hijau. [ ] `db push` staging+prod. [ ] Bukti manual T2
+- [x] Code + test lokal hijau + ter-push prod (`20260913121150`, fungsi 1-arg + 2-arg + trigger + 3 index terverifikasi ada). [ ] Bukti manual T2
   (SQL console non-DPT → `42501`) ditempel di PR.
 
 ### Partial — P0-02 Staging Separation + Backup Drill (code/docs selesai; infra menunggu dashboard)
@@ -56,7 +60,8 @@ All notable changes to UniVertex are documented here. Format follows
   clear state + redirect `/login`.
 - `src/pages/app/MySessions.tsx`: tombol "Keluar dari semua device lain".
 - Test: `sessions.test.ts` +5 case P0-03 (revoked true/false/404/throw, revoke-all
-  lewati sesi ini) — lokal hijau (sessions 16 tests, total 155).
+  lewati sesi ini) — lokal hijau (sessions 16 tests, total 155) + RPC ter-push prod
+  (`20260913121201`, `is_session_revoked(text)` terverifikasi ada).
 - Setting dashboard + SMTP: terdokumentasi di `docs/supabase-auth-redirects.md`
   §P0-03 (JWT 3600, MFA TOTP admin/committee, leaked-password + rate-limit,
   CAPTCHA login/invite, SMTP + uji 4 provider) — [ ] menunggu eksekusi + bukti
