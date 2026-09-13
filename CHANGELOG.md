@@ -4,6 +4,41 @@ All notable changes to UniVertex are documented here. Format follows
 [Keep a Changelog](https://keepachangelog.com), versioning follows
 [SemVer](https://semver.org).
 
+## [P1 Pilot] — Planned 2026-09-13 (BLOCKED: staging belum ada — E2E/k6/ZAP/UAT staging dilarang sentuh prod)
+
+> Baseline P1 2026-09-13 (commit `8caf144`, working tree tracked bersih):
+> `npm run test -- --run` **20 files / 155 tests passed** (~45s),
+> `npx tsc --noEmit` **0 error**, `npm run build` **sukses** (~30s).
+> MCP 2026-09-13: satu-satunya project adalah prod
+> `oiurjnmpkguyxevdbpbu` (`UniVertex`, `ap-southeast-1`,
+> `ACTIVE_HEALTHY`); 2 migrasi P0
+> (`20260913121150_enforce_eligibility_on_vote`,
+> `20260913121201_session_revoke_check`) + 3 fungsi
+> (`assert_event_is_votable(uuid)`, `(uuid,uuid)`,
+> `is_session_revoked(text)`) + 3 index DPT terverifikasi ada di prod.
+> Mesin ini tanpa Supabase CLI; MCP tanpa create-project → staging dibuat
+> manual via dashboard.
+> Handoff staging: `docs/P1-Staging-Handoff.md` (langkah A–E + verifikasi MCP).
+> Sisa gate P0 (T2 42501 di staging, drill restore, H1 revoke ≤5 mnt,
+> H5 email 4 provider, dashboard Auth/SMTP, Peraturan panitia) TETAP
+> menghalangi pilot di prod — P1 hanya jalan di staging.
+> Catatan: `vote.cast` audit SUDAH ada di
+> `src/pages/app/VotingPage.tsx:185-192` (metadata hanya `event_id`).
+> Best-effort non-gate 2026-09-13: commit `8caf144` Tailwind v4 codemod
+> (hapus `postcss.config.js`/`tailwind.config.ts` v3, update utilities) —
+> mengembalikan `npm run build` hijau setelah `autoprefixer` hilang.
+
+### Gate pilot final — status 2026-09-13 (semua BLOCKED/OPEN)
+
+- [ ] P0 gates lolos (lihat `[P0 Go-Live]` §Gate pilot).
+- [ ] P1-01: `npx playwright test` hijau di staging (7 skenario) + trace.
+- [ ] P1-02: k6 200-VU lolos SLO + 1x 2000-stretch + `tests/load/README.md`.
+- [ ] P1-03: UAT 15/15 + ZAP (0 high) + pentest 6/6 + coverage CI +
+      4 PANDUAN_* + `vote.cast` audit (sudah ada — tinggal verifikasi).
+- [ ] vitest hijau, tsc 0 error, build sukses.
+- Satu DoD merah → NO-GO + backlog, jangan paksa pilot.
+
+
 ## [P0 Go-Live] — Done 2026-09-13 (code + migrasi ter-push ke prod; drill/dashboard menunggu manual)
 
 > Rencana kerja: `docs/P0-Golive-Readiness-Plan.md`.
