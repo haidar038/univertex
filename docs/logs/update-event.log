@@ -1,0 +1,49 @@
+requests.js:1  PATCH https://oiurjnmpkguyxevdbpbu.supabase.co/rest/v1/election_events?id=eq.9698a797-b4b0-4cd9-b2a8-cf697c3e09fe 400 (Bad Request)
+(anonymous) @ requests.js:1
+(anonymous) @ @supabase_supabase-js.js?v=4fdec244:6182
+(anonymous) @ @supabase_supabase-js.js?v=4fdec244:6203
+await in (anonymous)
+then @ @supabase_supabase-js.js?v=4fdec244:615
+EditEventDialog.tsx:145 Error updating event: {code: '23514', details: null, hint: null, message: 'new row for relation "election_events" violates check constraint "election_events_status_check"'}
+(anonymous) @ EditEventDialog.tsx:145
+await in (anonymous)
+(anonymous) @ chunk-7OPZCGB2.js?v=4fdec244:1504
+await in (anonymous)
+executeDispatch @ react-dom_client.js?v=4fdec244:13622
+runWithFiberInDEV @ react-dom_client.js?v=4fdec244:997
+processDispatchQueue @ react-dom_client.js?v=4fdec244:13658
+(anonymous) @ react-dom_client.js?v=4fdec244:14071
+batchedUpdates$1 @ react-dom_client.js?v=4fdec244:2626
+dispatchEventForPluginEventSystem @ react-dom_client.js?v=4fdec244:13763
+dispatchEvent @ react-dom_client.js?v=4fdec244:16784
+dispatchDiscreteEvent @ react-dom_client.js?v=4fdec244:16765
+<form>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=4fdec244:247
+(anonymous) @ EditEventDialog.tsx:166
+react_stack_bottom_frame @ react-dom_client.js?v=4fdec244:18509
+renderWithHooks @ react-dom_client.js?v=4fdec244:5654
+updateFunctionComponent @ react-dom_client.js?v=4fdec244:7475
+beginWork @ react-dom_client.js?v=4fdec244:8525
+runWithFiberInDEV @ react-dom_client.js?v=4fdec244:997
+performUnitOfWork @ react-dom_client.js?v=4fdec244:12561
+workLoopSync @ react-dom_client.js?v=4fdec244:12424
+renderRootSync @ react-dom_client.js?v=4fdec244:12408
+performWorkOnRoot @ react-dom_client.js?v=4fdec244:11766
+performSyncWorkOnRoot @ react-dom_client.js?v=4fdec244:13517
+flushSyncWorkAcrossRoots_impl @ react-dom_client.js?v=4fdec244:13414
+processRootScheduleInMicrotask @ react-dom_client.js?v=4fdec244:13437
+(anonymous) @ react-dom_client.js?v=4fdec244:13531
+<EditEventDialog>
+exports.jsxDEV @ react_jsx-dev-runtime.js?v=4fdec244:247
+(anonymous) @ Events.tsx:223
+react_stack_bottom_frame @ react-dom_client.js?v=4fdec244:18509
+renderWithHooks @ react-dom_client.js?v=4fdec244:5654
+updateFunctionComponent @ react-dom_client.js?v=4fdec244:7475
+beginWork @ react-dom_client.js?v=4fdec244:8525
+runWithFiberInDEV @ react-dom_client.js?v=4fdec244:997
+performUnitOfWork @ react-dom_client.js?v=4fdec244:12561
+workLoopSync @ react-dom_client.js?v=4fdec244:12424
+renderRootSync @ react-dom_client.js?v=4fdec244:12408
+performWorkOnRoot @ react-dom_client.js?v=4fdec244:11766
+performWorkOnRootViaSchedulerTask @ react-dom_client.js?v=4fdec244:13505
+performWorkUntilDeadline @ react-dom_client.js?v=4fdec244:36

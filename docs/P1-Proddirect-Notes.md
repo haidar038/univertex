@@ -21,7 +21,8 @@ DONE (bukti lokal):
 - PANDUAN_ADMIN / PANITIA / VOTER / OBSERVER.
 - Test `vote.cast` audit baru HIJAU (13/13 VotingPage).
 
-BLOCKED (butuh manusia/akses, DILARANG dipaksa):
+BLOCKED (butuh manusia/akses, DILARANG dipaksa) — langkah manual lengkap di
+**`docs/P1-Manual-Testing-Runbook.md`** (Fase 0–5):
 - E2E penuh hijau: butuh akun sintetis `p1-*` + event `[P1-TEST]` + BASE_URL
   jendela lain; jangan arahkan ke event asli.
 - k6 run: binary k6 belum terinstall; SLO penuh NOT RUN ON PROD.
