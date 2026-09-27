@@ -225,7 +225,7 @@ export function AssignVoterGroupsDialog({
           </div>
 
           {/* Classes List */}
-          <ScrollArea className="h-[300px] rounded-md border border-border">
+          <ScrollArea className="h-75 rounded-md border border-border">
             <div className="space-y-1 p-4">
               {loadingClasses ? (
                 <div className="text-center text-sm text-muted-foreground">Memuat...</div>
@@ -237,18 +237,21 @@ export function AssignVoterGroupsDialog({
                 filteredClasses.map((cls) => (
                   <div
                     key={cls.id}
-                    className="flex items-start space-x-3 rounded-lg border border-transparent p-3 hover:border-border hover:bg-muted/50"
+                    className={`flex items-start space-x-3 rounded-lg border border-transparent p-3 hover:border-border hover:bg-muted/50 ${isSubmitting ? 'cursor-not-allowed' : 'cursor-pointer'}`}
+                    onClick={isSubmitting ? undefined : () => handleToggleClass(cls.id)}
                   >
                     <Checkbox
                       id={`class-${cls.id}`}
                       checked={selectedClassIds.includes(cls.id)}
                       onCheckedChange={() => handleToggleClass(cls.id)}
+                      onClick={(event) => event.stopPropagation()}
                       disabled={isSubmitting}
                     />
                     <div className="flex-1">
                       <Label
                         htmlFor={`class-${cls.id}`}
                         className="cursor-pointer font-medium text-foreground"
+                        onClick={(event) => event.stopPropagation()}
                       >
                         {cls.name}
                       </Label>
