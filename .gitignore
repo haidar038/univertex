@@ -78,3 +78,5 @@ playwright-report/
 coverage/
 dev-server.log
 
+# Agents repo
+.kilo
