@@ -84,6 +84,6 @@ Simpan copy fungsi versi `20260912...` di komentar migrasi. Rollback = `CREATE O
 
 ## 6. DoD
 
-- [ ] Migrasi apply bersih di staging lalu prod (`supabase migration list` hijau).
-- [ ] T2 manual terbukti `42501` (log terlampir di PR).
-- [ ] `vitest VotingPage` + `tsc` hijau.
+- [x] Migrasi apply bersih di prod (`20260913121150`, fungsi 1-arg + 2-arg + trigger + 3 index terverifikasi ada via MCP 2026-09-27; staging batal — slot penuh, prod-direct).
+- [x] T2 manual terbukti `42501` (2026-09-28, event Poltekes `cdeca0be…`, log di PR).
+- [x] `vitest VotingPage` + `tsc` hijau (VotingPage 13/13, sessions 16/16, full 20/156, tsc 0).

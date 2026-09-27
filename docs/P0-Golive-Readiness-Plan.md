@@ -29,7 +29,7 @@ Yang SENGAJA di luar P0: redesign secrecy `ballots` (P2), hierarchy organisasi (
 
 ## 3. Gate Pilot (Go / No-Go H-1)
 
-- [ ] P0-01: test SQL manual non-DPT → `42501` (bukti screenshot/log).
+- [x] P0-01: test SQL manual non-DPT → `42501` (bukti 2026-09-28: event `cdeca0be…/Poltekes`, trigger `tg_enforce_vote_timeline` → `assert_event_is_votable` line 35; UI banner DPT + tombol disabled terverifikasi).
 - [ ] P0-02: staging ≠ prod, drill restore tercatat (tanggal, durasi, RTO aktual).
 - [ ] P0-03: uji 2-browser revoke → keluar ≤5 mnt; email invite/reset masuk inbox (bukan spam).
 - [ ] `npx vitest --run` hijau, `tsc --noEmit` 0 error, `vite build` sukses.

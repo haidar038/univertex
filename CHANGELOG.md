@@ -48,8 +48,9 @@ All notable changes to UniVertex are documented here. Format follows
     via SQL console, tulis hanya ke event test).
 
 ### Gate pilot final — status 2026-09-13
-- [ ] P0 gates sisa (T2 42501, drill restore, H1 revoke ≤5 mnt, H5 email
+- [ ] P0 gates sisa (drill restore, H1 revoke ≤5 mnt, H5 email
       4 provider, dashboard Auth/SMTP, Peraturan panitia) — tetap open.
+      T2 42501 DONE 2026-09-28.
 - [ ] P1-01 penuh hijau (kredensial + `[P1-TEST]`).
 - [ ] P1-02 k6 smoke + README (SLO penuh NOT-PROVEN).
 - [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI
@@ -136,7 +137,7 @@ All notable changes to UniVertex are documented here. Format follows
 ### Gate pilot (Go / No-Go H-1) — status 2026-09-13
 
 - [x] `vitest --run` hijau (20/155), `tsc --noEmit` 0 error, `vite build` sukses.
-- [ ] P0-01: T2 manual non-DPT → `42501` di staging (log di PR).
+- [x] P0-01: T2 manual non-DPT → `42501` di prod (bukti 2026-09-28, event Poltekes `cdeca0be…`, log di PR).
 - [ ] P0-02: staging ≠ prod + drill restore tercatat (tanggal, durasi, RTO).
 - [ ] P0-03: H1 2-browser revoke ≤5 mnt; email invite/reset 4 provider (bukan spam); setting dashboard terdokumentasi.
 - [ ] `docs/Peraturan-Pemilihan-Template.md` diisi panitia; Helpdesk H-H siap.
