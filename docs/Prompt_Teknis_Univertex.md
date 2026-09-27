@@ -1,3 +1,5 @@
+> **ARSIP PROMPT AWAL — superseded.** Skema/RBAC/halaman di bawah adalah prompt bootstrap (SERIAL IDs, `profiles.role`, `active/closed`). Aktual: UUID, `user_roles`, 6-state, 5 role. Acuan aktif: `AGENTS.md` + `supabase/migrations/`.
+
 # TECHNICAL PROMPT: UniVertex (Aplikasi E-Voting Universitas)
 
 ## 1. Core Stack

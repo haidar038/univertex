@@ -1,3 +1,5 @@
+> **ARSIP KONSEP AWAL — superseded.** Stack/roles/status di bawah (Next.js, 3 role, `draft/active/closed`) adalah rencana Okt 2025, bukan implementasi. Aktual: Vite+React, 5 role, 6-state `draft→registration→voting→counting→published→archived`. Acuan aktif: `AGENTS.md`.
+
 # **Konsep Proyek: UniVertex**
 
 Revisi: 1.0  

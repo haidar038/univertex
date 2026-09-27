@@ -1,3 +1,5 @@
+> **ARSIP DISKUSI GOVERNANCE — sebagian sudah diimplementasi.** Fase 1–3 (committee/observer, state-machine 6-state, RBAC 31 permissions) selesai per `CHANGELOG.md [Unreleased]`. Sisa P2 (hierarchy organisasi, `ballots` secrecy) tetap out-of-scope. Acuan aktif: `AGENTS.md`.
+
 Ya. Masalah utama dari skema sekarang bukan pada konsep **voter/candidate**, tetapi pada **governance dan lifecycle sebuah election**.
 
 Saat ini `Admin` terlalu dominan:

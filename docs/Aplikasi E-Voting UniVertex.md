@@ -1,3 +1,5 @@
+> **ARSIP KONSEP AWAL — superseded.** Lihat `AGENTS.md` untuk stack/roles/lifecycle aktual (Vite, 5 role, 6-state, invite-only, `user_roles` + 31 permissions).
+
 ### **Aplikasi E-Voting UniVertex**
 
 #### **1\. Konsep Aplikasi Inti**

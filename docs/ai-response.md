@@ -1,3 +1,5 @@
+> **ARSIP REVIEW AI — sudah ditindaklanjuti.** 9 isu kritis di bawah diselesaikan di `docs/Update_Kritis_Fixes_September_2026.md` (108 tests, tsc 0, migrasi ter-apply). Jangan buka ulang tanpa cek `CHANGELOG.md [P0 Go-Live]` + `AGENTS.md`.
+
 # QUESTION 1
 ---
 Analisa codebase project ini, identifikasi dan review hasilnya tanpa perlu menggenerate apapun.

@@ -1,4 +1,7 @@
-﻿# Codebase Review & Dokumentasi Teknis - UniVertex
+﻿> **ARSIP HISTORIS — jangan jadikan acuan implementasi.** Status 5 Sep 2026, banyak temuan sudah fixed via `Update_September_2026.md` + `Update_Kritis_Fixes_September_2026.md` + P0/P1. Acuan aktif: `AGENTS.md`, `docs/P0-Golive-Readiness-Plan.md`, `CHANGELOG.md`.
+> Model lama di doc ini (Next.js, 3 role, status `draft/active/closed`, `profiles.role` kolom) sudah diganti: Vite SPA, 5 role `user_roles`, lifecycle 6-state, 31 permissions.
+
+# Codebase Review & Dokumentasi Teknis - UniVertex
 
 > **Proyek:** UniVertex - Aplikasi E-Voting Universitas
 > **Tipe:** Single Page Application (SPA) berbasis Vite + React 19

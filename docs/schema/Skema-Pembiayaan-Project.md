@@ -1,3 +1,5 @@
+> **ANNEX BISNIS — bukan gate produksi.** Dokumen pembiayaan/institusional, tetap relevan untuk kontrak/pilot, tapi bukan acuan teknis. Acuan teknis: `AGENTS.md`.
+---
 Menurutku, titik masalah UniVertex sekarang bukan **“bagaimana membuat pricing SaaS?”**, melainkan **“bagaimana mengubah project yang awalnya bootstrap menjadi layanan software yang dapat dibiayai institusi.”**
 
 Dan konteksmu sebenarnya sudah berubah cukup signifikan:

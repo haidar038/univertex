@@ -11,7 +11,7 @@ export default defineConfig({
     css: true,
     // E2E dijalankan oleh Playwright (bukan Vitest) — exclude agar vitest
     // tidak mencoba resolve `@playwright/test` dan tidak mengganggu coverage.
-    exclude: ['tests/e2e/**', 'tests/load/**', 'node_modules/**', 'dist/**'],
+    exclude: ['tests/e2e/**', 'tests/load/**', 'node_modules/**', 'dist/**', '.kilo/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],

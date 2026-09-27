@@ -1,5 +1,7 @@
 # P1 — Handoff Staging (wajib sebelum E2E/k6/ZAP)
 
+> **Update 2026-09-14 / AGENTS.md:** slot Supabase penuh (2/2) → staging TIDAK dibuat. Dokumen ini tetap berlaku **jika slot tersedia**, tapi jalur aktif adalah prod-direct scoped di `docs/P1-Proddirect-Notes.md` + `docs/P1-Manual-Testing-Runbook.md`. Jangan buat staging tanpa persetujuan + cek slot. E2E/k6/ZAP/UAT dilarang sentuh event asli `95676965-a5c6-4f62-88bb-37ab9a57968b`.
+
 > **Status 2026-09-13:** staging BELUM ADA. Satu-satunya project di
 > akun ini adalah **prod `oiurjnmpkguyxevdbpbu`** (`UniVertex`,
 > `ap-southeast-1`, `ACTIVE_HEALTHY`, diverifikasi via MCP

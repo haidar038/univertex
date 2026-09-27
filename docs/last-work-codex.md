@@ -1,3 +1,5 @@
+> **ARSIP SESSION LOG — jangan jadikan runbook.** Konteks Codex Sep 2026 (migration repair, `EventStatusDialog`, redirect). Status lanjutannya ada di `CHANGELOG.md [P0 Go-Live]/[P1 Pilot]` + `AGENTS.md`. Log error mentah pindah ke `docs/logs/` dan jangan di-commit lagi.
+
 # Perbaiki auth dan admin event
 
 > Lakukan beberapa perbaikan untuk masalah-masalah berikut ini:

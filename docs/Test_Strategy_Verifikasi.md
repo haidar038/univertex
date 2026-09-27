@@ -1,5 +1,7 @@
 ﻿# Test Strategy & Verifikasi Implementasi — UniVertex
 
+> **Addendum 2026-09-14 / AGENTS.md:** baseline kini 20 files / 155–156 tests (`CHANGELOG.md [P1 Pilot]`), bukan 97/13 di bawah. §4 manual-only (RLS/trigger/migrasi/email/multi-device/pair) tetap WAJIB dan belum tercover mock. Coverage gate scope P1 di `vitest.config.ts` (lib+hooks+VotingPage). Dokumen ini historis + metodologi, bukan angka terkini.
+
 > **Tanggal:** 6 September 2026
 > **Status:** 97/97 tests passing (13 file), TypeScript 0 errors
 > **Scope:** Verifikasi 7 implementasi + fix recursive login loop
