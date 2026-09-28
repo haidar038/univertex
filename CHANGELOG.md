@@ -15,15 +15,14 @@ All notable changes to UniVertex are documented here. Format follows
 ### Selesai (bukti lokal 2026-09-13)
 - Baseline: `npm run test -- --run` **20 files / 156 tests passed** (~45s),
   `npx tsc --noEmit` **0 error**, `npm run build` **sukses (~1m9s)**.
-- **P1-01 (scaffold + harness):** `npm i -D @playwright/test@1.63.0`
-  + `playwright.config.ts` (1 worker; trace `on-first-retry`; baseURL via env) +
-  `tests/e2e/{helpers,vote,committee-observer,admin}.spec.ts` (7 skenario
-  §4C.1). `npx playwright test --list` = 7 tests terdaftar; run rill sukses
-  launch Chromium + login + video; prod-safe SKIP aktif tanpa kredensial.
-  [ ] `npx playwright test` penuh hijau — butuh akun sintetis
-  (`p1-voter`/`p1-nonDPT`/`p1-committee`/`p1-observer`/`p1-admin`) +
-  `TEST_EVENT_ID` event `[P1-TEST]` di prod (buat manual via dashboard,
-  DILARANG pakai event asli).
+- **P1-01 DONE 2026-09-28 (7/7 hijau, 48.7s):** akun uji `@univertex.test`
+  (voter eligible, non-DPT, committee, observer, candidate approved, admin) +
+  `TEST_EVENT_ID` = event uji Poltekes `cdeca0be…` (pengganti `[P1-TEST]`).
+  Harness fix: `login()` fail-loud + klik kartu kandidat (ganti text-match).
+  Verifikasi MCP: 1 vote uji + `vote.cast` audit (metadata event-only) tercatat,
+  lalu cleanup → votes=0/obs=0 (baseline pra-uji pulih; event/DPT/staff/akun
+  dipertahankan sebagai fixture). Catatan: skenario 4 lolos tanpa observasi
+  tersimpan (kolom input tidak ada) — observasi manual tetap perlu diuji.
 - **P1-02 (scaffold):** `tests/load/election-day.js` (k6, smoke READ-ONLY,
   VUS/DURATION via env, threshold p95<500/p99<1000/errors<1%) +
   `tests/load/README.md`. `k6 run` belum dijalankan — binary k6 tidak ada
@@ -51,7 +50,7 @@ All notable changes to UniVertex are documented here. Format follows
 - [ ] P0 gates sisa (drill restore, H1 revoke ≤5 mnt, H5 email
       4 provider, dashboard Auth/SMTP, Peraturan panitia) — tetap open.
       T2 42501 DONE 2026-09-28.
-- [ ] P1-01 penuh hijau (kredensial + `[P1-TEST]`).
+- [x] P1-01 penuh hijau (7/7, 2026-09-28, event uji Poltekes).
 - [ ] P1-02 k6 smoke + README (SLO penuh NOT-PROVEN).
 - [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI
       (**PANDUAN_* + coverage CI + vote.cast DONE**).
