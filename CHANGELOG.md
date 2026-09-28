@@ -23,11 +23,9 @@ All notable changes to UniVertex are documented here. Format follows
   lalu cleanup → votes=0/obs=0 (baseline pra-uji pulih; event/DPT/staff/akun
   dipertahankan sebagai fixture). Catatan: skenario 4 lolos tanpa observasi
   tersimpan (kolom input tidak ada) — observasi manual tetap perlu diuji.
-- **P1-02 (scaffold):** `tests/load/election-day.js` (k6, smoke READ-ONLY,
-  VUS/DURATION via env, threshold p95<500/p99<1000/errors<1%) +
-  `tests/load/README.md`. `k6 run` belum dijalankan — binary k6 tidak ada
-  di mesin ini. **SLO 200-VU + stretch 2000-user = NOT RUN ON PROD** (butuh
-  env isolasi; catat bottleneck tidak berlaku).
+- **P1-02 DONE-smoke 2026-09-29:** `k6 run` 2 VU/30s ke prod (GET read-only):
+  50 iterasi, 0 failed, p95 132ms (<500), max 199ms. Threshold skrip lolos.
+  **SLO 200-VU + stretch 2000-user = NOT RUN ON PROD** (butuh env isolasi).
 - **P1-03 (sebagian):**
   - `@vitest/coverage-v8@4.0.6` + `vitest.config.ts` coverage gate
     (P1 scope: `src/lib`+`src/hooks`+`VotingPage.tsx`; threshold
@@ -52,7 +50,7 @@ All notable changes to UniVertex are documented here. Format follows
       MFA/CAPTCHA deferred, leaked-password N/A Free;
       Peraturan panitia; drill restore.
 - [x] P1-01 penuh hijau (7/7, 2026-09-28, event uji Poltekes).
-- [ ] P1-02 k6 smoke + README (SLO penuh NOT-PROVEN).
+- [x] P1-02 k6 smoke read-only lolos (2 VU/30s, p95 132ms). SLO penuh NOT-PROVEN.
 - [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI
       (**PANDUAN_* + coverage CI + vote.cast DONE**).
 - [ ] vitest hijau ✓, tsc 0 ✓, build ✓.
