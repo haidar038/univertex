@@ -138,7 +138,9 @@ All notable changes to UniVertex are documented here. Format follows
 - [x] `vitest --run` hijau (20/155), `tsc --noEmit` 0 error, `vite build` sukses.
 - [x] P0-01: T2 manual non-DPT → `42501` di prod (bukti 2026-09-28, event Poltekes `cdeca0be…`, log di PR).
 - [ ] P0-02: staging ≠ prod + drill restore tercatat (tanggal, durasi, RTO).
-- [ ] P0-03: H1 2-browser revoke ≤5 mnt; email invite/reset 4 provider (bukan spam); setting dashboard terdokumentasi.
+- [ ] P0-03: email invite/reset 4 provider (bukan spam); setting dashboard
+  (JWT/MFA/rate-limit/CAPTCHA/SMTP) terdokumentasi. H1 DONE 2026-09-28
+  (revoke 13:01 → logout 13:03:46 ≈3 mnt, `revoked_at` + audit terverifikasi MCP).
 - [ ] `docs/Peraturan-Pemilihan-Template.md` diisi panitia; Helpdesk H-H siap.
 - Satu saja merah → **postpone election**.
 

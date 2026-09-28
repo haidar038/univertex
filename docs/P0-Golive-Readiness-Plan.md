@@ -31,7 +31,8 @@ Yang SENGAJA di luar P0: redesign secrecy `ballots` (P2), hierarchy organisasi (
 
 - [x] P0-01: test SQL manual non-DPT → `42501` (bukti 2026-09-28: event `cdeca0be…/Poltekes`, trigger `tg_enforce_vote_timeline` → `assert_event_is_votable` line 35; UI banner DPT + tombol disabled terverifikasi).
 - [ ] P0-02: staging ≠ prod, drill restore tercatat (tanggal, durasi, RTO aktual).
-- [ ] P0-03: uji 2-browser revoke → keluar ≤5 mnt; email invite/reset masuk inbox (bukan spam).
+- [x] P0-03-revoke: uji 2-device revoke → keluar ±3 mnt ≤5 mnt (2026-09-28, toast + `revoked_at` + audit terverifikasi).
+- [ ] P0-03-sisa: email invite/reset masuk inbox (bukan spam); setting dashboard (JWT/MFA/rate-limit/CAPTCHA/SMTP) terdokumentasi.
 - [ ] `npx vitest --run` hijau, `tsc --noEmit` 0 error, `vite build` sukses.
 - [ ] `docs/Peraturan-Pemilihan-Template.md` sudah diisi panitia (tie-break, masa sanggah, publisher).
 - [ ] Helpdesk H-H siap (lihat `docs/SOP-Helpdesk-HariH.md`).
