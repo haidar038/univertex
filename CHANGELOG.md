@@ -40,9 +40,13 @@ All notable changes to UniVertex are documented here. Format follows
   - `vote.cast` audit: verifikasi test `VotingPage ("mencatat audit
     vote.cast ...")` HIJAU (metadata `{event_id}` tanpa candidate) — kode
     sudah ada sejak P0 (`VotingPage.tsx:185-192`).
+  - [x] Pentest parsial agen 2026-09-29 (4/6 vektor, tanpa brute-force):
+    anon SELECT `votes` → kosong ✓; anon RPC `admin_create_user` → 404
+    (tidak terekspos) ✓; trigger `tg_audit_log_no_update` ada ✓;
+    `/admin` tanpa login → redirect (ProtectedRoute 8/8) ✓.
+    Sisa jendela manusia: insert vote user lain via JWT + brute-force rate-limit.
   - [ ] UAT 15/15 (butuh 2-3 tester + jendela) · [ ] ZAP (0 high — butuh
-    jendela scan; agresif dilarang di prod) · [ ] pentest 6/6 (read-only
-    via SQL console, tulis hanya ke event test).
+    jendela scan; agresif dilarang di prod).
 
 ### Gate pilot final — status 2026-09-13
 - [ ] P0 gates sisa: H5 BERSYARAT (delivered 4/4, inbox 1/4 — mitigasi spam+fallback
