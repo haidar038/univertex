@@ -1,43 +1,54 @@
 # Peraturan Pemilihan — Pemilihan BEM Fakultas Hukum 2026
 
-> **Status:** DRAF pra-isi agen 2026-09-29 dari data live DB. Bagian bertanda **[PUTUSAN PANITIA]**
-> wajib diisi + ditandatangani panitia sebelum publikasi hasil. Template induk:
-> `docs/Peraturan-Pemilihan-Template.md`.
+> **Status:** DRAF pra-isi 2026-09-29 dari data live DB.
+> **Cara mengisi:** cari baris berawalan ✍️ — hapus garis bawah lalu tulis jawabannya.
+> Contoh jawaban tersedia di bawah tiap baris. Setelah semua terisi, ketua + 1 komite
+> tanda tangan di §7, status menjadi SAH.
 
-## 1. Identitas Pemilihan (terisi dari DB)
+## 1. Identitas Pemilihan (bagian ini SUDAH terisi dari database, jangan diubah)
 
 - Nama event: Pemilihan BEM Fakultas Hukum 2026 (`95676965-a5c6-4f62-88bb-37ab9a57968b`)
-- Jadwal: voting 16 Sep 2026 11:00 WIB s.d. 30 Sep 2026 11:00 WIB (DB: `2026-09-16 04:00Z`–`2026-09-30 04:00Z`)
-- Tipe: **open** (live tally) | DPT: 4 kelas (`event_voter_groups`)
-- Penyelenggara (owner): **[PUTUSAN PANITIA]**
-- Ketua panitia + kontak: **[PUTUSAN PANITIA]**
+- Jadwal: voting 16 Sep 2026 11:00 WIB s.d. 30 Sep 2026 11:00 WIB
+- Tipe: **open** (perolehan suara tampil langsung) | DPT: 4 kelas
+- ✍️ Penyelenggara (organisasi pemilik acara, contoh: *BEM Fakultas Hukum periode 2025/2026*): __________
+- ✍️ Ketua panitia (nama + nomor WA aktif hari-H, contoh: *Ahmad Hidayat — 0812-xxxx-xxxx*): __________
 
 ## 2. Sumber Hasil Resmi (satu-satunya kebenaran)
 
 1. Halaman resmi: `/results/95676965-a5c6-4f62-88bb-37ab9a57968b` + export tally bertanda waktu + hash snapshot DB.
 2. Screenshot dashboard admin / pesan WA **bukan** hasil resmi.
 
-## 3. Tie-Break & Masa Sanggah
+## 3. Jika Suara Seri / Selisih Tipis (wajib pilih SALAH SATU, hapus 2 lainnya)
 
-- Seri / selisih ≤ __ suara → **[PUTUSAN PANITIA: putaran 2 tanggal __ / musyawarah / undi — pilih satu]**.
-- Masa sanggah: 1x24 jam setelah `published` via formulir keberatan + bukti. Setelah itu final → `archived`.
-- Penghitungan ulang = `get_election_tally` ulang dari snapshot yang sama, disaksikan observer + IT independen.
+- ✍️ Batas selisih yang dianggap seri (contoh: *5 suara*): __________
+- ✍️ Cara memutuskan (pilih satu):
+  - (a) Coblos ulang (putaran 2) tanggal: __________
+  - (b) Musyawarah komite + 2 saksi observer, atau
+  - (c) Undian terbuka disaksikan observer.
+- Masa sanggah: 1x24 jam setelah hasil dipublikasi, via formulir keberatan + bukti. Setelah itu hasil final → diarsipkan.
+- Penghitungan ulang = hitung ulang dari data yang sama (`get_election_tally`), disaksikan observer + IT independen. Bukan coblos ulang.
 
 ## 4. Siapa Boleh Apa
 
-- Publish hasil: minimal **2 approvals** (ketua + 1 komite). Publish sendirian dilarang.
-- Ubah jadwal/kandidat saat `voting`: dilarang kecuali transisi resmi + audit `critical` + pengumuman.
-- Buka rincian `votes` individual: dilarang kecuali investigasi fraud dengan 2 saksi + catat `audit_log`.
-- Publisher hasil (nama + peran): **[PUTUSAN PANITIA]**.
+- Publish hasil: minimal **2 orang** (ketua + 1 komite). Publish sendirian dilarang.
+- ✍️ Dua nama yang berhak publish (contoh: *Ahmad Hidayat (ketua) + Siti Rahma (sekretaris)*): __________ dan __________
+- Ubah jadwal/kandidat saat voting berjalan: dilarang, kecuali lewat prosedur resmi + tercatat di audit + diumumkan.
+- Buka rincian suara per orang: dilarang, kecuali investigasi kecurangan dengan 2 saksi + tercatat di audit.
 
 ## 5. Privasi & Retensi (UU PDP No. 27/2022)
 
-- NIM + pilihan = sensitif; akses minimal, tidak disebar ke grup WA.
-- Snapshot H-H disimpan 1 tahun; lalu `voter_id` dianonimkan, agregat dipertahankan.
-- Korban kebocoran dinotifikasi <72 jam.
+- NIM + pilihan = data sensitif. Akses minimal, tidak disebar ke grup WA.
+- Data H-H disimpan 1 tahun untuk audit, lalu nama pemilih dianonimkan, angka agregat dipertahankan.
+- Korban kebocoran data dinotifikasi <72 jam.
 
 ## 6. Pelanggaran
 
-- Double-vote otomatis ditolak (`23505` — terbukti E2E 2026-09-28).
-- Non-DPT otomatis ditolak (`42501` — terbukti T2 2026-09-28).
-- Jual-beli suara / intimidasi → diskualifikasi oleh komite + berita acara.
+- Pilih 2x otomatis ditolak sistem (`23505` — terbukti uji 2026-09-28).
+- Bukan DPT otomatis ditolak sistem (`42501` — terbukti uji 2026-09-28).
+- Jual-beli suara / intimidasi → diskualifikasi pemilih/kandidat oleh komite + berita acara.
+
+## 7. Pengesahan (diisi saat tanda tangan)
+
+- Disahkan tanggal: __________
+- Tanda tangan 1 (ketua): __________ Nama jelas: __________
+- Tanda tangan 2 (komite): __________ Nama jelas: __________
