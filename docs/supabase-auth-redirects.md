@@ -58,18 +58,22 @@ role. Link reset dari aplikasi dan dialog admin kembali langsung ke
 - Uji kirim (H5): invite + reset ke Gmail/Yahoo/Outlook + email kampus.
   Syarat lolos: masuk <2 mnt, tidak spam, link reset ke `/reset-password`
   (bukan landing). Sediakan fallback helpdesk (`docs/SOP-Helpdesk-HariH.md`).
-- [ ] SMTP host: ............ (isi)
-- [ ] Uji Gmail: ..../..../.... oleh ....
-- [ ] Uji Yahoo: ..../..../.... oleh ....
-- [ ] Uji Outlook: ..../..../.... oleh ....
-- [ ] Uji email kampus: ..../..../.... oleh ....
+- [x] SMTP host: Gmail SMTP relay + App password (`univertexapp@gmail.com`) — 2026-09-28 oleh developer. Resend DITOLAK (tanpa custom domain).
+- [x] Uji Gmail: 2026-09-28 — TERKIRIM <2 mnt tapi masuk SPAM + banner "might be dangerous".
+- [x] Uji Yahoo: 2026-09-28 — TERKIRIM tapi SPAM, link di-disable sampai "not spam".
+- [x] Uji Outlook: 2026-09-28 — TERKIRIM tapi JUNK ("identified as junk").
+- [x] Uji Proton (pengganti email kampus): 2026-09-28 — TERKIRIM + INBOX ✓.
+- Verdict H5: delivered 4/4 cepat, inbox-placement 1/4 → BERSYARAT (lihat mitigasi di bawah), bukan hijau penuh.
+- Mitigasi pilot: instruksi voter cek spam + "Not spam/Looks safe" SEBELUM klik link (Yahoo/Outlook disable link di spam); fallback helpdesk reset manual (`admin_update_password`, `docs/SOP-Helpdesk-HariH.md` §2). Perbaikan permanen (domain sendiri + SPF/DKIM via Resend/SMTP kampus) = backlog pasca-pilot.
 
 ### E. Checklist perubahan dashboard
 
 | Tanggal | Siapa | Perubahan | Bukti |
 |---|---|---|---|
-| | | JWT expiry 3600 | screenshot redacted |
-| | | MFA TOTP on | screenshot redacted |
-| | | Leaked password + rate-limit on | screenshot redacted |
-| | | CAPTCHA login/invite | uji H4 log |
-| | | SMTP produksi | uji H5 4 provider |
+| 2026-09-28 | developer | JWT expiry 3600 (default, verified) | screenshot Sessions |
+| 2026-09-28 | developer | MFA TOTP: dashboard tersedia, TAPI app belum ada UI enroll/verify/AAL2 (`grep mfa src/` = 0) → DEFERRED, bukan enforced. Ref: `docs/supabase/about-mfa-totp-by-gemini.md` | implementasi menyusul pasca-pilot |
+| 2026-09-28 | developer | Leaked password: N/A (Free plan, butuh Pro) → pengecualian tercatat | dashboard notice |
+| 2026-09-28 | developer | Rate-limit ON (default: sign-in 30/5mnt, email 30/jam) | screenshot Rate Limits |
+| 2026-09-28 | developer | CAPTCHA login/invite: DEFERRED (tanpa widget, enforcement = blokir semua login) | `grep captcha src/` = 0 |
+| 2026-09-28 | developer | Redirect URLs: vercel.app + localhost terdaftar ✓. Site URL MASIH `http://localhost:8080` → WAJIB ganti ke origin prod sebelum pilot | screenshot URL Configuration |
+| 2026-09-28 | developer | SMTP Gmail relay + uji H5 (lihat §D) | 4 inbox screenshots |

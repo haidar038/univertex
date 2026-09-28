@@ -47,9 +47,10 @@ All notable changes to UniVertex are documented here. Format follows
     via SQL console, tulis hanya ke event test).
 
 ### Gate pilot final — status 2026-09-13
-- [ ] P0 gates sisa (drill restore, H1 revoke ≤5 mnt, H5 email
-      4 provider, dashboard Auth/SMTP, Peraturan panitia) — tetap open.
-      T2 42501 DONE 2026-09-28.
+- [ ] P0 gates sisa: H5 BERSYARAT (delivered 4/4, inbox 1/4 — mitigasi spam+fallback
+      tercatat 2026-09-28); dashboard: JWT✓ rate-limit✓ redirect✓, Site URL
+      localhost→prod BELUM, MFA/CAPTCHA deferred, leaked-password N/A Free;
+      Peraturan panitia; drill restore.
 - [x] P1-01 penuh hijau (7/7, 2026-09-28, event uji Poltekes).
 - [ ] P1-02 k6 smoke + README (SLO penuh NOT-PROVEN).
 - [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI
