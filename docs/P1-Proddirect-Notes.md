@@ -42,6 +42,16 @@ BLOCKED (butuh manusia/akses, DILARANG dipaksa) — langkah manual lengkap di
 6. Cleanup: hapus votes test → observations test → event test → users test;
    verifikasi residu 0 via `execute_sql` read-only.
 
+## Snapshot fallback tanpa Docker (2026-09-28)
+
+`scripts/snapshot-db.mjs` butuh Docker (`supabase db dump` exit 1, mesin dev tanpa Docker).
+Pengganti yang disetujui untuk Fase 2 prod-direct:
+
+* WAJIB: PITR/backup otomatis aktif — cek dashboard Database → Backups sebelum uji tulis.
+* Baseline pra-uji via MCP (2026-09-28): event Poltekes `cdeca0be…` votes=0, obs=0.
+  Pasca-uji wajib kembali ke angka ini (verifikasi residu 0); `audit_log` dipertahankan.
+* Hash `Get-FileHash` sebelumnya (E3B0C44… = file kosong) TIDAK valid — abaikan.
+
 ## Cara menjalankan E2E prod-safe
 
 ```powershell
