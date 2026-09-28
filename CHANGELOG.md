@@ -52,7 +52,7 @@ All notable changes to UniVertex are documented here. Format follows
 - [ ] P0 gates sisa: H5 BERSYARAT (delivered 4/4, inbox 1/4 — mitigasi spam+fallback
       tercatat 2026-09-28); dashboard: JWT✓ rate-limit✓ redirect✓ Site URL prod✓,
       MFA/CAPTCHA deferred, leaked-password N/A Free;
-      Peraturan panitia; drill restore.
+      Peraturan DONE 2026-09-29 (`Peraturan-Pemilihan-BEM-Hukum-2026.md` SAH); drill restore.
 - [x] P1-01 penuh hijau (7/7, 2026-09-28, event uji Poltekes).
 - [x] P1-02 k6 smoke read-only lolos (2 VU/30s, p95 132ms). SLO penuh NOT-PROVEN.
 - [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI

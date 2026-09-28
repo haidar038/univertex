@@ -34,7 +34,7 @@ Yang SENGAJA di luar P0: redesign secrecy `ballots` (P2), hierarchy organisasi (
 - [x] P0-03-revoke: uji 2-device revoke → keluar ±3 mnt ≤5 mnt (2026-09-28, toast + `revoked_at` + audit terverifikasi).
 - [ ] P0-03-sisa: email invite/reset masuk inbox (bukan spam); setting dashboard (JWT/MFA/rate-limit/CAPTCHA/SMTP) terdokumentasi.
 - [ ] `npx vitest --run` hijau, `tsc --noEmit` 0 error, `vite build` sukses.
-- [ ] `docs/Peraturan-Pemilihan-Template.md` sudah diisi panitia (tie-break, masa sanggah, publisher).
+- [x] `docs/Peraturan-Pemilihan-BEM-Hukum-2026.md` SAH 2026-09-29 (Chalid Ridwan + Faisal Abidin).
 - [ ] Helpdesk H-H siap (lihat `docs/SOP-Helpdesk-HariH.md`).
 
 Jika satu saja merah → **postpone election**, jangan paksakan.
