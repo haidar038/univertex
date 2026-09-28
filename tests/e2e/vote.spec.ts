@@ -20,14 +20,16 @@ test.describe('voter vote + double-vote + non-DPT (event isolasi)', () => {
     // Dashboard hanya menampilkan event eligible — event test harus terlihat.
     await expect(page.locator('body')).toContainText(/Pemilihan|Dashboard/i);
     await page.goto(`/app/vote/${TEST_EVENT_ID}`);
-    // Pilih kandidat pertama yang tersedia lalu konfirmasi.
-    const candidateCard = page.locator('text=Kandidat').first();
-    if (await candidateCard.count()) {
-      await candidateCard.click();
-      await page.getByRole('button', { name: /Konfirmasi Pilihan/i }).click();
-      await page.getByRole('button', { name: /Ya, Saya Yakin/i }).click();
-      await expect(page.locator('body')).toContainText(/berhasil tercatat|sudah memberikan suara/i);
-    }
+    // Klik kartu kandidat pertama (bukan text-match rapuh — pernah klik
+    // paragraf info "kandidat" sehingga pilihan tak pernah terjadi).
+    const candidateCard = page.locator('div.max-w-4xl > div.space-y-4 > div').first();
+    await expect(candidateCard).toBeVisible({ timeout: 15000 });
+    await candidateCard.click();
+    const confirmBtn = page.getByRole('button', { name: /Konfirmasi Pilihan/i });
+    await expect(confirmBtn).toBeVisible();
+    await confirmBtn.click();
+    await page.getByRole('button', { name: /Ya, Saya Yakin/i }).click();
+    await expect(page.locator('body')).toContainText(/berhasil tercatat|sudah memberikan suara/i);
     // Banner sudah-vote + vote ke-2 ditolak (toast 23505).
     await page.goto(`/app/vote/${TEST_EVENT_ID}`);
     await expect(page.locator('body')).toContainText(/sudah memberikan suara|tidak termasuk|belum dimulai|sudah berakhir/i);

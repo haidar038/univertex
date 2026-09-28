@@ -1,4 +1,4 @@
-import { test as base, expect } from '@playwright/test';
+import { test as base, expect, type Page } from '@playwright/test';
 
 /** Env helper — kembalikan string atau undefined bila kosong. */
 export function env(name: string): string | undefined {
@@ -13,6 +13,9 @@ export async function login(page: Page, email: string, password: string) {
   await page.getByLabel(/email/i).fill(email);
   await page.getByLabel(/password|kata sandi/i).fill(password);
   await page.getByRole('button', { name: /masuk|login/i }).click();
+  // Gagal login harus gagal di sini (dengan screenshot), bukan merambat
+  // menjadi assert body yang membingungkan di tiap spec.
+  await page.waitForURL((url) => !url.pathname.startsWith('/login'), { timeout: 15000 });
 }
 
 /**
