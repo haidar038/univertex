@@ -75,5 +75,5 @@ role. Link reset dari aplikasi dan dialog admin kembali langsung ke
 | 2026-09-28 | developer | Leaked password: N/A (Free plan, butuh Pro) → pengecualian tercatat | dashboard notice |
 | 2026-09-28 | developer | Rate-limit ON (default: sign-in 30/5mnt, email 30/jam) | screenshot Rate Limits |
 | 2026-09-28 | developer | CAPTCHA login/invite: DEFERRED (tanpa widget, enforcement = blokir semua login) | `grep captcha src/` = 0 |
-| 2026-09-28 | developer | Redirect URLs: vercel.app + localhost terdaftar ✓. Site URL MASIH `http://localhost:8080` → WAJIB ganti ke origin prod sebelum pilot | screenshot URL Configuration |
+| 2026-09-28 | developer | Redirect URLs: vercel.app + localhost terdaftar ✓. Site URL → origin prod DONE 2026-09-28 | screenshot URL Configuration |
 | 2026-09-28 | developer | SMTP Gmail relay + uji H5 (lihat §D) | 4 inbox screenshots |

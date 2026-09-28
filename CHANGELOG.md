@@ -48,8 +48,8 @@ All notable changes to UniVertex are documented here. Format follows
 
 ### Gate pilot final — status 2026-09-13
 - [ ] P0 gates sisa: H5 BERSYARAT (delivered 4/4, inbox 1/4 — mitigasi spam+fallback
-      tercatat 2026-09-28); dashboard: JWT✓ rate-limit✓ redirect✓, Site URL
-      localhost→prod BELUM, MFA/CAPTCHA deferred, leaked-password N/A Free;
+      tercatat 2026-09-28); dashboard: JWT✓ rate-limit✓ redirect✓ Site URL prod✓,
+      MFA/CAPTCHA deferred, leaked-password N/A Free;
       Peraturan panitia; drill restore.
 - [x] P1-01 penuh hijau (7/7, 2026-09-28, event uji Poltekes).
 - [ ] P1-02 k6 smoke + README (SLO penuh NOT-PROVEN).
