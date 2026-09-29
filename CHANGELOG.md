@@ -57,6 +57,9 @@ All notable changes to UniVertex are documented here. Format follows
       77E4097D…1A234A, counts votes=1/profiles=11/events=2/audit=113/cocok live;
       restore penuh menunggu env isolasi).
 - [x] P1-01 penuh hijau (7/7, 2026-09-28, event uji Poltekes).
+- [x] H-1 teknis 2026-09-29 (MCP): Hukum `voting`, window s.d. 30 Sep 04:00Z;
+  tally 1 suara/kandidat ✓; counts stabil (profiles 11/votes 1/audit 113 =
+  baseline dump) ✓; audit 24 jam wajar (login.failed=2 milik sendiri) ✓.
 - [x] P1-02 k6 smoke read-only lolos (2 VU/30s, p95 132ms). SLO penuh NOT-PROVEN.
 - [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI
       (**PANDUAN_* + coverage CI + vote.cast DONE**).
