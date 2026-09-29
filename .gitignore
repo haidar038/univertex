@@ -83,6 +83,10 @@ test-sql.cjs
 issues.log
 issues/
 backups/
+# Bukti uji manual (berisi data asli / hasil scan — simpan lokal saja)
+tests/e2e/export/
+tests/zap-test/
+tests/force-vote.txt
 
 # Agents repo
 .kilo

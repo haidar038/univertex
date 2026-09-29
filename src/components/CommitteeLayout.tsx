@@ -49,7 +49,7 @@ export function CommitteeLayout() {
             )}
 
             <div className={cn(
-                "fixed lg:sticky inset lg:top-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 lg:h-screen",
+                "fixed lg:sticky inset-y-0 left-0 z-50 flex w-64 flex-col border-r border-border bg-card transition-transform duration-300 lg:translate-x-0 lg:h-screen",
                 sidebarOpen ? "translate-x-0" : "-translate-x-full"
             )}>
                 <div className="flex h-16 items-center justify-center gap-3 border-b border-border px-6 shrink-0">

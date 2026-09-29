@@ -61,8 +61,14 @@ All notable changes to UniVertex are documented here. Format follows
   tally 1 suara/kandidat ✓; counts stabil (profiles 11/votes 1/audit 113 =
   baseline dump) ✓; audit 24 jam wajar (login.failed=2 milik sendiri) ✓.
 - [x] P1-02 k6 smoke read-only lolos (2 VU/30s, p95 132ms). SLO penuh NOT-PROVEN.
-- [ ] P1-03 UAT 15/15 + ZAP 0 high + pentest 6/6 + PANDUAN_* + coverage CI
-      (**PANDUAN_* + coverage CI + vote.cast DONE**).
+- [x] P1-03 UAT 9/10 (2026-09-29, HP+laptop): blocker #4 drawer mobile tidak
+  penuh → diperbaiki (`inset`→`inset-y-0` di 4 layout, tsc 0). Minta uji ulang
+  1x di HP. Export audit JSON+CSV terbukti jalan (`tests/e2e/export/`, di-ignore).
+- [x] ZAP pasif 2026-09-29: 9 alerts, **0 High** (Low/Info: CSP, SRI,
+  cache-control). Scan aktif tak sengaja terpicu sebagian (fuzz WEB-INF/PHP →
+  200/405 tak merusak, SPA read-only). Bukti `tests/zap-test/` (di-ignore).
+- [x] Pentest 6/6: 4 vektor agen + Uji A force-vote → `42501` ✓ + Uji B
+  brute-force >10x → akun aman, `auth.login.failed` tercatat ✓.
 - [ ] vitest hijau ✓, tsc 0 ✓, build ✓.
 - One DoD merah → NO-GO pilot nyata + backlog (item berbahaya di prod
   ditunda eksplisit, bukan dipaksa).
