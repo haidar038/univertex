@@ -15,7 +15,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
-import { Users, UserPlus, GraduationCap, Edit, BarChart3, CheckCircle2, AlertCircle, Clock, User as UserIcon, ShieldCheck, ListChecks, Settings, History, Plus, Trash2, ScrollText, Layers } from 'lucide-react';
+import { Users, UserPlus, GraduationCap, Edit, BarChart3, CheckCircle2, AlertCircle, Clock, User as UserIcon, ShieldCheck, ListChecks, Settings, History, Plus, Trash2, ScrollText, Layers, Ban } from 'lucide-react';
 import { Switch } from '@/components/ui/switch';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { AddCandidateDialog } from '@/components/admin/events/AddCandidateDialog';
@@ -27,6 +27,7 @@ import { AssignVoterGroupsDialog } from '@/components/admin/events/AssignVoterGr
 import { EditCandidateDialog } from '@/components/admin/events/EditCandidateDialog';
 import { EventResultsView } from '@/components/admin/events/EventResultsView';
 import { ApproveCandidateDialog } from '@/components/admin/events/ApproveCandidateDialog';
+import { RevokeCandidateDialog } from '@/components/admin/events/RevokeCandidateDialog';
 import { getCandidatePhotoUrl, getCandidateStatusInfo } from '@/lib/candidate-helpers';
 import {
   ELECTION_STATUSES,
@@ -54,6 +55,7 @@ export default function AdminEventDetail() {
   const [assignGroupsOpen, setAssignGroupsOpen] = useState(false);
   const [editCandidateOpen, setEditCandidateOpen] = useState(false);
   const [approveDialogOpen, setApproveDialogOpen] = useState(false);
+  const [revokeDialogOpen, setRevokeDialogOpen] = useState(false);
   const [selectedCandidate, setSelectedCandidate] = useState<any>(null);
 
   // Candidate pairs (pasangan calon)
@@ -336,6 +338,11 @@ export default function AdminEventDetail() {
     setApproveDialogOpen(true);
   };
 
+  const handleRevokeCandidate = (candidate: any) => {
+    setSelectedCandidate(candidate);
+    setRevokeDialogOpen(true);
+  };
+
   if (loading) {
     return <div className="p-8 text-center">Memuat...</div>;
   }
@@ -466,6 +473,18 @@ export default function AdminEventDetail() {
                         >
                           <CheckCircle2 className="h-4 w-4" />
                           Tinjau & Setujui
+                        </Button>
+                      )}
+
+                      {/* Revoke button for approved candidates */}
+                      {candidate.status === 'approved' && (
+                        <Button
+                          className="mt-2 w-full gap-2"
+                          variant="destructive"
+                          onClick={() => handleRevokeCandidate(candidate)}
+                        >
+                          <Ban className="h-4 w-4" />
+                          Cabut Kandidat
                         </Button>
                       )}
 
@@ -875,6 +894,12 @@ export default function AdminEventDetail() {
           <ApproveCandidateDialog
             open={approveDialogOpen}
             onOpenChange={setApproveDialogOpen}
+            candidate={selectedCandidate}
+            onSuccess={fetchEventDetails}
+          />
+          <RevokeCandidateDialog
+            open={revokeDialogOpen}
+            onOpenChange={setRevokeDialogOpen}
             candidate={selectedCandidate}
             onSuccess={fetchEventDetails}
           />

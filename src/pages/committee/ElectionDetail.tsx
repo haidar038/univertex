@@ -39,6 +39,7 @@ interface Candidate {
     mission: string | null;
     photo_url: string | null;
     status: string;
+    profiles?: { full_name: string; student_id: string } | null;
 }
 
 
@@ -109,7 +110,7 @@ export default function CommitteeElectionDetail() {
             const [eventRes, tallyRes, candRes, pairRes, obsRes] = await Promise.all([
                 supabase.from('election_events').select('*').eq('id', electionId).maybeSingle(),
                 supabase.rpc('get_election_tally', { p_event_id: electionId }),
-                supabase.from('candidates').select('*').eq('event_id', electionId),
+                supabase.from('candidates').select('id, user_id, vision, mission, photo_url, status, profiles(full_name, student_id)').eq('event_id', electionId),
                 fetchPairsWithMembers(electionId),
                 supabase.from('election_observations')
                     .select('id,category,severity,description,created_at')
@@ -281,7 +282,8 @@ export default function CommitteeElectionDetail() {
                             return (
                                 <div key={c.id} className="flex items-center gap-3">
                                     <div className="flex-1">
-                                        <p className="font-medium">Kandidat {c.id.slice(0, 8)}…</p>
+                                        <p className="font-medium">{c.profiles?.full_name || 'Tanpa nama'}</p>
+                                        <p className="text-xs text-muted-foreground">{c.profiles?.student_id || '-'}</p>
                                         <div className="h-2 rounded-full bg-muted overflow-hidden mt-1">
                                             <div
                                                 className="h-full bg-primary"

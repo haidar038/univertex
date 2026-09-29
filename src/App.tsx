@@ -106,6 +106,7 @@ const App = () => (
                             <Route path="audit-log" element={<AdminAuditLog />} />
                             <Route path="audit-export" element={<AdminAuditExport />} />
                             <Route path="sessions" element={<AdminSessions />} />
+                            <Route path="profile" element={<ProfilePage />} />
                         </Route>
 
                         {/* Voter/Candidate routes */}

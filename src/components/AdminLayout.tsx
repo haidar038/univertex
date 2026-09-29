@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Calendar, Users, GraduationCap, LogOut, Menu, X, MailPlus, ScrollText, Shield, FileDown } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, GraduationCap, LogOut, Menu, X, MailPlus, ScrollText, Shield, FileDown, User } from "lucide-react";
 import { useState } from "react";
 
 const navigation = [
@@ -16,6 +16,7 @@ const navigation = [
     { name: "Sesi Perangkat", href: "/admin/sessions", icon: Shield },
     { name: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
     { name: "Audit Export", href: "/admin/audit-export", icon: FileDown },
+    { name: "Profil", href: "/admin/profile", icon: User },
 ];
 
 export function AdminLayout() {
@@ -97,7 +98,6 @@ export function AdminLayout() {
                 <div className="border-t border-border p-4 shrink-0">
                     <div className="mb-4 rounded-lg bg-muted p-3">
                         <p className="text-sm font-medium text-foreground">{profile?.full_name}</p>
-                        <p className="text-xs text-muted-foreground">{profile?.student_id}</p>
                         <p className="mt-1 text-xs font-medium text-primary">Administrator</p>
                     </div>
                     <div className="flex gap-2 mb-2">

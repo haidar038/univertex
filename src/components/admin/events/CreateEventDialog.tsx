@@ -27,6 +27,7 @@ import {
 } from '@/components/ui/select';
 import { logAudit } from '@/lib/audit';
 import { cn } from '@/lib/utils';
+import { localDateTimeToUTCISO } from '@/lib/datetime';
 import { EventDateTimeFields } from '@/components/admin/events/EventDateTimeFields';
 
 const eventFormSchema = z.object({
@@ -100,10 +101,8 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
   const publicResults = watch('public_results');
   const scopeTypeValue = watch('scope_type');
 
-  const normalizeDateTime = (date: string, time: string) => {
-    if (!date || !time) return '';
-    return `${date}T${time}`;
-  };
+  // Simpan sebagai UTC; input form selalu waktu lokal (anti-geser zona waktu).
+  const normalizeDateTime = (date: string, time: string) => localDateTimeToUTCISO(date, time);
 
   const onSubmit = async (data: EventFormValues) => {
     setIsSubmitting(true);

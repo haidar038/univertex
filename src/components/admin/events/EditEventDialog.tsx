@@ -5,7 +5,6 @@ import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
 import { logAudit } from '@/lib/audit';
 import { toast } from 'sonner';
-import { format, parseISO } from 'date-fns';
 import { EventDateTimeFields } from '@/components/admin/events/EventDateTimeFields';
 import {
   Dialog,
@@ -22,6 +21,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
+import { localDateTimeToUTCISO, utcToLocalDate, utcToLocalTime } from '@/lib/datetime';
 
 const eventFormSchema = z.object({
   title: z.string().min(3, 'Judul minimal 3 karakter').max(100, 'Judul maksimal 100 karakter'),
@@ -92,18 +92,16 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
   const showResultsAfterVoting = watch('show_results_after_voting');
   const publicResults = watch('public_results');
 
-  const normalizeDateTime = (date: string, time: string) => {
-    if (!date || !time) return '';
-    return `${date}T${time}`;
-  };
+  // Simpan sebagai UTC; tampilkan sebagai waktu lokal (anti-geser zona waktu).
+  const normalizeDateTime = (date: string, time: string) => localDateTimeToUTCISO(date, time);
 
   // Update form when event changes
   useEffect(() => {
     if (event) {
-      const startDate = format(parseISO(event.start_time), 'yyyy-MM-dd');
-      const startTime = format(parseISO(event.start_time), 'HH:mm');
-      const endDate = format(parseISO(event.end_time), 'yyyy-MM-dd');
-      const endTime = format(parseISO(event.end_time), 'HH:mm');
+      const startDate = utcToLocalDate(event.start_time);
+      const startTime = utcToLocalTime(event.start_time);
+      const endDate = utcToLocalDate(event.end_time);
+      const endTime = utcToLocalTime(event.end_time);
 
       reset({
         title: event.title,
