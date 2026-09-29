@@ -1,0 +1,10 @@
+skema,termin,persen,nominal_acuan,acuan_dari,syarat_pencairan,timing,penanggung_jawab,status,catatan
+50/50,DP kickoff,50,5500000-12500000,PROJECT-FEE harga_dipilih di budget-pilot-template.csv,"Kontrak + kickoff + akun infra universitas dibuat",T0 kontrak,Universitas ke Binary Verse,TEMPLATE,"Jangan mulai deploy prod sebelum DP cair; Skema 14"
+50/50,Pelunasan go-live,50,5500000-12500000,PROJECT-FEE harga_dipilih,"UAT sign-off + H-1 checklist + snapshot + hash 2 lokasi",H-1 sebelum go-live,Universitas ke Binary Verse,TEMPLATE,"Satu gate merah -> postpone bukan paksa go-live"
+40/30/30,DP kontrak,40,4400000-10000000,PROJECT-FEE harga_dipilih,"Kontrak + kickoff",T0 kontrak,Universitas ke Binary Verse,TEMPLATE,"Opsi proyek besar; Skema 14"
+40/30/30,Staging UAT,30,3300000-7500000,PROJECT-FEE harga_dipilih,"Staging online + migrasi hijau + UAT sign-off panitia + Peraturan diisi",Staging done,Universitas ke Binary Verse,TEMPLATE,"Bukti: Vercel preview->staging; migration list"
+40/30/30,Go-live,30,3300000-7500000,PROJECT-FEE harga_dipilih,"H-1 checklist + snapshot + kontak darurat terisi",H-1 sebelum go-live,Universitas ke Binary Verse,TEMPLATE,"Pelunasan sebelum event dibuka"
+INFRA,Infra Pra-GoLive,100,1640000-2500000,INFRA di budget-pilot-template.csv,"Org Vercel+Supabase milik universitas aktif + billing jalan",Pra-GoLive,Universitas ke provider,TEMPLATE,"Binary Verse hanya operator; Skema 6"
+INFRA,Usage settlement,100,aktual,Tagihan dashboard Vercel+Supabase+SMTP,"Rekonsiliasi billing pasca-event",H+7,Universitas ke provider,TEMPLATE,"Simpan invoice sebagai lampiran BAST"
+E-OPT,Maintenance,100,1000000-3000000 per bulan,E1 harga_dipilih,"BAST event + paket maintenance disepakati",Pasca-event,Universitas ke Binary Verse,OPSIONAL,"Mulai setelah H+7"
+E-OPT,Annual license,100,12000000-30000000 per tahun,E2 harga_dipilih,"Evaluasi pilot sukses + multi-event",Pasca-pilot,Universitas ke Binary Verse,OPSIONAL,"Jangan ditawarkan sebelum pilot sukses; Skema 12"
