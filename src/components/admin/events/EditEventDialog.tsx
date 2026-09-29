@@ -3,6 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { supabase } from '@/integrations/supabase/client';
+import { logAudit } from '@/lib/audit';
 import { toast } from 'sonner';
 import { format, parseISO } from 'date-fns';
 import { EventDateTimeFields } from '@/components/admin/events/EventDateTimeFields';
@@ -140,6 +141,26 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
         .eq('id', event.id);
 
       if (error) throw error;
+
+      // Jejak audit: perubahan jadwal/konten event harus tercatat (Peraturan §4).
+      // Fire-and-forget: kegagalan audit tidak boleh menggagalkan update.
+      const windowChanged =
+        startTime !== event.start_time || endTime !== event.end_time;
+      await logAudit({
+        action: 'event.update',
+        description: `Updated election event "${data.title}"`,
+        category: 'election',
+        targetType: 'election_events',
+        targetId: event.id,
+        metadata: {
+          title: data.title,
+          start_time: startTime,
+          end_time: endTime,
+          election_type: data.election_type,
+          window_changed: windowChanged,
+        },
+        severity: event.status === 'draft' && !windowChanged ? 'info' : 'warning',
+      }).catch(() => undefined);
 
       toast.success('Acara berhasil diperbarui!');
       onOpenChange(false);
