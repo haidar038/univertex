@@ -1,12 +1,12 @@
 # Peraturan Pemilihan — Pemilihan BEM Fakultas Hukum 2026
 
 > **Status:** SAH 2026-09-29 — disahkan Chalid Ridwan (Ketua Panitia) + Faisal Abidin (Komite).
-> Dokumen final, tidak ada isian tersisa. Perubahan setelah ini hanya via amandemen tertulis panitia.
+> Event masih fase testing: penyesuaian jadwal selama testing dicatat di §1 tanpa amandemen formal.
 
 ## 1. Identitas Pemilihan (bagian ini SUDAH terisi dari database, jangan diubah)
 
 - Nama event: Pemilihan BEM Fakultas Hukum 2026 (`95676965-a5c6-4f62-88bb-37ab9a57968b`)
-- Jadwal: voting 16 Sep 2026 11:00 WIB s.d. 30 Sep 2026 11:00 WIB
+- Jadwal: voting 19 Sep 2026 04:00 WIT s.d. 1 Okt 2026 08:00 WIT (DB: `2026-09-18 19:00Z`–`2026-09-30 23:00Z`; diperbarui 2026-09-29 selama testing)
 - Tipe: **open** (perolehan suara tampil langsung) | DPT: 4 kelas
 - Penyelenggara (organisasi pemilik acara, contoh: *BEM Fakultas Hukum periode 2025/2026*): BEM FH Unkhair periode 2025/2026
 - Ketua panitia (nama + nomor WA aktif hari-H, contoh: *Ahmad Hidayat — 0812-xxxx-xxxx*): Chalid Ridwan - 081234567890
