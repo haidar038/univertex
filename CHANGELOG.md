@@ -61,9 +61,9 @@ All notable changes to UniVertex are documented here. Format follows
   tally 1 suara/kandidat ✓; counts stabil (profiles 11/votes 1/audit 113 =
   baseline dump) ✓; audit 24 jam wajar (login.failed=2 milik sendiri) ✓.
 - [x] P1-02 k6 smoke read-only lolos (2 VU/30s, p95 132ms). SLO penuh NOT-PROVEN.
-- [x] P1-03 UAT 9/10 (2026-09-29, HP+laptop): blocker #4 drawer mobile tidak
-  penuh → diperbaiki (`inset`→`inset-y-0` di 4 layout, tsc 0). Minta uji ulang
-  1x di HP. Export audit JSON+CSV terbukti jalan (`tests/e2e/export/`, di-ignore).
+- [x] P1-03 UAT 10/10 DONE 2026-09-29 (HP+laptop; uji ulang drawer mobile lolos
+  setelah fix `inset-y-0`). Export audit JSON+CSV terbukti jalan
+  (`tests/e2e/export/`, di-ignore).
 - [x] ZAP pasif 2026-09-29: 9 alerts, **0 High** (Low/Info: CSP, SRI,
   cache-control). Scan aktif tak sengaja terpicu sebagian (fuzz WEB-INF/PHP →
   200/405 tak merusak, SPA read-only). Bukti `tests/zap-test/` (di-ignore).
