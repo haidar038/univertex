@@ -57,9 +57,15 @@ All notable changes to UniVertex are documented here. Format follows
       77E4097D…1A234A, counts votes=1/profiles=11/events=2/audit=113/cocok live;
       restore penuh menunggu env isolasi).
 - [x] P1-01 penuh hijau (7/7, 2026-09-28, event uji Poltekes).
-- [x] H-1 teknis 2026-09-29 (MCP): Hukum `voting`, window s.d. 30 Sep 04:00Z;
-  tally 1 suara/kandidat ✓; counts stabil (profiles 11/votes 1/audit 113 =
-  baseline dump) ✓; audit 24 jam wajar (login.failed=2 milik sendiri) ✓.
+- [x] H-1 teknis 2026-09-29 (MCP): tally 1 suara/kandidat ✓; counts stabil
+  (profiles 11/votes 1/audit 113 = baseline dump) ✓; audit 24 jam wajar
+  (login.failed=2 milik sendiri) ✓.
+- [x] Gladi penutupan 2026-09-29 (event uji Poltekes): `end_time` tiba →
+  `counting` otomatis via cron ✓, vote ditolak, alur publish manual dilalui ✓.
+- [!] TEMUAN: window Hukum berubah (start 16→18 Sep, end 04:00Z→23:00Z =
+  1 Okt 08:00 WIT) TANPA jejak audit (`event.update`/`status_change` nihil) —
+  melanggar §4 Peraturan; §1 Peraturan (jadwal 30 Sep 11:00 WIB) kini basi.
+  Perlu amandemen + pengumuman panitia sebelum tutup.
 - [x] P1-02 k6 smoke read-only lolos (2 VU/30s, p95 132ms). SLO penuh NOT-PROVEN.
 - [x] P1-03 UAT 10/10 DONE 2026-09-29 (HP+laptop; uji ulang drawer mobile lolos
   setelah fix `inset-y-0`). Export audit JSON+CSV terbukti jalan
