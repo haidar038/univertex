@@ -12,7 +12,6 @@ import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import VotingPage from '../app/VotingPage';
 import { supabase } from '@/integrations/supabase/client';
 import * as useAuthModule from '@/hooks/useAuth';
-
 vi.mock('sonner', () => ({
   toast: {
     success: vi.fn(),
@@ -427,8 +426,53 @@ describe('VotingPage - Success Flow', () => {
   });
 });
 
-describe('VotingPage - Not Found', () => {
+describe('VotingPage - P-B closed tidak redirect ke hasil', () => {
   beforeEach(() => {
+    vi.clearAllMocks();
+    mockUseAuth();
+  });
+
+  function renderWithLanding() {
+    return render(
+      <MemoryRouter initialEntries={['/app/vote/event-1']}>
+        <Routes>
+          <Route path="/app/vote/:eventId" element={<VotingPage />} />
+          <Route path="/app/dashboard" element={<div>DASHBOARD MARKER</div>} />
+          <Route path="/app/results/:eventId" element={<div>RESULTS MARKER</div>} />
+        </Routes>
+      </MemoryRouter>
+    );
+  }
+
+  it('closed sesudah vote → dashboard, bukan halaman hasil', async () => {
+    mockFrom({ insertVote: { error: null } }); // activeEvent default closed
+
+    renderWithLanding();
+    await castVoteFlow();
+
+    await waitFor(() => {
+      expect(screen.getByText('DASHBOARD MARKER')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('RESULTS MARKER')).not.toBeInTheDocument();
+  });
+
+  it('open sesudah vote → halaman hasil (tidak regresi)', async () => {
+    mockFrom({
+      event: { ...activeEvent, election_type: 'open' as const, show_results_after_voting: true },
+      insertVote: { error: null },
+    });
+
+    renderWithLanding();
+    await castVoteFlow();
+
+    await waitFor(() => {
+      expect(screen.getByText('RESULTS MARKER')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('DASHBOARD MARKER')).not.toBeInTheDocument();
+  });
+});
+
+describe('VotingPage - Not Found', () => {  beforeEach(() => {
     vi.clearAllMocks();
     mockUseAuth();
   });

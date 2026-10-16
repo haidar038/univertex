@@ -110,6 +110,36 @@ Atau via Supabase Studio:
 2. Copy-paste isi file `.sql`
 3. Run per chunk (tergantung ukuran)
 
+### 2.3b Pelajaran drill 2026-10-12 (Supabase, WAJIB dibaca sebelum restore)
+
+Drill full-DB dump → staging menghasilkan ratusan error. Bedakan 3 kelas:
+
+1. **Noise — abaikan:** `already exists` (schema/type/function/table/policy/trigger/index)
+   bila restore di atas project yang sudah di-push migrasi. Solusi bersih:
+   kosongkan dulu via dashboard SQL Editor dengan file
+   `supabase/migrations/20260908000000_reset_database_for_testing.sql`
+   (TRUNCATE public + auth, skema dipertahankan), baru `psql -f`.
+2. **Batasan Supabase — terima + rencanakan:** role `postgres` BUKAN owner
+   schema managed (`auth`, `storage`, `realtime`, `extensions`, `vault`,
+   `graphql_*`, `pgbouncer`). Semua `permission denied / must be owner` di
+   schema itu = ekspektasi, bukan kegagalan backup. Konsekuensi: **auth
+   (users/sessions/mfa) TIDAK ikut ke-restore** → DR env butuh re-provision
+   auth (re-invite + reset password massal via `admin_update_password`).
+   Backup tetap valid untuk data aplikasi (`public.*`).
+3. **Jebakan trigger sendiri — DROP dulu:** `COPY votes` ditolak
+   `trg_enforce_vote_timeline` (`voter_id must equal authenticated user`,
+   karena `auth.uid()` NULL saat restore). Prosedur:
+   `DROP TRIGGER IF EXISTS trg_enforce_vote_timeline ON public.votes;`
+   → load → buat ulang trigger persis dari migrasi
+   `20251104000000_add_votes_unique_constraint_and_timeline_check.sql`
+   → verifikasi `votes` count = prod. Jangan lupa langkah terakhir ini.
+4. **Urutan FK:** `COPY audit_log/candidates/committees` bisa gagal bila
+   `election_events` belum ke-load (tergantung urutan dump). Bila terjadi,
+   ulangi COPY tabel yang gagal setelahnya — bukan tanda backup rusak.
+5. **PowerShell Windows:** operator `<` tidak didukung. Pakai
+   `psql "<uri>" -f backup.sql` (port session-mode 5432 untuk restore besar).
+   Selalu catat waktu mulai/selesai untuk bukti RTO.
+
 ### 2.4 Verifikasi setelah restore
 
 Checklist WAJIB dijalankan:

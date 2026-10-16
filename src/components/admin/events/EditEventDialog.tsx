@@ -31,6 +31,7 @@ const eventFormSchema = z.object({
   end_date: z.string().min(1, 'Tanggal selesai harus diisi'),
   end_time: z.string().min(1, 'Waktu selesai harus diisi'),
   election_type: z.enum(['open', 'closed']),
+  use_pairs: z.boolean(),
   show_results_after_voting: z.boolean(),
   public_results: z.boolean(),
 }).refine((data) => {
@@ -40,6 +41,12 @@ const eventFormSchema = z.object({
 }, {
   message: 'Waktu selesai harus setelah waktu mulai',
   path: ['end_time'],
+}).refine((data) => {
+  // P-B: event tertutup tidak boleh membocorkan hasil sementara.
+  return data.election_type !== 'closed' || data.show_results_after_voting === false;
+}, {
+  message: 'Pemilihan tertutup: hasil dibuka saat published, matikan opsi tampil-setelah-memilih',
+  path: ['show_results_after_voting'],
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -52,6 +59,7 @@ interface Event {
   end_time: string;
   status: string;
   election_type?: 'open' | 'closed';
+  use_pairs?: boolean;
   show_results_after_voting?: boolean;
   public_results?: boolean;
 }
@@ -83,12 +91,14 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
       end_date: '',
       end_time: '',
       election_type: 'closed',
+      use_pairs: false,
       show_results_after_voting: false,
       public_results: false,
     },
   });
 
   const electionTypeValue = watch('election_type');
+  const usePairs = watch('use_pairs');
   const showResultsAfterVoting = watch('show_results_after_voting');
   const publicResults = watch('public_results');
 
@@ -111,6 +121,7 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
         end_date: endDate,
         end_time: endTime,
         election_type: event.election_type || 'closed',
+        use_pairs: event.use_pairs || false,
         show_results_after_voting: event.show_results_after_voting || false,
         public_results: event.public_results || false,
       });
@@ -133,7 +144,9 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
           start_time: startTime,
           end_time: endTime,
           election_type: data.election_type,
-          show_results_after_voting: data.show_results_after_voting,
+          // P-B: paksa false untuk closed (pertahanan terakhir bila validasi lolos).
+          show_results_after_voting: data.election_type === 'closed' ? false : data.show_results_after_voting,
+          use_pairs: data.use_pairs,
           public_results: data.public_results,
         })
         .eq('id', event.id);
@@ -187,7 +200,7 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="title">
+            <Label className="text-base line-clamp-3" htmlFor="title">
               Judul Acara <span className="text-destructive">*</span>
             </Label>
             <Input
@@ -202,7 +215,9 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="description">Deskripsi</Label>
+            <Label className="text-base line-clamp-3" htmlFor="description">
+              Deskripsi
+            </Label>
             <Textarea
               id="description"
               placeholder="Deskripsi singkat tentang acara pemilihan..."
@@ -233,17 +248,17 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
 
           {/* Election Type */}
           <div className="space-y-3">
-            <Label>
+            <Label className="text-base line-clamp-3" htmlFor="election_type">
               Jenis Pemilihan <span className="text-destructive">*</span>
             </Label>
             <RadioGroup
               value={electionTypeValue}
-              onValueChange={(value) => setValue('election_type', value as 'open' | 'closed')}
+              onValueChange={(value) => { const t = value as 'open' | 'closed'; setValue('election_type', t); if (t === 'closed') setValue('show_results_after_voting', false); }}
               disabled={isSubmitting}
             >
               <div
                 onClick={() => {
-                  if (!isSubmitting) setValue('election_type', 'closed');
+                  if (!isSubmitting) { setValue('election_type', 'closed'); setValue('show_results_after_voting', false); }
                 }}
                 className={cn(
                   'flex items-start space-x-3 space-y-0 rounded-md border p-4 transition-colors',
@@ -286,21 +301,40 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
 
           {/* Visibility Options */}
           <div className="space-y-3 rounded-md border p-4">
-            <Label className="text-base">Pengaturan Visibilitas Hasil</Label>
+            <Label className="text-base line-clamp-3">Mode & Visibilitas Hasil</Label>
+
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="edit_use_pairs"
+                checked={usePairs}
+                onCheckedChange={(checked) => setValue('use_pairs', checked as boolean)}
+                disabled={isSubmitting}
+              />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="edit_use_pairs" className="cursor-pointer font-medium">
+                  Pasangan calon (ketua & wakil)
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  Ubah hanya saat event masih draft dan belum ada suara — ganti mode di tengah jalan mencampur data.
+                </p>
+              </div>
+            </div>
 
             <div className="flex items-start space-x-3">
               <Checkbox
                 id="edit_show_results_after_voting"
                 checked={showResultsAfterVoting}
                 onCheckedChange={(checked) => setValue('show_results_after_voting', checked as boolean)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || electionTypeValue === 'closed'}
               />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="edit_show_results_after_voting" className="cursor-pointer font-medium">
                   Tampilkan hasil setelah voter memilih
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Voter dapat melihat hasil sementara setelah mereka memberikan suara (hanya berlaku saat pemilihan masih aktif).
+                  {electionTypeValue === 'closed'
+                    ? 'Nonaktif untuk pemilihan tertutup — hasil dibuka saat status published.'
+                    : 'Voter dapat melihat hasil sementara setelah mereka memberikan suara (hanya berlaku saat pemilihan masih aktif).'}
                 </p>
               </div>
             </div>

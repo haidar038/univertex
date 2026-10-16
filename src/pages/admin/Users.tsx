@@ -1,13 +1,15 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
-import { UserPlus, Users as UsersIcon, Edit, Trash2, Upload, KeyRound } from 'lucide-react';
+import { UserPlus, Users as UsersIcon, Edit, Trash2, Upload, KeyRound, Search, ChevronLeft, ChevronRight, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { Checkbox } from '@/components/ui/checkbox';
 import { RequirePermission } from '@/components/RequirePermission';
 import { CreateUserDialog } from '@/components/admin/users/CreateUserDialog';
 import { EditUserDialog } from '@/components/admin/users/EditUserDialog';
 import { DeleteUserDialog } from '@/components/admin/users/DeleteUserDialog';
+import { BulkDeleteUsersDialog } from '@/components/admin/users/BulkDeleteUsersDialog';
 import { BulkImportUsersDialog } from '@/components/admin/users/BulkImportUsersDialog';
 import { ResetPasswordDialog } from '@/components/admin/users/ResetPasswordDialog';
 
@@ -30,10 +32,39 @@ export default function AdminUsers() {
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [resetPasswordDialogOpen, setResetPasswordDialogOpen] = useState(false);
+  const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
+  const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [page, setPage] = useState(1);
+  const PAGE_SIZE = 20;
+  // P-C shift+klik: anchor index klik terakhir + status tombol Shift global
+  // (Radix onCheckedChange tidak membawa MouseEvent, jadi dibaca dari window).
+  const lastClickedIndex = useRef<number | null>(null);
+  const shiftHeld = useRef(false);
 
   useEffect(() => {
     fetchUsers();
+  }, []);
+
+  useEffect(() => {
+    const down = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') shiftHeld.current = true;
+    };
+    const up = (e: KeyboardEvent) => {
+      if (e.key === 'Shift') shiftHeld.current = false;
+    };
+    const blur = () => {
+      shiftHeld.current = false;
+    };
+    window.addEventListener('keydown', down);
+    window.addEventListener('keyup', up);
+    window.addEventListener('blur', blur);
+    return () => {
+      window.removeEventListener('keydown', down);
+      window.removeEventListener('keyup', up);
+      window.removeEventListener('blur', blur);
+    };
   }, []);
 
   const handleEdit = (user: UserWithRoles) => {
@@ -49,6 +80,76 @@ export default function AdminUsers() {
   const handleResetPassword = (user: UserWithRoles) => {
     setSelectedUser(user);
     setResetPasswordDialogOpen(true);
+  };
+
+  // Tampil = hasil filter; halaman = potongan 20; seleksi/shift-anchor
+  // selalu mengacu urutan tampil (index global halaman).
+  const filteredUsers = searchQuery.trim() === ''
+    ? users
+    : users.filter((u) => {
+        const q = searchQuery.trim().toLowerCase();
+        return (
+          u.full_name.toLowerCase().includes(q) ||
+          u.student_id.toLowerCase().includes(q) ||
+          (u.email || '').toLowerCase().includes(q)
+        );
+      });
+  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  const safePage = Math.min(Math.max(page, 1), totalPages);
+  const pageUsers = filteredUsers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageOffset = (safePage - 1) * PAGE_SIZE;
+
+  const goPage = (p: number) => {
+    lastClickedIndex.current = null;
+    setPage(Math.min(Math.max(p, 1), totalPages));
+  };
+
+  const toggleSelect = (id: string, index?: number) => {
+    const anchor = lastClickedIndex.current;
+    // Shift+klik: pilih semua dari klik terakhir (anchor) sampai baris ini.
+    // Index = posisi di urutan tampil (halaman), diteruskan dari map.
+    if (shiftHeld.current && anchor !== null && index !== undefined) {
+      const [a, b] = anchor < index ? [anchor, index] : [index, anchor];
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        filteredUsers.slice(a, b + 1).forEach((u) => next.add(u.id));
+        return next;
+      });
+      return;
+    }
+    if (index !== undefined) lastClickedIndex.current = index;
+    setSelectedIds((prev) => {
+      const next = new Set(prev);
+      if (next.has(id)) next.delete(id);
+      else next.add(id);
+      return next;
+    });
+  };
+
+  // Header checkbox = yang tampil di halaman ini (seleksi global tetap).
+  const allVisibleSelected =
+    pageUsers.length > 0 && pageUsers.every((u) => selectedIds.has(u.id));
+
+  const toggleSelectAll = () => {
+    lastClickedIndex.current = null;
+    if (allVisibleSelected) {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageUsers.forEach((u) => next.delete(u.id));
+        return next;
+      });
+    } else {
+      setSelectedIds((prev) => {
+        const next = new Set(prev);
+        pageUsers.forEach((u) => next.add(u.id));
+        return next;
+      });
+    }
+  };
+
+  const handleBulkDeleteSuccess = () => {
+    setSelectedIds(new Set());
+    fetchUsers();
   };
 
   const fetchUsers = async () => {
@@ -74,6 +175,13 @@ export default function AdminUsers() {
       });
 
       setUsers(usersWithRoles);
+      lastClickedIndex.current = null;
+      setPage(1);
+      // Buang seleksi untuk id yang sudah tidak ada (mis. habis dihapus).
+      setSelectedIds((prev) => {
+        const alive = new Set(usersWithRoles.map((u) => u.id));
+        return new Set([...prev].filter((id) => alive.has(id)));
+      });
     } catch (error) {
       console.error('Error fetching users:', error);
     } finally {
@@ -131,10 +239,59 @@ export default function AdminUsers() {
         ) : (
           <Card>
             <CardContent className="p-0">
+              <div className="border-b border-border p-3">
+                <div className="relative">
+                  <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
+                  <input
+                    value={searchQuery}
+                    onChange={(e) => {
+                      setSearchQuery(e.target.value);
+                      setPage(1);
+                      lastClickedIndex.current = null;
+                    }}
+                    placeholder="Cari nama, NIM, atau email..."
+                    aria-label="Cari pengguna"
+                    className="w-full rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
+                  />
+                </div>
+                {searchQuery.trim() !== '' && (
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {filteredUsers.length} dari {users.length} pengguna cocok
+                  </p>
+                )}
+              </div>
+              {selectedIds.size > 0 && (
+                <div className="flex items-center justify-between border-b border-border bg-muted/50 p-3">
+                  <span className="text-sm text-muted-foreground">
+                    {selectedIds.size} pengguna dipilih
+                  </span>
+                  <div className="flex gap-2">
+                    <Button variant="ghost" size="sm" onClick={() => setSelectedIds(new Set())}>
+                      Batalkan
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      size="sm"
+                      className="gap-2"
+                      onClick={() => setBulkDeleteDialogOpen(true)}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                      Hapus Massal
+                    </Button>
+                  </div>
+                </div>
+              )}
               <div className="overflow-x-auto">
                 <table className="w-full">
                   <thead className="border-b border-border bg-muted/50">
                     <tr>
+                      <th className="p-4">
+                        <Checkbox
+                          checked={allVisibleSelected}
+                          onCheckedChange={toggleSelectAll}
+                          aria-label="Pilih semua"
+                        />
+                      </th>
                       <th className="p-4 text-left text-sm font-medium text-foreground">Nama</th>
                       <th className="p-4 text-left text-sm font-medium text-foreground">Email</th>
                       <th className="p-4 text-left text-sm font-medium text-foreground">NIM</th>
@@ -144,8 +301,17 @@ export default function AdminUsers() {
                     </tr>
                   </thead>
                   <tbody className="divide-y divide-border">
-                    {users.map((user) => (
+                    {pageUsers.map((user, i) => {
+                      const idx = pageOffset + i;
+                      return (
                       <tr key={user.id} className="hover:bg-muted/30">
+                        <td className="p-4">
+                          <Checkbox
+                            checked={selectedIds.has(user.id)}
+                            onCheckedChange={() => toggleSelect(user.id, idx)}
+                            aria-label={`Pilih ${user.full_name}`}
+                          />
+                        </td>
                         <td className="p-4 text-sm text-foreground">{user.full_name}</td>
                         <td className="p-4 text-sm text-muted-foreground">{user.email || '-'}</td>
                         <td className="p-4 text-sm text-muted-foreground">{user.student_id}</td>
@@ -171,8 +337,7 @@ export default function AdminUsers() {
                               onClick={() => handleEdit(user)}
                             >
                               <Edit className="h-4 w-4" />
-                            </Button>
-                            <Button
+                            </Button>                            <Button
                               variant="ghost"
                               size="icon"
                               onClick={() => handleResetPassword(user)}
@@ -191,10 +356,39 @@ export default function AdminUsers() {
                           </div>
                         </td>
                       </tr>
-                    ))}
+                      );
+                    })}
+                    {filteredUsers.length === 0 && (
+                      <tr>
+                        <td colSpan={7} className="p-8 text-center text-sm text-muted-foreground">
+                          Tidak ada pengguna yang cocok dengan pencarian.
+                        </td>
+                      </tr>
+                    )}
                   </tbody>
                 </table>
               </div>
+              {totalPages > 1 && (
+                <div className="flex items-center justify-between border-t border-border p-3">
+                  <span className="text-xs text-muted-foreground">
+                    Halaman {safePage} dari {totalPages} ({filteredUsers.length} pengguna)
+                  </span>
+                  <div className="flex gap-1">
+                    <Button variant="ghost" size="icon" onClick={() => goPage(1)} disabled={safePage <= 1} aria-label="Halaman pertama">
+                      <ChevronsLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => goPage(safePage - 1)} disabled={safePage <= 1} aria-label="Halaman sebelumnya">
+                      <ChevronLeft className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => goPage(safePage + 1)} disabled={safePage >= totalPages} aria-label="Halaman berikutnya">
+                      <ChevronRight className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => goPage(totalPages)} disabled={safePage >= totalPages} aria-label="Halaman terakhir">
+                      <ChevronsRight className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </div>
+              )}
             </CardContent>
           </Card>
         )}
@@ -230,6 +424,12 @@ export default function AdminUsers() {
           userId={selectedUser?.id || null}
           userName={selectedUser?.full_name || null}
           onSuccess={fetchUsers}
+        />
+        <BulkDeleteUsersDialog
+          open={bulkDeleteDialogOpen}
+          onOpenChange={setBulkDeleteDialogOpen}
+          userIds={Array.from(selectedIds)}
+          onSuccess={handleBulkDeleteSuccess}
         />
       </div>
     </RequirePermission>

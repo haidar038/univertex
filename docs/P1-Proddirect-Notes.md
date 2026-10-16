@@ -78,3 +78,144 @@ npx playwright test
 - P1-02: script smoke ada; SLO penuh NOT-PROVEN.
 - P1-03: PANDUAN_* + coverage CI + test `vote.cast` ada; UAT 15/15 + ZAP +
   pentest penuh menunggu jendela maintenance.
+
+## Snapshot pilot-pre 2026-10-12 (agen + user)
+
+- Prod dump ackups\pilot-pre-prod.sql (8.699.897 bytes, 61.620 lines) SHA256 21512C0961295D9BCD45D55F983F2F1418C67108AC3E8CAF5295A988EE008E27 — full DB incl auth schema, pg_dump 18.6.
+- Staging dump ackups\pilot-pre-staging.sql (662.218 bytes, 11.490 lines) SHA256 669A3CB769B885A1AD61A469634F9F08BDCFD2055CE80935404167B154F3E200.
+- Kompresi: pilot-pre-prod-2026-10-12.sql.tar.gz (1.082.107 bytes), pilot-pre-staging-2026-10-12.sql.tar.gz (120.346 bytes). Lokasi 2 (Drive privat) menunggu user upload.
+- Verifikasi isi prod dump = live 2026-10-12: profiles 58 / events 5 / votes 29 / audit 368 / candidates 9 / evg 11 / transitions 18 — COCOK 100%.
+- Sisa: drill restore dump prod ke staging (<1 jam) + verifikasi RUNBOOK §2.4 — butuh staging DB password untuk psql.
+
+
+## Drill restore 2026-10-12 — SEBAGIAN (bukan hijau penuh)
+
+- Metode: psql -f backups\pilot-pre-prod.sql ke staging (full-DB dump, 61.620 lines). Log: ackups\drill-restore-2026-10-12.log (78KB). Durasi mulai/selesai BELUM dicatat — catat manual saat ulang.
+- Hasil akhir staging (verifikasi MCP read-only): profiles 58 / events 5 / audit 368 / cand 9 / evg 11 / sess 35 / inv 3 / rp 48 = COCOK prod; user_roles 57/62 (5 orphan, FK ke auth.users); votes 0/29 (ditolak trigger sendiri).
+- Error noise (diabaikan): ratusan 'already exists' (restore di atas skema 53 migrasi) + 'permission denied/must be owner' untuk schema managed (auth/storage/realtime/extensions/vault) — ekspektasi Supabase, auth TIDAK bisa di-clone via dump.
+- Temuan prosedur: (1) DROP 	rg_enforce_vote_timeline sebelum load votes, CREATE lagi sesudahnya; (2) FK order — load events dulu atau ulangi COPY yang gagal; (3) DR env butuh re-provision auth (re-invite/reset). RTO <1 jam BELUM terbukti (durasi tak tercatat).
+
+
+## Drill restore run-2 2026-10-12 — HIJAU data aplikasi
+
+- Prosedur §2.3b: reset staging + DROP trigger + \psql -f\ 2x + CREATE trigger P0-01. Log: \ackups\drill-restore-2026-10-12-run2.log\ (~80KB).
+- Durasi kasar dari timestamp file: 00:36:38 ? 00:47:56 ˜ 11 menit (<1 jam). Menunggu konfirmasi user apakah itu 1 atau 2 run.
+- Verifikasi MCP: staging profiles 58 / events 5 / votes 29 / audit 368 / cand 9 / evg 11 / sess 35 = COCOK prod 100%; roles 57/62 (5 orphan FK auth, diterima); trigger \	rg_enforce_vote_timeline\ ADA (langkah 3 done).
+- Sisa: auth tak ikut (batasan Supabase) + tes login 1 admin + 1 voter + 1 vote uji staging (manual user).
+
+
+## Hasil uji manual user 2026-10-12 (M1 hijau penuh)
+
+- Akun: pakai data lama (1 admin, 2 kandidat, sisanya voter) — bukan email saran agen.
+- RTO TERUKUR: restore 8.7MB = 2 mnt 3 dtk (Measure-Command: TotalMinutes 2.06). Target <1 jam TERCAPAI.
+- Vote uji: BERHASIL sesuai skenario (staging votes 29?30 terverifikasi MCP).
+- Backup lokasi 2 (Drive privat): DONE.
+- TEMUAN: hapus event staging 400 (edge log DELETE election_events). Akar: bukan RLS (user admin valid) — FK menahan (event voting + votes 1/cand 2/evg 1); dialog janji cascade yang tak ada. SQL manual + fix produk dicatat di tasklist P-B.
+
+
+## P-B 2026-10-12 — lubang closed HIJAU (kode + guard + data)
+
+- Temuan: event prod \3c0c4606\ closed+voting+show=true = bocor tally ke semua voter. Tutup 3 lapis: UI force false (Create/Edit dialog + zod + submit), guard R1 (\20261012000100\, closed selalu 42501 non-staff + staff boleh pantau), data fix (\20261012000200\).
+- Voter closed: vote ? dashboard (bukan results); ResultsPage mode redacted (\?\, bar abu-abu, struk Pilihanmu); Dashboard tombol hasil hanya open. Test sendiri tangkap 1 bocor (badge Total) ? fixed.
+- DeleteEventDialog: tolak hapus bila votes>0 (arahkan arsip).
+- Bukti: vitest 21 files / 165 tests hijau (+5 P-B), tsc 0, build 1m01s OK. Guard + flag live di staging (push EXIT 0) dan prod (MCP apply, body terverifikasi).
+- Sisa: E2E staging (tunggu fixture auth P-C) + drift histori prod (CLI push ditolak; teruskan MCP apply atau db pull).
+
+
+## P-C 2026-10-12 — bulk delete + import per-kelas HIJAU kode
+
+- RPC baru: \dmin_bulk_delete_users\ (\20261012000300\; maks 200, skip admin + pemilik votes/kandidatur, audit) + \dmin_import_class_users\ (\20261012000400\; validasi + idempotent + audit). Live staging (push EXIT 0) + prod (MCP apply, terverifikasi ada).
+- UI: \BulkDeleteUsersDialog.tsx\ + checkbox/toolbar \Users.tsx\; override kelas di \BulkImportUsersDialog.tsx\; banner pengarah di \Invitations.tsx\.
+- Bukti: vitest 22 files / 169 tests hijau (+4 P-C), tsc 0, build OK.
+- Sisa manual: uji klik staging (import 10 dummy + bulk delete 3) + 100-dummy bila hijau. Email konfirmasi/auto-login = backlog M4. R2 privacy = sesi sendiri.
+
+
+## Bug checkbox Users.tsx 2026-10-12 (temuan user, staging)
+
+- Gejala: klik checkbox -> crash \Cannot read properties of undefined (reading 'size')\ di \Users.tsx:162\.
+- Akar: updater \	oggleSelect\ tidak me-\eturn next\ (Set baru hilang, state jadi undefined). Salah tulis agen, bukan salah data.
+- Fix 1 baris + test regresi \UsersSelection.test.tsx\ (klik-tampil-toolbar-tanpa-crash, pilih-semua). Full suite 23 files / 171 tests hijau, tsc 0, build OK.
+
+
+## M3 hijau penuh 2026-10-12 — rantai import?DPT?vote terbukti staging
+
+- Import 10 + 100 dummy OK; hapus massal (biasa + shift+klik) OK.
+- Event uji \d8b974a5\ (open/voting): 2 suara (M Khaidar + Dummy UJI002) + audit \ote.cast\ — rantai H-H valid.
+- 7 dummy tersisa termasuk UJI002 = benar (skip proteksi pemilik suara terbukti live, bukan bug). Flag closed \3c0c4606\ tetap false.
+
+
+## P-D 2026-10-12 — email HIJAU dokumen
+
+- Keputusan: Gmail relay + batch 50-100/jam + template 1 paragraf. SOP fallback §6 baru. MFA deferred + aturan manual.
+- Sisa manual: konfirmasi dashboard tak berubah + isi PIC + latih 2 helpdesk.
+
+
+## PIN 8 digit H-H 2026-10-12 (persetujuan user)
+
+- Keputusan: password generate = 8 digit acak (10^8 kombinasi, CSPRNG, string zero-padded). Aman untuk kredensial 1 hari (rate-limit + audit bunuh brute-force); anti-bingung (tanpa O/0, l/I, case).
+- Implementasi: \src/lib/pin.ts\ (test 2 hijau) + toggle di \BulkImportUsersDialog\ (default ON; kolom password CSV boleh kosong) + tombol Unduh CSV Kredensial sekali + peringatan hapus file digital.
+- Bukti: full suite 175 hijau, tsc 0, build OK. Sisa: uji klik staging (import 3 PIN -> unduh CSV -> login 1 PIN).
+
+
+## Email blast Fase 2 HIJAU kode 2026-10-12
+
+- DB: \email_queue\ + RPC \dmin_enqueue_event_voters\ (\20261012000500\) — push staging EXIT 0, prod via MCP apply (terverifikasi ada). PIN tidak disimpan.
+- Function \send-voter-credentials\ (Deno, deno check EXIT 0): auth admin via JWT, PIN CSPRNG, set password Auth Admin API, kirim Resend, throttle 1.5s, batch 40, idempotent, audit per batch. Deploy staging + prod EXIT 0 (secrets RESEND_API_KEY/RESEND_FROM/APP_URL menyusul Fase 1 user).
+- UI: \/admin/email-blast\ (rute + nav): isi antrean, kirim batch, export gagal->slip. Test +3.
+- Bukti: vitest 178 hijau, tsc 0, build OK.
+
+
+
+## Fix blast 405 + panel + search + hapus arsip 2026-10-14
+
+- CORS function: jawab OPTIONS + header di semua response (localhost/preview/prod). Deploy staging + prod EXIT 0. deno check EXIT 0.
+- Panel blast: label dinamis \Kirim N Email\ (N=min antrean), pemilih batch 10/40/100, tombol Reset Antrean (hapus pending + konfirmasi).
+- Users: search nama/NIM/email client-side + seleksi/shift jalan di hasil filter + pesan kosong.
+- Hapus event: RPC \dmin_delete_event\ (20261012000600; arsip-only, transaksional, audit dipertahankan) + dialog konfirmasi ketik. Blokir non-arsip berdata tetap. Live staging + prod.
+- Bukti: 183 tests hijau (+5: 2 search + 3 delete-dialog), tsc 0, build OK.
+
+
+## Fix 401/400 + pagination 2026-10-14
+
+- Blast 401 = sesi habis (CORS sudah sembuh). Function: pesan granular no_token/bad_token/not_admin + UI pre-check sesi + toast pesan server. Deploy staging + prod.
+- Delete 400 = trigger audit_log_immutable menolak NULL election_id. Fix: klausa election_id-only-NULL (cermin actor_id) via 20261012000700 (staging push, prod MCP + terverifikasi). Dialog arsip + ketik-nama + RPC tetap.
+- Users pagination 20/halaman (First/Prev/Next/Last, seleksi lintas halaman, search reset). Test flaky timeout 5s -> 15s untuk render 25-baris.
+- Bukti: 26 files / 186 tests hijau, tsc 0, build OK.
+
+
+## Akar 401 blast ketemu 2026-10-14 (gotcha supabase-js)
+
+- \supabase.functions\ = client BARU dengan header STATIK (anon key); token sesi TIDAK disuntik otomatis (beda dengan realtime yang ada setAuth). Jadi server selalu terima anon key -> bad_token 401. Fix: kirim \headers: { Authorization: Bearer <access_token> }\ eksplisit di invoke + test kontrak header. Bukan salah sesi user.
+
+
+## Dua sumber kredensial 2026-10-14 (temuan user)
+
+- Gejala: login gagal pasca-blast padahal import pakai password123.
+- Akar: blast MEREGENERASI PIN + set password baru saat kirim (server tak bisa baca password lama — hanya hash). Maka password import/CSV import OTOMATIS kedaluwarsa; yang berlaku = PIN di email blast. Bukan bug, tapi jebakan alur: dipermanenkan di UI (peringatan di dialog import + panel blast: satu kohort satu jalur).
+
+
+## Sinkronisasi user management 2026-10-16
+
+- Import SATU jalur: RPC batch + roles per baris (20261012000800); loop per-baris UI DIHAPUS. PIN tetap client-side (slip).
+- Hapus SATU aturan: dialog tunggal via admin_bulk_delete_users([id]) + blokir berdata + teks diperbaiki.
+- Keputusan: invite=orang luar, assign=orang dalam; banned_until tidak dibangun; get_my_access dibatalkan. Detail di 10-invitations-and-class-import.md.
+- Staging push EXIT 0; prod via MCP apply x2 (roles + audit parity) sukses.
+- Bukti: 28 files / 190 tests hijau, tsc 0, build OK. Sisa manual: import uji 2 baris (voter + candidate) di staging.
+
+
+## Audit INSERT 42601 2026-10-16 (salah hitung kolom, salah saya)
+
+- Daftar kolom audit kehilangan target_id tapi VALUES tetap 10 item. Plpgsql baru gagal saat DIEKSEKUSI (bukan saat CREATE) — itu sebabnya push lolos tapi batch meledak + rollback total. Fix: 20261012001000 (10 kolom, push staging EXIT 0). Pelajaran: hitung kolom-vs-values manual untuk setiap INSERT di RPC baru.
+
+
+## Import 2-user staging HIJAU 2026-10-16
+
+- 1 voter + 1 voter|candidate via RPC batch: kelas + badge peran benar (screenshot). Sinkronisasi import selesai.
+- Sisa: paste 20261012001000 di dashboard PROD (mencakup roles + pgcrypto + audit fix).
+
+
+## P-E agen 2026-10-16 (R3 + k6 script)
+
+- R3: 20261012001100 kunci search_path 7 fungsi (isi diaudit aman), push staging EXIT 0; prod = paste dashboard user. EXECUTE noise = accepted-risk tercatat.
+- k6: tests/load/staging-mixed.js baru (login burst + tally + vote opt-in), archive valid. Run vs staging = manual user (butuh ANON + akun beban). ZAP/UAT/H-1 = manual.
+

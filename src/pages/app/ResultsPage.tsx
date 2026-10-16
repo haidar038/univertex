@@ -5,9 +5,10 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trophy, Users, ArrowLeft, Lock, Eye, Clock, AlertTriangle } from 'lucide-react';
+import { Trophy, Users, ArrowLeft, Lock, Eye, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
+import { useAuth } from '@/hooks/useAuth';
 import { fetchPairsWithMembers, getPairDisplayName, type PairWithMembers } from '@/lib/candidate-pair-helpers';
 
 interface CandidateResult {
@@ -51,11 +52,14 @@ const safePercent = (votes: number, totalVotes: number): number => {
 
 export default function ResultsPage() {
   const { eventId } = useParams();
+  const { profile } = useAuth();
   const [event, setEvent] = useState<EventData | null>(null);
   const [results, setResults] = useState<CandidateResult[]>([]);
   const [pairResults, setPairResults] = useState<PairResult[]>([]);
   const [loading, setLoading] = useState(true);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
+  // P-B: id kandidat/paslon yang dipilih user (untuk struk abu-abu closed).
+  const [myChoiceId, setMyChoiceId] = useState<string | null>(null);
 
   useEffect(() => {
     if (eventId) {
@@ -64,7 +68,8 @@ export default function ResultsPage() {
       setErrorMsg('ID pemilihan tidak valid');
       setLoading(false);
     }
-  }, [eventId]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [eventId, profile?.id]);
 
   const fetchResults = async () => {
     setLoading(true);
@@ -84,6 +89,26 @@ export default function ResultsPage() {
         return;
       }
       setEvent(eventData as EventData);
+      const redactedEvent =
+        (eventData as EventData).election_type === 'closed' &&
+        !['published', 'archived'].includes((eventData as EventData).status);
+
+      // P-B: pilihan sendiri untuk struk abu-abu (RLS: voter hanya lihat miliknya).
+      if (profile?.id) {
+        const { data: myVote } = await supabase
+          .from('votes')
+          .select('candidate_id, pair_id')
+          .eq('voter_id', profile.id)
+          .eq('event_id', eventId)
+          .maybeSingle();
+        if (myVote) {
+          setMyChoiceId(
+            ((myVote as { pair_id?: string | null }).pair_id ??
+              (myVote as { candidate_id?: string | null }).candidate_id ??
+              null) as string | null
+          );
+        }
+      }
 
       // Single aggregated RPC instead of N+1 queries
       const { data: tally, error: tallyError } = await supabase.rpc(
@@ -91,7 +116,11 @@ export default function ResultsPage() {
         { p_event_id: eventId }
       );
 
-      if (tallyError) throw tallyError;
+      // P-B: voter closed pre-publish memang ditolak server (42501).
+      // Itu bukan error — tampilkan mode sensor dengan daftar kandidat.
+      if (tallyError) {
+        if (!(redactedEvent && (tallyError as { code?: string })?.code === '42501')) throw tallyError;
+      }
 
       if (eventData.use_pairs) {
         // Mode pasangan: hasil per pasangan (ketua & wakil)
@@ -197,6 +226,14 @@ export default function ResultsPage() {
 
   // Always coerce to finite numbers to prevent NaN rendering downstream.
   const isPairMode = event.use_pairs;
+  // P-B: closed pre-publish = sensor. Angka/pemenang disembunyikan walau
+  // server (data lama) masih mengembalikan tally.
+  const isRedacted =
+    event.election_type === 'closed' &&
+    !['published', 'archived'].includes(event.status);
+  const myChoiceName = isPairMode
+    ? pairResults.find((r) => r.id === myChoiceId)?.name
+    : results.find((r) => r.id === myChoiceId)?.name;
   const totalVotes: number = isPairMode
     ? pairResults.reduce((sum, r) => sum + (Number.isFinite(r.votes) ? r.votes : 0), 0)
     : results.reduce((sum, r) => sum + (Number.isFinite(r.votes) ? r.votes : 0), 0);
@@ -222,7 +259,7 @@ export default function ResultsPage() {
           )}
         </div>
 
-        {winnerName && totalVotes > 0 && (
+        {winnerName && totalVotes > 0 && !isRedacted && (
           <Card className="mb-8 border-primary/50 bg-gradient-to-br from-card to-primary/10">
             <CardContent className="py-8 text-center">
               <Trophy className="mx-auto mb-4 h-16 w-16 text-primary" />
@@ -248,13 +285,32 @@ export default function ResultsPage() {
           </Card>
         )}
 
+        {/* P-B: struk abu-abu untuk closed pre-publish */}
+        {isRedacted && (
+          <Card className="mb-8 border-muted bg-muted/30">
+            <CardContent className="py-8 text-center">
+              <Lock className="mx-auto mb-4 h-12 w-12 text-muted-foreground" />
+              <h2 className="mb-2 text-xl font-bold text-foreground">Hasil Disembunyikan</h2>
+              <p className="mb-1 text-sm text-muted-foreground">
+                Pemilihan tertutup — perolehan suara dibuka setelah hasil dipublikasikan.
+              </p>
+              {myChoiceName && (
+                <p className="mt-3 inline-flex items-center gap-2 rounded-full bg-success/15 px-4 py-2 text-sm font-semibold text-success-foreground">
+                  <CheckCircle2 className="h-4 w-4" />
+                  Pilihanmu: {myChoiceName}
+                </p>
+              )}
+            </CardContent>
+          </Card>
+        )}
+
         <Card>
           <CardHeader>
             <CardTitle className="flex items-center justify-between">
               <span>Perolehan Suara</span>
               <Badge variant="outline">
                 <Users className="h-3 w-3 mr-1" />
-                Total: {totalVotes}
+                Total: {isRedacted ? '?' : totalVotes}
               </Badge>
             </CardTitle>
             <CardDescription>
@@ -288,14 +344,14 @@ export default function ResultsPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-foreground">{safeVotes}</p>
-                        <p className="text-xs text-muted-foreground">{pct}%</p>
+                        <p className="font-bold text-foreground">{isRedacted ? '?' : safeVotes}</p>
+                        <p className="text-xs text-muted-foreground">{isRedacted ? '?' : `${pct}%`}</p>
                       </div>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full bg-primary transition-all"
-                        style={{ width: `${pct}%` }}
+                        className={`h-full transition-all ${isRedacted ? 'bg-muted-foreground/30' : 'bg-primary'}`}
+                        style={{ width: `${isRedacted ? 0 : pct}%` }}
                       />
                     </div>
                   </div>
@@ -318,14 +374,14 @@ export default function ResultsPage() {
                         </div>
                       </div>
                       <div className="text-right">
-                        <p className="font-bold text-foreground">{safeVotes}</p>
-                        <p className="text-xs text-muted-foreground">{pct}%</p>
+                        <p className="font-bold text-foreground">{isRedacted ? '?' : safeVotes}</p>
+                        <p className="text-xs text-muted-foreground">{isRedacted ? '?' : `${pct}%`}</p>
                       </div>
                     </div>
                     <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
                       <div
-                        className="h-full bg-primary transition-all"
-                        style={{ width: `${pct}%` }}
+                        className={`h-full transition-all ${isRedacted ? 'bg-muted-foreground/30' : 'bg-primary'}`}
+                        style={{ width: `${isRedacted ? 0 : pct}%` }}
                       />
                     </div>
                   </div>
@@ -336,7 +392,7 @@ export default function ResultsPage() {
             <div className="mt-6 border-t border-border pt-4">
               <div className="flex items-center justify-between text-sm">
                 <span className="text-muted-foreground">Total Suara Masuk</span>
-                <span className="font-bold text-foreground">{totalVotes}</span>
+                <span className="font-bold text-foreground">{isRedacted ? 'Disembunyikan' : totalVotes}</span>
               </div>
             </div>
           </CardContent>

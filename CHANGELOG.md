@@ -26,6 +26,15 @@ All notable changes to UniVertex are documented here. Format follows
 - **P1-02 DONE-smoke 2026-09-29:** `k6 run` 2 VU/30s ke prod (GET read-only):
   50 iterasi, 0 failed, p95 132ms (<500), max 199ms. Threshold skrip lolos.
   **SLO 200-VU + stretch 2000-user = NOT RUN ON PROD** (butuh env isolasi).
+- **Fase 1 (T1–T4) REVERTED 2026-10-09 — rollback atas permintaan user:**
+  migrasi `20261009000000_harden_privacy_rls` sudah ter-apply ke prod, lalu
+  dibatalkan via `20261009000100_revert_harden_privacy_rls` (restore 3 policy
+  SELECT longgar persis redaksi aslinya; file harden TETAP sebagai histori).
+  `setup-admin.js/.ts` + `scripts/README.md` dikembalikan ke semula via git.
+  Cara apply revert: SQL Editor dashboard (MCP tidak tersedia) → run file
+  revert → cek verifikasi `pg_policies` → cek app sebagai voter/panitia/observer.
+  Catatan: revert T4 mengembalikan password hardcoded di repo — disarankan
+  kerjakan ulang T4 terpisah (independen, tidak sentuh RLS).
 - **P1-03 (sebagian):**
   - `@vitest/coverage-v8@4.0.6` + `vitest.config.ts` coverage gate
     (P1 scope: `src/lib`+`src/hooks`+`VotingPage.tsx`; threshold

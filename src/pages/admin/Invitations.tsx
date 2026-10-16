@@ -204,6 +204,19 @@ export default function AdminInvitations() {
         </Button>
       </div>
 
+      {/* P-C: voter massal lewat Import per-kelas (/admin/users), bukan invite
+          satu-satu. Undangan di sini untuk susulan: panitia, observer,
+          kandidat tambahan. Email otomatis tidak dijamin (SMTP backlog M4) —
+          salin link manual sebagai fallback. */}
+      <div className="mb-6 rounded-lg border border-border bg-muted/30 p-4 text-sm text-muted-foreground">
+        <p className="font-medium text-foreground">Kapan pakai undangan?</p>
+        <p>
+          Untuk ratusan voter, gunakan <strong>Import CSV per-kelas</strong> di Manajemen Pengguna —
+          akun langsung aktif dan siap memilih saat hari-H. Halaman ini untuk undangan susulan
+          (panitia/observer/kandidat). Bila email tidak sampai, salin link undangan manual.
+        </p>
+      </div>
+
       <Card>
         <CardHeader>
           <CardTitle>Daftar Undangan ({rows.length})</CardTitle>

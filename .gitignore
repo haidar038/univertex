@@ -26,6 +26,7 @@ out
 .env.production
 .env.test
 *.local
+.*-prod.bak
 
 # Editor directories and files
 .vscode/*
@@ -81,7 +82,7 @@ coverage/
 dev-server.log
 test-sql.cjs
 issues.log
-issues/
+# issues/
 backups/
 # Bukti uji manual (berisi data asli / hasil scan — simpan lokal saja)
 tests/e2e/export/

@@ -51,7 +51,7 @@ export function EventDateTimeFields({
     return (
         <div className="grid gap-4 md:grid-cols-2">
             <div className="space-y-2">
-                <Label>
+                <Label className="text-base line-clamp-3" htmlFor="start_date">
                     Waktu Mulai <span className="text-destructive">*</span>
                 </Label>
                 <div className="grid gap-2 sm:grid-cols-[minmax(160px,1fr)_118px]">
@@ -98,7 +98,7 @@ export function EventDateTimeFields({
             </div>
 
             <div className="space-y-2">
-                <Label>
+                <Label className="text-base line-clamp-3" htmlFor="end_date">
                     Waktu Selesai <span className="text-destructive">*</span>
                 </Label>
                 <div className="grid gap-2 sm:grid-cols-[minmax(160px,1fr)_118px]">

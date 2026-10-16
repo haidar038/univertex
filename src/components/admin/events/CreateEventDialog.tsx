@@ -39,6 +39,9 @@ const eventFormSchema = z.object({
   end_time: z.string().min(1, 'Waktu selesai harus diisi'),
   status: z.enum(['draft', 'registration', 'voting', 'counting', 'published', 'archived']),
   election_type: z.enum(['open', 'closed']),
+  // Mode paslon: dipilih di awal agar tab Pasangan langsung tersedia.
+  // Mengubahnya di tengah jalan (sudah ada kandidat/vote) berisiko campur data.
+  use_pairs: z.boolean(),
   show_results_after_voting: z.boolean(),
   public_results: z.boolean(),
   scope_type: z.enum(['', 'university', 'faculty', 'department', 'program', 'cohort', 'class', 'organization']),
@@ -57,6 +60,12 @@ const eventFormSchema = z.object({
 }, {
   message: 'scope_type dan scope_id harus diisi bersamaan',
   path: ['scope_id'],
+}).refine((data) => {
+  // P-B: event tertutup tidak boleh membocorkan hasil sementara.
+  return data.election_type !== 'closed' || data.show_results_after_voting === false;
+}, {
+  message: 'Pemilihan tertutup: hasil dibuka saat published, matikan opsi tampil-setelah-memilih',
+  path: ['show_results_after_voting'],
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -88,6 +97,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
       end_time: '',
       status: 'draft',
       election_type: 'closed',
+      use_pairs: false,
       show_results_after_voting: false,
       public_results: false,
       scope_type: '',
@@ -97,6 +107,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
 
   const statusValue = watch('status');
   const electionTypeValue = watch('election_type');
+  const usePairs = watch('use_pairs');
   const showResultsAfterVoting = watch('show_results_after_voting');
   const publicResults = watch('public_results');
   const scopeTypeValue = watch('scope_type');
@@ -117,7 +128,9 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
         end_time: endTime,
         status: data.status,
         election_type: data.election_type,
-        show_results_after_voting: data.show_results_after_voting,
+        use_pairs: data.use_pairs,
+        // P-B: paksa false untuk closed (pertahanan terakhir bila validasi lolos).
+        show_results_after_voting: data.election_type === 'closed' ? false : data.show_results_after_voting,
         public_results: data.public_results,
         scope_type: data.scope_type || null,
         scope_id: data.scope_id || null,
@@ -135,6 +148,7 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
           election_type: data.election_type,
           status: data.status,
           public_results: data.public_results,
+          use_pairs: data.use_pairs,
         },
       });
 
@@ -196,10 +210,10 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
 
           <div className="space-y-3">
             <Label>Jenis Pemilihan <span className="text-destructive">*</span></Label>
-            <RadioGroup value={electionTypeValue} onValueChange={(value) => setValue('election_type', value as 'open' | 'closed')} disabled={isSubmitting}>
+            <RadioGroup value={electionTypeValue} onValueChange={(value) => { const t = value as 'open' | 'closed'; setValue('election_type', t); if (t === 'closed') setValue('show_results_after_voting', false); }} disabled={isSubmitting}>
               <div
                 onClick={() => {
-                  if (!isSubmitting) setValue('election_type', 'closed');
+                  if (!isSubmitting) { setValue('election_type', 'closed'); setValue('show_results_after_voting', false); }
                 }}
                 className={cn(
                   'flex items-start space-x-3 space-y-0 rounded-md border p-4 transition-colors',
@@ -234,14 +248,28 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
 
           <div className="space-y-3 rounded-md border p-4">
             <div>
+              <Label className="text-base">Mode Pemilihan</Label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <Checkbox id="use_pairs" checked={usePairs} onCheckedChange={(checked) => setValue('use_pairs', checked as boolean)} disabled={isSubmitting} />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="use_pairs" className="cursor-pointer font-medium">Pasangan calon (ketua & wakil)</Label>
+                <p className="text-sm text-muted-foreground">Voter memilih satu paket paslon. Tentukan di awal — tab Pasangan langsung tersedia setelah event dibuat.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-md border p-4">
+            <div>
               <Label className="text-base">Pengaturan Visibilitas Hasil</Label>
             </div>
 
             <div className="flex items-start space-x-3">
-              <Checkbox id="show_results_after_voting" checked={showResultsAfterVoting} onCheckedChange={(checked) => setValue('show_results_after_voting', checked as boolean)} disabled={isSubmitting} />
+              <Checkbox id="show_results_after_voting" checked={showResultsAfterVoting} onCheckedChange={(checked) => setValue('show_results_after_voting', checked as boolean)} disabled={isSubmitting || electionTypeValue === 'closed'} />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="show_results_after_voting" className="cursor-pointer font-medium">Tampilkan hasil setelah voter memilih</Label>
-                <p className="text-sm text-muted-foreground">Voter dapat melihat hasil sementara setelah vote.</p>
+                <p className="text-sm text-muted-foreground">{electionTypeValue === 'closed' ? 'Nonaktif untuk pemilihan tertutup — hasil dibuka saat status published.' : 'Voter dapat melihat hasil sementara setelah vote.'}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
