@@ -11,7 +11,7 @@ import { logAudit } from '@/lib/audit';
 import { toast } from 'sonner';
 import { format } from 'date-fns';
 import { id as idLocale } from 'date-fns/locale';
-import { MailPlus, Copy, CheckCircle2, XCircle, Clock, Trash2 } from 'lucide-react';
+import { MailPlus, Copy, CheckCircle2, XCircle, Clock, Trash2, UserX } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 interface InvitationRow {
@@ -172,6 +172,23 @@ export default function AdminInvitations() {
     }
   };
 
+  const handleDeleteUser = async (row: InvitationRow) => {
+    // Hapus bersih: akun terhubung + baris undangan (server menolak bila
+    // target admin / punya votes/kandidatur — sama seperti bulk delete).
+    if (!row.accepted_user_id) return;
+    if (!confirm(`HAPUS PERMANEN akun ${row.email} beserta undangannya? Tidak dapat dibatalkan.`)) return;
+    const { error } = await supabase.rpc('admin_delete_invitation_user', {
+      p_invitation_id: row.id,
+    });
+    if (error) {
+      toast.error(error.message || 'Gagal menghapus pengguna undangan.');
+    } else {
+      // Audit ditulis oleh RPC admin_delete_invitation_user (satu baris).
+      toast.success('Akun dan undangan dihapus.');
+      refresh();
+    }
+  };
+
   const copyLink = async (link: string) => {
     try {
       await navigator.clipboard.writeText(link);
@@ -289,6 +306,17 @@ export default function AdminInvitations() {
                                 className="text-destructive"
                               >
                                 <Trash2 className="h-4 w-4" />
+                              </Button>
+                            )}
+                            {r.accepted_user_id && (
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                onClick={() => handleDeleteUser(r)}
+                                title="Hapus permanen akun + undangan"
+                                className="text-destructive"
+                              >
+                                <UserX className="h-4 w-4" />
                               </Button>
                             )}
                           </div>
