@@ -159,7 +159,6 @@ async function castVoteFlow() {
   });
   await waitFor(() => screen.getByText(/Ya, Saya Yakin/i));
   await act(async () => {
-    fireEvent.getByText ? null : null;
     fireEvent.click(screen.getByText(/Ya, Saya Yakin/i));
   });
 }
