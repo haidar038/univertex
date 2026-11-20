@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Users, Calendar, Vote as VoteIcon, TrendingUp } from "lucide-react";
+import { fetchPairsWithMembers, getPairDisplayName } from "@/lib/candidate-pair-helpers";
 
 export default function AdminDashboard() {
     const [stats, setStats] = useState({
@@ -35,28 +36,50 @@ export default function AdminDashboard() {
             });
 
             // Fetch live vote counts for active events.
-            // N+1 fix: per event we now run exactly 2 queries (candidates +
+            // N+1 fix: per event we now run exactly 2 queries (candidates/pairs +
             // get_election_tally RPC) instead of 1 + N (one count query per
             // candidate). The RPC is SECURITY DEFINER and admins always pass
             // its access guard.
             if (activeEventsResult.count && activeEventsResult.count > 0) {
-                const { data: activeEvents } = await supabase.from("election_events").select("id, title").eq("status", "voting");
+                const { data: activeEvents } = await supabase.from("election_events").select("id, title, use_pairs").eq("status", "voting");
 
                 if (activeEvents) {
                     const voteCounts = await Promise.all(
                         activeEvents.map(async (event) => {
-                            const [candRes, tallyRes] = await Promise.all([
-                                supabase.from("candidates")
-                                    .select("id, user_id, profiles(full_name)")
-                                    .eq("event_id", event.id),
-                                supabase.rpc("get_election_tally", { p_event_id: event.id }),
-                            ]);
+                            const { data: tallyData } = await supabase.rpc("get_election_tally", { p_event_id: event.id });
+                            const tallyRows = ((tallyData || []) as Array<{ candidate_id: string | null; pair_id: string | null; total_votes: number | string }>);
 
-                            const candidates = candRes.data;
+                            // Mode paslon: agregat per pasangan (nomor + nama paslon),
+                            // bukan per orang — 4 kandidat (2 ketua + 2 wakil) = 2 baris.
+                            if ((event as { use_pairs?: boolean }).use_pairs) {
+                                const pairs = await fetchPairsWithMembers(event.id, { approvedOnly: true });
+
+                                const votesByPair = new Map<string, number>();
+                                tallyRows.forEach((row) => {
+                                    if (row.pair_id) {
+                                        votesByPair.set(row.pair_id, Number(row.total_votes) || 0);
+                                    }
+                                });
+
+                                return {
+                                    eventTitle: event.title,
+                                    isPair: true,
+                                    candidates: pairs.map((p) => ({
+                                        name: `Paslon ${p.number ?? '?'} — ${getPairDisplayName(p)}`,
+                                        sub: p.members.map((m) => m.candidates?.profiles?.full_name || 'Tanpa nama').join(' • '),
+                                        votes: votesByPair.get(p.id) ?? 0,
+                                    })),
+                                };
+                            }
+
+                            const { data: candidates } = await supabase.from("candidates")
+                                .select("id, user_id, profiles(full_name)")
+                                .eq("event_id", event.id);
+
                             if (!candidates) return null;
 
                             const votesByCandidate = new Map<string, number>();
-                            ((tallyRes.data || []) as Array<{ candidate_id: string | null; total_votes: number | string }>).forEach((row) => {
+                            tallyRows.forEach((row) => {
                                 if (row.candidate_id) {
                                     votesByCandidate.set(row.candidate_id, Number(row.total_votes) || 0);
                                 }
@@ -64,11 +87,13 @@ export default function AdminDashboard() {
 
                             const candidatesWithVotes = candidates.map((candidate: any) => ({
                                 name: (candidate.profiles as any).full_name,
+                                sub: null as string | null,
                                 votes: votesByCandidate.get(candidate.id) ?? 0,
                             }));
 
                             return {
                                 eventTitle: event.title,
+                                isPair: false,
                                 candidates: candidatesWithVotes,
                             };
                         })
@@ -170,7 +195,12 @@ export default function AdminDashboard() {
                                         <div className="space-y-3">
                                             {event?.candidates.map((candidate: any, cIdx: number) => (
                                                 <div key={cIdx} className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-2">
-                                                    <span className="text-sm font-medium text-foreground truncate">{candidate.name}</span>
+                                                    <div className="min-w-0">
+                                                        <span className="text-sm font-medium text-foreground truncate block">{candidate.name}</span>
+                                                        {candidate.sub && (
+                                                            <span className="text-xs text-muted-foreground truncate block">{candidate.sub}</span>
+                                                        )}
+                                                    </div>
                                                     <div className="flex items-center gap-2 w-full sm:w-auto">
                                                         <div className="h-2 flex-1 sm:w-24 md:w-32 overflow-hidden rounded-full bg-muted">
                                                             <div

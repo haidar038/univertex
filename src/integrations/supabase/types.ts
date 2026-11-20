@@ -477,6 +477,7 @@ export type Database = {
           election_type: Database["public"]["Enums"]["election_type"]
           end_time: string
           id: string
+          public_live_count: boolean
           public_results: boolean
           show_results_after_voting: boolean
           start_time: string
@@ -491,6 +492,7 @@ export type Database = {
           election_type?: Database["public"]["Enums"]["election_type"]
           end_time: string
           id?: string
+          public_live_count?: boolean
           public_results?: boolean
           show_results_after_voting?: boolean
           start_time: string
@@ -505,6 +507,7 @@ export type Database = {
           election_type?: Database["public"]["Enums"]["election_type"]
           end_time?: string
           id?: string
+          public_live_count?: boolean
           public_results?: boolean
           show_results_after_voting?: boolean
           start_time?: string
@@ -1047,6 +1050,10 @@ export type Database = {
       }
       admin_bulk_delete_users: {
         Args: { p_user_ids: string[] }
+        Returns: Json
+      }
+      admin_delete_invitation_user: {
+        Args: { p_invitation_id: string }
         Returns: Json
       }
       admin_correct_audit_entry: {

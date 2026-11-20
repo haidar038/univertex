@@ -42,11 +42,13 @@ export default function PublicResultsPage() {
       const isCounting = eventData.status === 'counting';
       const isOpen = eventData.election_type === 'open';
       const hasPublicResults = eventData.public_results;
+      const hasPublicLive = eventData.public_live_count === true;
 
       // Determine if user can view results
-      // - Can view if election is voting AND open type
-      // - Can view if published/counting AND has public_results
-      const canView = (isVoting && isOpen) || ((isPublished || isCounting) && hasPublicResults);
+      // - Live publik: voting + open + opt-in public_live_count di form
+      // - Hasil akhir: counting/published + public_results
+      // - Closed+voting selalu gelap untuk publik (tally 42501).
+      const canView = (isVoting && isOpen && hasPublicLive) || ((isPublished || isCounting) && hasPublicResults);
       setCanViewResults(canView);
 
       if (!canView) {

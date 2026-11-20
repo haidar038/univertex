@@ -23,7 +23,7 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { cn } from '@/lib/utils';
 import { localDateTimeToUTCISO, utcToLocalDate, utcToLocalTime } from '@/lib/datetime';
 
-const eventFormSchema = z.object({
+export const eventFormSchema = z.object({
   title: z.string().min(3, 'Judul minimal 3 karakter').max(100, 'Judul maksimal 100 karakter'),
   description: z.string().optional(),
   start_date: z.string().min(1, 'Tanggal mulai harus diisi'),
@@ -34,6 +34,7 @@ const eventFormSchema = z.object({
   use_pairs: z.boolean(),
   show_results_after_voting: z.boolean(),
   public_results: z.boolean(),
+  public_live_count: z.boolean(),
 }).refine((data) => {
   const startTime = new Date(`${data.start_date}T${data.start_time}`);
   const endTime = new Date(`${data.end_date}T${data.end_time}`);
@@ -47,6 +48,18 @@ const eventFormSchema = z.object({
 }, {
   message: 'Pemilihan tertutup: hasil dibuka saat published, matikan opsi tampil-setelah-memilih',
   path: ['show_results_after_voting'],
+}).refine((data) => {
+  // Tertutup = tidak ada hasil publik; hasil hanya untuk peserta saat published.
+  return data.election_type !== 'closed' || data.public_results === false;
+}, {
+  message: 'Pemilihan tertutup: matikan opsi hasil publik',
+  path: ['public_results'],
+}).refine((data) => {
+  // Live publik hanya bermakna untuk open; closed+voting selalu 42501 di server.
+  return data.election_type !== 'closed' || data.public_live_count === false;
+}, {
+  message: 'Pemilihan tertutup: matikan opsi live count publik',
+  path: ['public_live_count'],
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -62,6 +75,7 @@ interface Event {
   use_pairs?: boolean;
   show_results_after_voting?: boolean;
   public_results?: boolean;
+  public_live_count?: boolean;
 }
 
 interface EditEventDialogProps {
@@ -94,6 +108,7 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
       use_pairs: false,
       show_results_after_voting: false,
       public_results: false,
+      public_live_count: false,
     },
   });
 
@@ -101,6 +116,7 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
   const usePairs = watch('use_pairs');
   const showResultsAfterVoting = watch('show_results_after_voting');
   const publicResults = watch('public_results');
+  const publicLiveCount = watch('public_live_count');
 
   // Simpan sebagai UTC; tampilkan sebagai waktu lokal (anti-geser zona waktu).
   const normalizeDateTime = (date: string, time: string) => localDateTimeToUTCISO(date, time);
@@ -124,6 +140,7 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
         use_pairs: event.use_pairs || false,
         show_results_after_voting: event.show_results_after_voting || false,
         public_results: event.public_results || false,
+        public_live_count: event.public_live_count || false,
       });
     }
   }, [event, reset]);
@@ -147,7 +164,8 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
           // P-B: paksa false untuk closed (pertahanan terakhir bila validasi lolos).
           show_results_after_voting: data.election_type === 'closed' ? false : data.show_results_after_voting,
           use_pairs: data.use_pairs,
-          public_results: data.public_results,
+          public_results: data.election_type === 'closed' ? false : data.public_results,
+          public_live_count: data.election_type === 'closed' ? false : data.public_live_count,
         })
         .eq('id', event.id);
 
@@ -253,12 +271,12 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
             </Label>
             <RadioGroup
               value={electionTypeValue}
-              onValueChange={(value) => { const t = value as 'open' | 'closed'; setValue('election_type', t); if (t === 'closed') setValue('show_results_after_voting', false); }}
+              onValueChange={(value) => { const t = value as 'open' | 'closed'; setValue('election_type', t); if (t === 'closed') { setValue('show_results_after_voting', false); setValue('public_results', false); setValue('public_live_count', false); } }}
               disabled={isSubmitting}
             >
               <div
                 onClick={() => {
-                  if (!isSubmitting) { setValue('election_type', 'closed'); setValue('show_results_after_voting', false); }
+                  if (!isSubmitting) { setValue('election_type', 'closed'); setValue('show_results_after_voting', false); setValue('public_results', false); setValue('public_live_count', false); }
                 }}
                 className={cn(
                   'flex items-start space-x-3 space-y-0 rounded-md border p-4 transition-colors',
@@ -344,14 +362,35 @@ export function EditEventDialog({ open, onOpenChange, event, onSuccess }: EditEv
                 id="edit_public_results"
                 checked={publicResults}
                 onCheckedChange={(checked) => setValue('public_results', checked as boolean)}
-                disabled={isSubmitting}
+                disabled={isSubmitting || electionTypeValue === 'closed'}
               />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="edit_public_results" className="cursor-pointer font-medium">
                   Hasil publik (tanpa login)
                 </Label>
                 <p className="text-sm text-muted-foreground">
-                  Hasil pemilihan dapat dilihat oleh siapa saja di halaman depan tanpa perlu login.
+                  {electionTypeValue === 'closed'
+                    ? 'Nonaktif untuk pemilihan tertutup — hasil hanya untuk peserta login.'
+                    : 'Hasil pemilihan dapat dilihat oleh siapa saja di halaman depan tanpa perlu login.'}
+                </p>
+              </div>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <Checkbox
+                id="edit_public_live_count"
+                checked={publicLiveCount}
+                onCheckedChange={(checked) => setValue('public_live_count', checked as boolean)}
+                disabled={isSubmitting || electionTypeValue === 'closed'}
+              />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="edit_public_live_count" className="cursor-pointer font-medium">
+                  Live count publik saat voting
+                </Label>
+                <p className="text-sm text-muted-foreground">
+                  {electionTypeValue === 'closed'
+                    ? 'Nonaktif untuk pemilihan tertutup — live count tidak pernah publik.'
+                    : 'Siapa saja (tanpa login) bisa melihat perolehan suara live selama voting.'}
                 </p>
               </div>
             </div>
