@@ -52,7 +52,12 @@ Persiapan (app menembak staging, login admin staging):
 
 ## G1. P-E pra-pilot (saat H-7, staging SAJA)
 
-1. **k6:** skrip `tests/load/election-day.js` — smoke 2 VU sudah hijau; 300 VU campuran **dilarang di prod**, hanya staging. Catat p95/max/error%.
+1. **k6 (staging saja, jangan prod):** `tests/load/staging-mixed.js`. Mode REST-only (default aman):
+   ```powershell
+   $env:ANON_KEY = <anon staging, tanpa kutip>
+   k6 run -e LANDING=0 -e TALLY_EVENT_ID=87f36fe7-f251-4326-8215-1eff49058608 -e VUS=100 -e DURATION=2m tests/load/staging-mixed.js
+   ```
+   Target preview Vercel terproteksi → script abort di setup (temuan run 100 VU pertama: tanpa guard, yang terukur justru halaman login Vercel). Untuk ikut fetch halaman app: `-e BYPASS=<secret>` (Dashboard Vercel → Settings → Deployment Protection → Protection Bypass for Automation → Generate). Catat p95/max/error%.
 2. **ZAP pasif** ke staging, target 0 High. Pindai agresif dilarang di mana pun.
 3. **UAT 15/15** dengan panitia (HP + laptop), minta tanda tangan.
 4. **R3 advisor:** minta agen merapikan (search_path + EXECUTE) — sesi sendiri.

@@ -27,9 +27,9 @@
 
 ## P-C — User + Invite
 
-* [ ] Bulk delete di `Users.tsx`: checkbox + toolbar + dialog konfirmasi + audit `user.bulk_delete` + blokir hapus yang `votes>0`/`candidacies>0` kecuali diketik konfirmasi + lewati admin. Lihat `07-users-bulk-delete.md`.
-* [ ] Import per-kelas: di `Classes.tsx` / `BulkImportUsersDialog.tsx` tambah mode "pilih kelas → import → kirim email konfirmasi". CSV wajib: `full_name, student_id, email, password, roles` + `class_name` opsional (lihat `BulkImportUsersDialog.tsx:82`).
-* [ ] Invite rework: `Invitations.tsx` khusus susulan (committee/observer/kandidat). Voter massal lewat import kelas, bukan invite satu-satu. Token tetap 64-hex, link `/invite/:token` disalin manual bila email nyangkut.
+* [x] Bulk delete di `Users.tsx` (2026-10-16, `676e683`): checkbox + toolbar + `BulkDeleteUsersDialog` + RPC `admin_bulk_delete_users` + audit `user.bulk_delete` + blokir admin/pemilik votes/kandidatur. Test `BulkDeleteUsersDialog.test.tsx` + `UsersSelection.test.tsx` hijau.
+* [x] Import per-kelas (2026-10-16, `676e683`): `BulkImportUsersDialog.tsx` punya override kelas + kolom `class_name` opsional; RPC `admin_import_class_users` (roles + audit `target_id`) sudah live di prod via `20261015162954`.
+* [x] Invite rework (2026-10-16, `676e683`): `Invitations.tsx` untuk susulan (committee/observer/kandidat), voter massal lewat import kelas; token 64-hex + salin link manual; hapus user undangan via RPC `admin_delete_invitation_user` (migrasi `20261016000100`, test `Invitations.test.tsx`).
 * [ ] Akses H-H only: akun pre-provision aktif, tapi vote tetap ditolak di luar window via trigger (`42501`/`P0001`) + banner DPT di `VotingPage.tsx:168-173`. Uji simulasi window di staging.
 * [ ] Uji 100 akun dummy staging end-to-end.
 
@@ -43,7 +43,7 @@
 ## P-E — Beban + Security staging
 
 * [x] R3 search_path 2026-10-16 (`20261012001100`, 7 fungsi; push staging EXIT 0; prod = paste dashboard oleh user). EXECUTE berlebih DINYATAKAN accepted-risk (fungsi wajib callable; penjagaan riil = cek `has_role` di dalam; mencabut EXECUTE = matikan fitur).
-* [x] Skrip k6 staging `tests/load/staging-mixed.js` 2026-10-16 (login burst + baca + tally; vote opt-in; `k6 archive` valid). Run 100→300→600 VU = manual user (butuh ANON staging + akun uji beban).
+* [x] Skrip k6 staging `tests/load/staging-mixed.js` v2 2026-10-17 — temuan run 100 VU pertama: preview Vercel TERPROTEKSI (Vercel Authentication) → k6 tanpa sadar mengukur halaman login Vercel (343 MB download; run TIDAK VALID). v2: abort di setup untuk target terproteksi, `LANDING=0`/`BYPASS=<secret>`, metrik `errors` jujur (0/1), tag + threshold per-endpoint, validasi TALLY_EVENT_ID (abort bila P0002). Bukti: archive OK, smoke 6/6, verify agen 100 VU×1m `LANDING=0` → checks 7392/7392, p95 events 746ms / tally 607ms, exit 0 (`test-results/k6-100vu-v2.txt`). Run 100/300 VU user hijau; 600 VU selesai 2026-10-17 — user (`test-results/k6-600.txt`) + verify agen bersih (`test-results/k6-600-v2.txt`: checks 82.792/82.792, p95 791ms, 0 reset), setelah patch accounting `http_req_failed` (tally 400/401/403 = expected).
 * [ ] ZAP pasif staging 0 High — manual user (ZAP/docker tidak ada di mesin ini).
 * [ ] UAT 15/15 + H-1 — manual user + panitia.
 * [ ] Pentest 6 vektor ulang di staging — manual user (pola P1-03 berlaku).
