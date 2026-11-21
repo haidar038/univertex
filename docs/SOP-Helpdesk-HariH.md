@@ -37,3 +37,11 @@ Uraian: __ | Bukti (foto error, jam): __ | Tuntutan: __
 Tanda tangan pelapor + 1 saksi panitia + jam terima: __
 Keputusan komite: __ | Eksekusi (SQL/RPC apa): __ | Audit ID: __
 ```
+
+## 6. Jika Email Undangan/Reset Tidak Sampai (P-D 2026-10-12)
+
+1. Suruh voter cek folder **Spam/Junk/Promotions** dulu (Gmail/Yahoo/Outlook sering menaruh email sistem di sana).
+2. Di spam: klik **"Not spam" / "Looks safe" DULU**, baru klik link (Yahoo/Outlook menonaktifkan link di dalam spam).
+3. Bila tetap tidak ada: admin buka `/admin/invitations` → salin link `/invite/:token` → kirim manual (WA/lisan) + catat `invitation.create` manual.
+4. Reset password tanpa email: `ResetPasswordDialog` → bila email tak bisa diakses, `admin_update_password` + password sementara + wajib ganti di `/app/profile` (§2 langkah 3).
+5. Jangan kirim ulang berkali-kali (rate-limit email 30/jam) — 1 kirim + fallback manual.

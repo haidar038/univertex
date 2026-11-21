@@ -32,6 +32,7 @@ import AdminEventDetail from "./pages/admin/EventDetail";
 import AdminUsers from "./pages/admin/Users";
 import AdminClasses from "./pages/admin/Classes";
 import AdminInvitations from "./pages/admin/Invitations";
+import AdminEmailBlast from "./pages/admin/EmailBlast";
 import AdminAuditLog from "./pages/admin/AuditLog";
 import AdminSessions from "./pages/admin/Sessions";
 import AdminElectionStaff from "./pages/admin/ElectionStaff";
@@ -103,6 +104,7 @@ const App = () => (
                             <Route path="users" element={<AdminUsers />} />
                             <Route path="classes" element={<AdminClasses />} />
                             <Route path="invitations" element={<AdminInvitations />} />
+                            <Route path="email-blast" element={<AdminEmailBlast />} />
                             <Route path="audit-log" element={<AdminAuditLog />} />
                             <Route path="audit-export" element={<AdminAuditExport />} />
                             <Route path="sessions" element={<AdminSessions />} />

@@ -61,13 +61,13 @@ function emit(level: LogLevel, msg: string, ctx?: LogContext) {
             break;
         case "warn":
             console.warn(line);
-            if (Sentry && (Sentry as unknown as { addBreadcrumb?: Function }).addBreadcrumb) {
+            if (Sentry && (Sentry as unknown as { addBreadcrumb?: (...args: unknown[]) => unknown }).addBreadcrumb) {
                 Sentry.addBreadcrumb({ category: "log", level: "warning", message: msg, data: safe });
             }
             break;
         case "error":
             console.error(line);
-            if (Sentry && (Sentry as unknown as { addBreadcrumb?: Function }).addBreadcrumb) {
+            if (Sentry && (Sentry as unknown as { addBreadcrumb?: (...args: unknown[]) => unknown }).addBreadcrumb) {
                 Sentry.addBreadcrumb({ category: "log", level: "error", message: msg, data: safe });
             }
             break;
@@ -84,7 +84,7 @@ export const logger = {
      */
     error: (msg: string, err?: unknown, ctx?: LogContext) => {
         emit("error", msg, ctx);
-        if (err !== undefined && err !== null && Sentry && (Sentry as unknown as { captureException?: Function }).captureException) {
+        if (err !== undefined && err !== null && Sentry && (Sentry as unknown as { captureException?: (...args: unknown[]) => unknown }).captureException) {
             Sentry.captureException(err, { extra: stripPii(ctx) });
         }
     },

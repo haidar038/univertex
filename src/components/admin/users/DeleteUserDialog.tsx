@@ -46,8 +46,28 @@ export function DeleteUserDialog({ open, onOpenChange, userId, userName, onSucce
     if (!userId) return;
     setIsDeleting(true);
     try {
-      const { error } = await supabase.from('profiles').delete().eq('id', userId);
+      // Satu aturan hapus untuk tunggal & massal: via RPC (blokir pemilik
+      // votes/kandidatur + audit). Jangan profiles.delete langsung.
+      const { data, error } = await supabase.rpc('admin_bulk_delete_users', {
+        p_user_ids: [userId],
+      });
       if (error) throw error;
+      const res = data as unknown as {
+        deleted: string[];
+        skipped_admin: string[];
+        skipped_has_data: Array<{ id: string }>;
+      };
+      if (res.skipped_admin.length > 0) {
+        toast.error('Akun admin tidak dapat dihapus dari sini.');
+        return;
+      }
+      if (res.skipped_has_data.length > 0) {
+        toast.error('Pengguna memiliki suara/kandidatur — tidak dapat dihapus.');
+        return;
+      }
+      if (res.deleted.length === 0) {
+        throw new Error('Pengguna tidak ditemukan');
+      }
 
       await logAudit({
         action: 'user.delete',
@@ -101,7 +121,7 @@ export function DeleteUserDialog({ open, onOpenChange, userId, userName, onSucce
                 {stats.candidaciesCount > 0 && <div className="flex items-center gap-3 text-sm"><UserX className="h-4 w-4 text-destructive" /><span><strong>{stats.candidaciesCount}</strong> pencalonan</span></div>}
               </div>
               <Alert>
-                <AlertDescription className="text-sm">Akun autentikasi tetap ada. Hapus via Supabase Dashboard untuk penuh.</AlertDescription>
+                <AlertDescription className="text-sm">Akun autentikasi ikut terhapus. Pengguna dengan suara/kandidatur ditolak penghapusannya.</AlertDescription>
               </Alert>
             </>
           ) : (
@@ -111,7 +131,7 @@ export function DeleteUserDialog({ open, onOpenChange, userId, userName, onSucce
 
         <AlertDialogFooter>
           <AlertDialogCancel disabled={isDeleting}>Batal</AlertDialogCancel>
-          <AlertDialogAction onClick={handleDelete} disabled={isDeleting || loading} className="bg-destructive hover:bg-destructive/90">
+          <AlertDialogAction onClick={handleDelete} disabled={isDeleting || loading || hasData} className="bg-destructive hover:bg-destructive/90">
             {isDeleting ? 'Menghapus...' : 'Hapus Pengguna'}
           </AlertDialogAction>
         </AlertDialogFooter>

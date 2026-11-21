@@ -11,6 +11,7 @@ import { render, screen, waitFor } from '@testing-library/react';
 import { MemoryRouter, Routes, Route } from 'react-router-dom';
 import ResultsPage from '../app/ResultsPage';
 import { supabase } from '@/integrations/supabase/client';
+import * as useAuthModule from '@/hooks/useAuth';
 
 vi.mock('sonner', () => ({
   toast: { success: vi.fn(), error: vi.fn(), info: vi.fn(), warning: vi.fn() },
@@ -39,11 +40,22 @@ const event = {
   end_time: '2026-01-02T00:00:00Z',
 };
 
-function mockResults({ tally, candidates }: { tally: any[]; candidates: any[] }) {
+function mockResults({ tally, candidates, event: ev, tallyError, myVote }: {
+  tally: any[];
+  candidates: any[];
+  event?: any;
+  tallyError?: any;
+  myVote?: any;
+}) {
   vi.mocked(supabase.from).mockImplementation((table: string) => {
     if (table === 'election_events') {
       return chainable({
-        maybeSingle: vi.fn().mockResolvedValue({ data: event, error: null }),
+        maybeSingle: vi.fn().mockResolvedValue({ data: ev ?? event, error: null }),
+      });
+    }
+    if (table === 'votes') {
+      return chainable({
+        maybeSingle: vi.fn().mockResolvedValue({ data: myVote ?? null, error: null }),
       });
     }
     if (table === 'candidates') {
@@ -60,10 +72,26 @@ function mockResults({ tally, candidates }: { tally: any[]; candidates: any[] })
 
   vi.mocked(supabase.rpc).mockImplementation((fn: string) => {
     if (fn === 'get_election_tally') {
+      if (tallyError) return Promise.resolve({ data: null, error: tallyError }) as any;
       return Promise.resolve({ data: tally, error: null }) as any;
     }
     return Promise.resolve({ data: null, error: null }) as any;
   });
+}
+
+function mockVoter() {
+  vi.spyOn(useAuthModule, 'useAuth').mockReturnValue({
+    user: { id: 'voter-1' } as any,
+    profile: { id: 'voter-1' } as any,
+    loading: false,
+    refresh: vi.fn(),
+    signOut: vi.fn(),
+    isAdmin: false,
+    isVoter: true,
+    isCandidate: false,
+    isCommittee: false,
+    isObserver: false,
+  } as any);
 }
 
 function renderPage() {
@@ -199,6 +227,93 @@ describe('ResultsPage - Sorting & Empty States', () => {
     await waitFor(() => {
       expect(screen.getByText(/Pemilihan tidak ditemukan/i)).toBeInTheDocument();
     });
+  });
+});
+
+describe('ResultsPage - P-B mode sensor closed', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+    mockVoter();
+  });
+
+  const closedVoting = {
+    ...event,
+    status: 'voting',
+    election_type: 'closed',
+    show_results_after_voting: true,
+    public_results: false,
+  };
+
+  const twoCandidates = [
+    { id: 'c1', profiles: { full_name: 'Kandidat A', student_id: 'NA' } },
+    { id: 'c2', profiles: { full_name: 'Kandidat B', student_id: 'NB' } },
+  ];
+
+  it('closed pre-publish yang ditolak server (42501) tampil sensor + pilihan sendiri', async () => {
+    mockResults({
+      tally: [],
+      candidates: twoCandidates,
+      event: closedVoting,
+      tallyError: { code: '42501', message: 'not allowed' },
+      myVote: { candidate_id: 'c1', pair_id: null },
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Hasil Disembunyikan/i)).toBeInTheDocument();
+    });
+
+    // Tidak bocor: tanpa angka, persen, pemenang/posisi teratas
+    expect(document.body.textContent).not.toMatch(/75%/);
+    expect(document.body.textContent).not.toMatch(/Pemenang|Posisi Teratas/);
+    expect(document.body.textContent).toMatch(/Disembunyikan/);
+    // Struk abu-abu: pilihan sendiri tetap terlihat
+    expect(screen.getByText(/Pilihanmu: Kandidat A/i)).toBeInTheDocument();
+    // Bukan error page
+    expect(screen.queryByText(/Gagal memuat hasil/i)).not.toBeInTheDocument();
+  });
+
+  it('closed pre-publish tetap sensor walau server (data lama) masih kirim tally', async () => {
+    mockResults({
+      tally: [
+        { candidate_id: 'c1', pair_id: null, total_votes: 3 },
+        { candidate_id: 'c2', pair_id: null, total_votes: 1 },
+      ],
+      candidates: twoCandidates,
+      event: closedVoting,
+      myVote: { candidate_id: 'c2', pair_id: null },
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Hasil Disembunyikan/i)).toBeInTheDocument();
+    });
+
+    expect(document.body.textContent).not.toMatch(/75%/);
+    expect(document.body.textContent).not.toMatch(/Total: 4/);
+    expect(screen.getByText(/Pilihanmu: Kandidat B/i)).toBeInTheDocument();
+  });
+
+  it('closed yang sudah published tampil penuh (tidak regresi)', async () => {
+    mockResults({
+      tally: [
+        { candidate_id: 'c1', pair_id: null, total_votes: 3 },
+        { candidate_id: 'c2', pair_id: null, total_votes: 1 },
+      ],
+      candidates: twoCandidates,
+      event: { ...closedVoting, status: 'published' },
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getAllByText('Kandidat A').length).toBeGreaterThan(0);
+    });
+
+    expect(document.body.textContent).toMatch(/75%/);
+    expect(screen.queryByText(/Hasil Disembunyikan/i)).not.toBeInTheDocument();
   });
 });
 

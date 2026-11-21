@@ -30,7 +30,7 @@ import { cn } from '@/lib/utils';
 import { localDateTimeToUTCISO } from '@/lib/datetime';
 import { EventDateTimeFields } from '@/components/admin/events/EventDateTimeFields';
 
-const eventFormSchema = z.object({
+export const eventFormSchema = z.object({
   title: z.string().min(3, 'Judul minimal 3 karakter').max(100, 'Judul maksimal 100 karakter'),
   description: z.string().optional(),
   start_date: z.string().min(1, 'Tanggal mulai harus diisi'),
@@ -39,8 +39,12 @@ const eventFormSchema = z.object({
   end_time: z.string().min(1, 'Waktu selesai harus diisi'),
   status: z.enum(['draft', 'registration', 'voting', 'counting', 'published', 'archived']),
   election_type: z.enum(['open', 'closed']),
+  // Mode paslon: dipilih di awal agar tab Pasangan langsung tersedia.
+  // Mengubahnya di tengah jalan (sudah ada kandidat/vote) berisiko campur data.
+  use_pairs: z.boolean(),
   show_results_after_voting: z.boolean(),
   public_results: z.boolean(),
+  public_live_count: z.boolean(),
   scope_type: z.enum(['', 'university', 'faculty', 'department', 'program', 'cohort', 'class', 'organization']),
   scope_id: z.string().optional(),
 }).refine((data) => {
@@ -57,6 +61,24 @@ const eventFormSchema = z.object({
 }, {
   message: 'scope_type dan scope_id harus diisi bersamaan',
   path: ['scope_id'],
+}).refine((data) => {
+  // P-B: event tertutup tidak boleh membocorkan hasil sementara.
+  return data.election_type !== 'closed' || data.show_results_after_voting === false;
+}, {
+  message: 'Pemilihan tertutup: hasil dibuka saat published, matikan opsi tampil-setelah-memilih',
+  path: ['show_results_after_voting'],
+}).refine((data) => {
+  // Tertutup = tidak ada hasil publik; hasil hanya untuk peserta saat published.
+  return data.election_type !== 'closed' || data.public_results === false;
+}, {
+  message: 'Pemilihan tertutup: matikan opsi hasil publik',
+  path: ['public_results'],
+}).refine((data) => {
+  // Live publik hanya bermakna untuk open; closed+voting selalu 42501 di server.
+  return data.election_type !== 'closed' || data.public_live_count === false;
+}, {
+  message: 'Pemilihan tertutup: matikan opsi live count publik',
+  path: ['public_live_count'],
 });
 
 type EventFormValues = z.infer<typeof eventFormSchema>;
@@ -88,8 +110,10 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
       end_time: '',
       status: 'draft',
       election_type: 'closed',
+      use_pairs: false,
       show_results_after_voting: false,
       public_results: false,
+      public_live_count: false,
       scope_type: '',
       scope_id: '',
     },
@@ -97,8 +121,10 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
 
   const statusValue = watch('status');
   const electionTypeValue = watch('election_type');
+  const usePairs = watch('use_pairs');
   const showResultsAfterVoting = watch('show_results_after_voting');
   const publicResults = watch('public_results');
+  const publicLiveCount = watch('public_live_count');
   const scopeTypeValue = watch('scope_type');
 
   // Simpan sebagai UTC; input form selalu waktu lokal (anti-geser zona waktu).
@@ -117,8 +143,11 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
         end_time: endTime,
         status: data.status,
         election_type: data.election_type,
-        show_results_after_voting: data.show_results_after_voting,
-        public_results: data.public_results,
+        use_pairs: data.use_pairs,
+        // P-B: paksa false untuk closed (pertahanan terakhir bila validasi lolos).
+        show_results_after_voting: data.election_type === 'closed' ? false : data.show_results_after_voting,
+        public_results: data.election_type === 'closed' ? false : data.public_results,
+        public_live_count: data.election_type === 'closed' ? false : data.public_live_count,
         scope_type: data.scope_type || null,
         scope_id: data.scope_id || null,
       }).select('id').single();
@@ -135,6 +164,8 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
           election_type: data.election_type,
           status: data.status,
           public_results: data.public_results,
+          public_live_count: data.public_live_count,
+          use_pairs: data.use_pairs,
         },
       });
 
@@ -196,10 +227,10 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
 
           <div className="space-y-3">
             <Label>Jenis Pemilihan <span className="text-destructive">*</span></Label>
-            <RadioGroup value={electionTypeValue} onValueChange={(value) => setValue('election_type', value as 'open' | 'closed')} disabled={isSubmitting}>
+            <RadioGroup value={electionTypeValue} onValueChange={(value) => { const t = value as 'open' | 'closed'; setValue('election_type', t); if (t === 'closed') { setValue('show_results_after_voting', false); setValue('public_results', false); setValue('public_live_count', false); } }} disabled={isSubmitting}>
               <div
                 onClick={() => {
-                  if (!isSubmitting) setValue('election_type', 'closed');
+                  if (!isSubmitting) { setValue('election_type', 'closed'); setValue('show_results_after_voting', false); setValue('public_results', false); setValue('public_live_count', false); }
                 }}
                 className={cn(
                   'flex items-start space-x-3 space-y-0 rounded-md border p-4 transition-colors',
@@ -234,21 +265,42 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
 
           <div className="space-y-3 rounded-md border p-4">
             <div>
+              <Label className="text-base">Mode Pemilihan</Label>
+            </div>
+
+            <div className="flex items-start space-x-3">
+              <Checkbox id="use_pairs" checked={usePairs} onCheckedChange={(checked) => setValue('use_pairs', checked as boolean)} disabled={isSubmitting} />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="use_pairs" className="cursor-pointer font-medium">Pasangan calon (ketua & wakil)</Label>
+                <p className="text-sm text-muted-foreground">Voter memilih satu paket paslon. Tentukan di awal — tab Pasangan langsung tersedia setelah event dibuat.</p>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-3 rounded-md border p-4">
+            <div>
               <Label className="text-base">Pengaturan Visibilitas Hasil</Label>
             </div>
 
             <div className="flex items-start space-x-3">
-              <Checkbox id="show_results_after_voting" checked={showResultsAfterVoting} onCheckedChange={(checked) => setValue('show_results_after_voting', checked as boolean)} disabled={isSubmitting} />
+              <Checkbox id="show_results_after_voting" checked={showResultsAfterVoting} onCheckedChange={(checked) => setValue('show_results_after_voting', checked as boolean)} disabled={isSubmitting || electionTypeValue === 'closed'} />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="show_results_after_voting" className="cursor-pointer font-medium">Tampilkan hasil setelah voter memilih</Label>
-                <p className="text-sm text-muted-foreground">Voter dapat melihat hasil sementara setelah vote.</p>
+                <p className="text-sm text-muted-foreground">{electionTypeValue === 'closed' ? 'Nonaktif untuk pemilihan tertutup — hasil dibuka saat status published.' : 'Voter dapat melihat hasil sementara setelah vote.'}</p>
               </div>
             </div>
             <div className="flex items-start space-x-3">
-              <Checkbox id="public_results" checked={publicResults} onCheckedChange={(checked) => setValue('public_results', checked as boolean)} disabled={isSubmitting} />
+              <Checkbox id="public_results" checked={publicResults} onCheckedChange={(checked) => setValue('public_results', checked as boolean)} disabled={isSubmitting || electionTypeValue === 'closed'} />
               <div className="space-y-1 leading-none">
                 <Label htmlFor="public_results" className="cursor-pointer font-medium">Hasil publik (tanpa login)</Label>
-                <p className="text-sm text-muted-foreground">Hasil dapat dilihat siapa saja tanpa login.</p>
+                <p className="text-sm text-muted-foreground">{electionTypeValue === 'closed' ? 'Nonaktif untuk pemilihan tertutup — hasil hanya untuk peserta login.' : 'Hasil dapat dilihat siapa saja tanpa login.'}</p>
+              </div>
+            </div>
+            <div className="flex items-start space-x-3">
+              <Checkbox id="public_live_count" checked={publicLiveCount} onCheckedChange={(checked) => setValue('public_live_count', checked as boolean)} disabled={isSubmitting || electionTypeValue === 'closed'} />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="public_live_count" className="cursor-pointer font-medium">Live count publik saat voting</Label>
+                <p className="text-sm text-muted-foreground">{electionTypeValue === 'closed' ? 'Nonaktif untuk pemilihan tertutup — live count tidak pernah publik.' : 'Siapa saja (tanpa login) bisa melihat perolehan suara live selama voting.'}</p>
               </div>
             </div>
           </div>

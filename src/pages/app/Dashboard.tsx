@@ -186,7 +186,8 @@ export default function VoterDashboard() {
                                                     <div className="rounded-lg bg-success/10 p-2.5 md:p-3 text-center">
                                                         <p className="text-xs md:text-sm font-medium text-success-foreground">Terima kasih telah memberikan suara!</p>
                                                     </div>
-                                                    {(event.election_type === "open" || event.show_results_after_voting) && (
+                                                    {/* P-B: hasil sementara hanya untuk open. Closed dibuka saat published. */}
+                                                    {event.election_type === "open" && (
                                                         <Link to={`/app/results/${event.id}`}>
                                                             <Button variant="outline" className="w-full gap-2 text-xs md:text-sm h-9 md:h-10">
                                                                 <BarChart3 className="h-3 w-3 md:h-4 md:w-4" />

@@ -12,6 +12,18 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-21 — prod migration window (3 migrasi)
+- Snapshot logis prod + rollback `get_election_tally` disimpan di `backups/`
+  (SHA256 `55D0DABD…1965A` / `700A45DC…8E335`); full `pg_dump` tidak bisa
+  karena Docker/password DB tidak tersedia.
+- Apply via MCP: `lock_function_search_path`, `public_live_count`,
+  `admin_delete_invitation_user` → prod 65 migrasi.
+- Verifikasi: 0 fungsi `search_path` mutable (dari 7); 3 policy anon baru;
+  helper publik `true` untuk 4 event open+counting, `false` untuk event closed;
+  tally closed → `42501`; RPC hapus undangan hanya `authenticated`.
+- Mapping versi remote: `20261121010909/…0924/…0944` ↔ file lokal
+  `20261012001100/20261016000000/20261016000100`.
+
 ### Selesai (bukti lokal 2026-09-13)
 - Baseline: `npm run test -- --run` **20 files / 156 tests passed** (~45s),
   `npx tsc --noEmit` **0 error**, `npm run build` **sukses (~1m9s)**.
@@ -26,6 +38,15 @@ All notable changes to UniVertex are documented here. Format follows
 - **P1-02 DONE-smoke 2026-09-29:** `k6 run` 2 VU/30s ke prod (GET read-only):
   50 iterasi, 0 failed, p95 132ms (<500), max 199ms. Threshold skrip lolos.
   **SLO 200-VU + stretch 2000-user = NOT RUN ON PROD** (butuh env isolasi).
+- **Fase 1 (T1–T4) REVERTED 2026-10-09 — rollback atas permintaan user:**
+  migrasi `20261009000000_harden_privacy_rls` sudah ter-apply ke prod, lalu
+  dibatalkan via `20261009000100_revert_harden_privacy_rls` (restore 3 policy
+  SELECT longgar persis redaksi aslinya; file harden TETAP sebagai histori).
+  `setup-admin.js/.ts` + `scripts/README.md` dikembalikan ke semula via git.
+  Cara apply revert: SQL Editor dashboard (MCP tidak tersedia) → run file
+  revert → cek verifikasi `pg_policies` → cek app sebagai voter/panitia/observer.
+  Catatan: revert T4 mengembalikan password hardcoded di repo — disarankan
+  kerjakan ulang T4 terpisah (independen, tidak sentuh RLS).
 - **P1-03 (sebagian):**
   - `@vitest/coverage-v8@4.0.6` + `vitest.config.ts` coverage gate
     (P1 scope: `src/lib`+`src/hooks`+`VotingPage.tsx`; threshold

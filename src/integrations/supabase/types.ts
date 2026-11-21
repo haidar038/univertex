@@ -360,6 +360,48 @@ export type Database = {
         }
         Relationships: []
       }
+      email_queue: {
+        Row: {
+          attempts: number
+          created_at: string
+          email: string
+          error: string | null
+          event_id: string
+          full_name: string | null
+          id: string
+          provider_msg_id: string | null
+          sent_at: string | null
+          status: string
+          user_id: string | null
+        }
+        Insert: {
+          attempts?: number
+          created_at?: string
+          email: string
+          error?: string | null
+          event_id: string
+          full_name?: string | null
+          id?: string
+          provider_msg_id?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Update: {
+          attempts?: number
+          created_at?: string
+          email?: string
+          error?: string | null
+          event_id?: string
+          full_name?: string | null
+          id?: string
+          provider_msg_id?: string | null
+          sent_at?: string | null
+          status?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       election_committees: {
         Row: {
           appointed_at: string
@@ -435,6 +477,7 @@ export type Database = {
           election_type: Database["public"]["Enums"]["election_type"]
           end_time: string
           id: string
+          public_live_count: boolean
           public_results: boolean
           show_results_after_voting: boolean
           start_time: string
@@ -449,6 +492,7 @@ export type Database = {
           election_type?: Database["public"]["Enums"]["election_type"]
           end_time: string
           id?: string
+          public_live_count?: boolean
           public_results?: boolean
           show_results_after_voting?: boolean
           start_time: string
@@ -463,6 +507,7 @@ export type Database = {
           election_type?: Database["public"]["Enums"]["election_type"]
           end_time?: string
           id?: string
+          public_live_count?: boolean
           public_results?: boolean
           show_results_after_voting?: boolean
           start_time?: string
@@ -1003,6 +1048,14 @@ export type Database = {
         Args: { p_election_id: string; p_user_id: string }
         Returns: string
       }
+      admin_bulk_delete_users: {
+        Args: { p_user_ids: string[] }
+        Returns: Json
+      }
+      admin_delete_invitation_user: {
+        Args: { p_invitation_id: string }
+        Returns: Json
+      }
       admin_correct_audit_entry: {
         Args: {
           p_correction_reason: string
@@ -1037,6 +1090,14 @@ export type Database = {
         }
         Returns: string
       }
+      admin_delete_event: {
+        Args: { p_event_id: string }
+        Returns: Json
+      }
+      admin_enqueue_event_voters: {
+        Args: { p_event_id: string }
+        Returns: number
+      }
       admin_export_audit_log: {
         Args: {
           p_election_id?: string
@@ -1045,6 +1106,10 @@ export type Database = {
           p_offset?: number
           p_to_date?: string
         }
+        Returns: Json
+      }
+      admin_import_class_users: {
+        Args: { p_class_id: string; p_users: Json }
         Returns: Json
       }
       admin_list_invitations: {

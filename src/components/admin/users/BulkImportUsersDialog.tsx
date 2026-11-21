@@ -10,10 +10,20 @@ import {
   DialogTitle,
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
+import { Label } from '@/components/ui/label';
 import { Progress } from '@/components/ui/progress';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertCircle, Download } from 'lucide-react';
+import { Upload, FileSpreadsheet, CheckCircle2, XCircle, AlertCircle, Download, KeyRound } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Checkbox } from '@/components/ui/checkbox';
+import { generatePin } from '@/lib/pin';
 
 interface BulkImportUsersDialogProps {
   open: boolean;
@@ -49,7 +59,26 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
   const [importResults, setImportResults] = useState<ImportResult[]>([]);
   const [progress, setProgress] = useState(0);
   const [step, setStep] = useState<'upload' | 'preview' | 'importing' | 'complete'>('upload');
+  // P-C: kelas override — untuk import per-kelas tanpa kolom class_name.
+  const [classes, setClasses] = useState<Array<{ id: string; name: string }>>([]);
+  const [classOverride, setClassOverride] = useState<string>('none');
+  // Upacara kredensial H-H: password 8 digit acak (CSPRNG), anti-bingung.
+  const [autoGenPw, setAutoGenPw] = useState(true);
   const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const fetchClasses = async () => {
+    const { data } = await supabase.from('classes').select('id, name').order('name');
+    setClasses((data as Array<{ id: string; name: string }>) || []);
+  };
+
+  const handleOpenChange = (o: boolean) => {
+    if (o) {
+      setClassOverride('none');
+      fetchClasses();
+    } else {
+      handleClose();
+    }
+  };
 
   const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -145,7 +174,8 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
     if (!user.email || !isValidEmail(user.email)) {
       errors.push('Email tidak valid');
     }
-    if (!user.password || user.password.length < 8) {
+    // Upacara H-H: password digenerate otomatis (8 digit) bila mode aktif.
+    if (!autoGenPw && (!user.password || user.password.length < 8)) {
       errors.push('Password minimal 8 karakter');
     }
     if (!user.roles || user.roles.trim() === '') {
@@ -186,69 +216,84 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
       .select('id, name');
     const classesMap = new Map(classesData?.map(c => [c.name.toLowerCase(), c.id]) || []);
 
-    for (let i = 0; i < validUsers.length; i++) {
-      const user = validUsers[i];
-      try {
-        // Find class_id if class_name provided
-        let classId = null;
-        if (user.class_name) {
-          classId = classesMap.get(user.class_name.toLowerCase());
-          if (!classId) {
-            console.warn(`Kelas tidak ditemukan: ${user.class_name}`);
-          }
-        }
+    // PIN per baris (upacara H-H): digenerate di client agar bisa diunduh
+    // SEKALI sebagai slip kredensial. Server tidak pernah mengembalikannya.
+    const withPins = validUsers.map((user) =>
+      autoGenPw && (!user.password || user.password.length < 8)
+        ? { ...user, password: generatePin() }
+        : user
+    );
 
-        // Create the account via the admin_create_user RPC. Never call
-        // supabase.auth.signUp here - that would hijack the admin's own
-        // browser session.
-        const { data: userId, error: rpcError } = await supabase.rpc('admin_create_user', {
-          p_email: user.email,
-          p_full_name: user.full_name,
-          p_password: user.password,
-          p_student_id: user.student_id,
-          p_class_id: classId,
-          p_department: user.department || null,
-          p_skip_confirmation: true,
-        });
-
-        if (rpcError) throw rpcError;
-        if (!userId) throw new Error('Gagal membuat user');
-
-        // Parse roles and adjust on top of the default 'voter' role
-        const roles = user.roles.split('|').map(r => r.trim());
-
-        if (!roles.includes('voter')) {
-          await supabase
-            .from('user_roles')
-            .delete()
-            .eq('user_id', userId)
-            .eq('role', 'voter');
-        }
-
-        if (roles.includes('candidate')) {
-          await supabase
-            .from('user_roles')
-            .insert({
-              user_id: userId,
-              role: 'candidate',
-            });
-        }
-
-        results.push({ success: true, user });
-      } catch (error: any) {
-        console.error(`Error importing user ${user.email}:`, error);
-        let errorMessage = error.message || 'Unknown error';
-        if (error.code === '23505' || /sudah terdaftar/i.test(errorMessage || '')) {
-          errorMessage = 'Email sudah terdaftar';
-        } else if (/sudah digunakan/i.test(errorMessage || '')) {
-          errorMessage = 'NIM sudah digunakan';
-        } else if (/password minimal/i.test(errorMessage || '')) {
-          errorMessage = 'Password minimal 8 karakter';
-        }
-        results.push({ success: false, user, error: errorMessage });
+    // Kelompokkan per kelas ter-resolve; SATU-SATUNYA jalur tulis = RPC batch.
+    // Baris tanpa kelas = error eksplisit (dulu lolos diam-diam class null).
+    const groups = new Map<string, typeof withPins>();
+    const noClass: typeof withPins = [];
+    for (const user of withPins) {
+      let classId: string | null = null;
+      if (user.class_name) {
+        classId = classesMap.get(user.class_name.toLowerCase()) || null;
       }
+      if (!classId && classOverride !== 'none') classId = classOverride;
+      if (!classId) noClass.push(user);
+      else {
+        const g = groups.get(classId) || [];
+        g.push(user);
+        groups.set(classId, g);
+      }
+    }
+    for (const user of noClass) {
+      results.push({
+        success: false,
+        user,
+        error: 'Kelas tidak ditemukan — pilih kelas tujuan atau perbaiki class_name',
+      });
+    }
 
-      setProgress(((i + 1) / validUsers.length) * 100);
+    let done = noClass.length;
+    const total = validUsers.length;
+    // Create accounts via admin_import_class_users (chunk 200). Never call
+    // supabase.auth.signUp here - that would hijack the admin's own session.
+    // Roles per baris ditentukan server (satu aturan untuk semua import).
+    for (const [classId, rows] of groups) {
+      for (let s = 0; s < rows.length; s += 200) {
+        const chunk = rows.slice(s, s + 200);
+        try {
+          const { data, error: rpcError } = await supabase.rpc('admin_import_class_users', {
+            p_class_id: classId,
+            p_users: chunk.map((u) => ({
+              full_name: u.full_name,
+              student_id: u.student_id,
+              email: u.email,
+              password: u.password,
+              department: u.department || null,
+              roles: u.roles,
+            })),
+          });
+          if (rpcError) throw rpcError;
+          const res = data as unknown as {
+            created: number;
+            skipped_exists: string[];
+            errors: Array<{ email: string; error: string }>;
+          };
+          const skipped = new Set(res.skipped_exists || []);
+          const errByEmail = new Map((res.errors || []).map((e) => [e.email.toLowerCase(), e.error]));
+          for (const u of chunk) {
+            const key = u.email.toLowerCase();
+            if (errByEmail.has(key)) {
+              results.push({ success: false, user: u, error: errByEmail.get(key) });
+            } else if (skipped.has(u.email) || skipped.has(key)) {
+              results.push({ success: false, user: u, error: 'Email sudah terdaftar' });
+            } else {
+              results.push({ success: true, user: u });
+            }
+          }
+        } catch (error: unknown) {
+          const msg = error instanceof Error ? error.message : 'Gagal import batch';
+          for (const u of chunk) results.push({ success: false, user: u, error: msg });
+        }
+        done += chunk.length;
+        setProgress((done / total) * 100);
+      }
     }
 
     setImportResults(results);
@@ -275,6 +320,7 @@ export function BulkImportUsersDialog({ open, onOpenChange, onSuccess }: BulkImp
     setImportResults([]);
     setProgress(0);
     setStep('upload');
+    setClassOverride('none');
     onOpenChange(false);
   };
 
@@ -294,13 +340,30 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
     toast.success('Template berhasil diunduh');
   };
 
+  const downloadCredentials = () => {
+    // Slip kredensial H-H: unduh SEKALI, cetak per-kelas, simpan terkunci.
+    // Server tidak menyimpan PIN plain — file ini satu-satunya salinan.
+    const rows = importResults
+      .filter((r) => r.success)
+      .map((r) => `${r.user.full_name},${r.user.student_id},${r.user.email},${r.user.password}`);
+    const csv = `full_name,student_id,email,password\n${rows.join('\n')}`;
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'kredensial-voter.csv';
+    a.click();
+    window.URL.revokeObjectURL(url);
+    toast.success('CSV kredensial diunduh — simpan terkunci, jangan disebar digital');
+  };
+
   const validCount = parsedUsers.filter(u => u.valid).length;
   const invalidCount = parsedUsers.filter(u => !u.valid).length;
   const successCount = importResults.filter(r => r.success).length;
   const failCount = importResults.filter(r => !r.success).length;
 
   return (
-    <Dialog open={open} onOpenChange={handleClose}>
+    <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogContent className="sm:max-w-175">
         <DialogHeader>
           <DialogTitle>Import Pengguna dari CSV</DialogTitle>
@@ -319,7 +382,8 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
                 File CSV harus memiliki kolom: <strong>full_name, student_id, email, password, roles</strong>.
                 Kolom opsional: <strong>department, class_name</strong>.
                 <br />
-                Roles dipisahkan dengan | (contoh: voter|candidate)
+                Roles dipisahkan dengan | (contoh: voter|candidate).
+                Bila "Generate PIN" aktif, kolom password boleh kosong.
               </AlertDescription>
             </Alert>
 
@@ -332,6 +396,46 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
                 <Download className="mr-2 h-4 w-4" />
                 Download Template
               </Button>
+            </div>
+
+            {/* P-C: import per-kelas — pilih kelas sekali, berlaku untuk
+                baris tanpa class_name yang cocok. */}
+            <div className="space-y-2">
+              <Label htmlFor="class-override">Kelas tujuan (opsional)</Label>
+              <Select value={classOverride} onValueChange={setClassOverride}>
+                <SelectTrigger id="class-override">
+                  <SelectValue placeholder="Ikut kolom class_name CSV" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">Ikut kolom class_name CSV</SelectItem>
+                  {classes.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-xs text-muted-foreground">
+                Untuk import 1 kelas penuh: pilih kelas di sini, CSV cukup berisi
+                full_name, student_id, email, password, roles.
+              </p>
+            </div>
+
+            {/* Upacara kredensial H-H: PIN 8 digit acak per voter. */}
+            <div className="flex items-start space-x-3 rounded-md border p-3">
+              <Checkbox
+                id="autogen-pin"
+                checked={autoGenPw}
+                onCheckedChange={(v) => setAutoGenPw(v === true)}
+              />
+              <div className="space-y-1 leading-none">
+                <Label htmlFor="autogen-pin" className="cursor-pointer font-medium">
+                  Generate PIN 8 digit otomatis
+                </Label>
+                <p className="text-xs text-muted-foreground">
+                  Kolom password CSV boleh kosong — tiap voter dapat PIN acak
+                  (10^8 kombinasi). Unduh CSV kredensial setelah import untuk
+                  dicetak sebagai slip H-H.
+                </p>
+              </div>
             </div>
 
             <div
@@ -382,8 +486,8 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
                   <div
                     key={user.rowNumber}
                     className={`p-3 rounded-lg border ${user.valid
-                        ? 'bg-green-50 border-green-200'
-                        : 'bg-red-50 border-red-200'
+                      ? 'bg-green-50 border-green-200'
+                      : 'bg-red-50 border-red-200'
                       }`}
                   >
                     <div className="flex items-start justify-between">
@@ -474,7 +578,7 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
                     .filter(r => !r.success)
                     .map((result, idx) => (
                       <div key={idx} className="p-2 bg-red-50 border border-red-200 rounded">
-                        <p className="font-medium text-sm">
+                        <p className="font-medium text-sm text-red-600">
                           {result.user.full_name} ({result.user.email})
                         </p>
                         <p className="text-xs text-red-600">{result.error}</p>
@@ -482,6 +586,24 @@ Bob Johnson,123458,bob@example.com,password123,Sistem Informasi,Informatika 2022
                     ))}
                 </div>
               </ScrollArea>
+            )}
+
+            {successCount > 0 && (
+              <div className="space-y-2">
+                <Button variant="outline" className="w-full gap-2" onClick={downloadCredentials}>
+                  <KeyRound className="h-4 w-4" />
+                  Unduh CSV Kredensial ({successCount} akun, sekali saja)
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  Berisi PIN tiap akun — cetak per-kelas sebagai slip H-H, lalu hapus file digitalnya.
+                  PIN tidak bisa dilihat lagi setelah dialog ditutup.
+                </p>
+                <p className="text-xs font-medium text-destructive">
+                  Perhatian: bila akun ini nanti di-blast via email, password di sini DIGANTI
+                  PIN baru yang dikirim email — CSV ini otomatis kedaluwarsa. Satu kohort =
+                  satu jalur (slip fisik ATAU email, jangan campur).
+                </p>
+              </div>
             )}
           </div>
         )}

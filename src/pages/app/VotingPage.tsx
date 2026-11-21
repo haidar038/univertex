@@ -191,7 +191,9 @@ export default function VotingPage() {
         metadata: { event_id: eventId },
       });
 
-      if (event?.election_type === 'open' || event?.show_results_after_voting) {
+      // P-B: hanya open yang boleh auto-redirect ke hasil. Closed tidak pernah
+      // (struk abu-abu di dashboard; angka dibuka saat published).
+      if (event?.election_type === 'open') {
         navigate(`/app/results/${eventId}`);
       } else {
         navigate('/app/dashboard');

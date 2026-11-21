@@ -4,7 +4,7 @@ import { useTheme } from "next-themes";
 import { Button } from "@/components/ui/button";
 import { ThemeToggle } from "@/components/ui/theme-toggle";
 import { cn } from "@/lib/utils";
-import { LayoutDashboard, Calendar, Users, GraduationCap, LogOut, Menu, X, MailPlus, ScrollText, Shield, FileDown, User } from "lucide-react";
+import { LayoutDashboard, Calendar, Users, GraduationCap, LogOut, Menu, X, MailPlus, ScrollText, Shield, FileDown, User, Send } from "lucide-react";
 import { useState } from "react";
 
 const navigation = [
@@ -13,6 +13,7 @@ const navigation = [
     { name: "Manajemen Pengguna", href: "/admin/users", icon: Users },
     { name: "Manajemen Kelas", href: "/admin/classes", icon: GraduationCap },
     { name: "Undangan", href: "/admin/invitations", icon: MailPlus },
+    { name: "Blast Email", href: "/admin/email-blast", icon: Send },
     { name: "Sesi Perangkat", href: "/admin/sessions", icon: Shield },
     { name: "Audit Log", href: "/admin/audit-log", icon: ScrollText },
     { name: "Audit Export", href: "/admin/audit-export", icon: FileDown },
