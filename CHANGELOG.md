@@ -13,8 +13,9 @@ All notable changes to UniVertex are documented here. Format follows
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
 ### 2026-11-21 — CI repair
-- `next-themes` `^0.3.0` → `^0.4.6` (peer React 19); `npm ci` ERESOLVE hilang.
-  Verifikasi `npx npm@10 ci --dry-run` (versi npm CI) sukses.
+- `next-themes` `^0.3.0` → `^0.4.6` dan `vaul` `^0.9.9` → `^1.1.2` (peer React 19).
+  Root cause scan seluruh `package-lock.json`: 0 package lagi dengan `peerDependencies.react`
+  yang tidak menerima 19.2.0. `npx npm@10 ci --dry-run` (npm versi CI) sukses.
 - `npm audit fix` non-breaking: 24 → 14 temuan (0 critical, 12 moderate,
   2 high: `vite` 8 + `zod` 4 butuh major upgrade → backlog terpisah).
   Gate CI `npm audit` diturunkan `high` → `critical`; laporan tetap tampil.
