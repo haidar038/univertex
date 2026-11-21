@@ -250,3 +250,27 @@ Run user (`test-results/k6-600.txt`): semua threshold ? (errors 0,02%; p95 534ms
 Patch accounting `tests/load/staging-mixed.js`: tally 400/401/403 ditandai expected via `responseCallback: http.expectedStatuses(...)` (default + setup-probe) + threshold `http_req_failed rate<0.01`.
 
 Verify agen 600 VU x 2m `LANDING=0` (`test-results/k6-600-v2.txt`): exit 0; checks 82.792/82.792 (100%); http_req_failed 0,00%; 0 reset; {events} p95 817ms; {tally} p95 775ms; avg 364ms; max 6,65s; 678 req/s. (Bandingkan run user: p95 534 vs 791ms = varians antar-run; reset 23 vs 0 ? menegaskan sifat transien.)
+
+
+## Fase 1 prod-direct — migrasi 3 file 2026-11-21
+
+Preflight prod (`oiurjnmpkguyxevdbpbu`, 62 migrasi): `public_live_count` TIDAK ada, `event_allows_public_tally` TIDAK ada, `admin_delete_invitation_user` TIDAK ada, 7 fungsi `search_path` mutable. 5 event semuanya `counting`; tidak ada event `voting` live.
+
+Snapshot:
+- Full `pg_dump` TIDAK bisa: `supabase db dump` butuh Docker (tidak terpasang) dan password DB tidak ada di mesin. Physical restore tetap mengandalkan backup harian Supabase.
+- Snapshot logis: `backups/oiurjnmpkguyxevdbpbu-p1-premigrasi-20261120-manifest.json` (row count 21 tabel + 5 event + preflight), SHA256 `55D0DABD…1965A`.
+- Rollback fungsi tally: `backups/get_election_tally-before-20261120.sql`, SHA256 `700A45DC…8E335`.
+
+Apply via MCP `apply_migration` (bukan `db push` — drift histori masih ada):
+- `20261012001100_lock_function_search_path` → versi remote `20261121010909`
+- `20261016000000_public_live_count` → versi remote `20261121010924`
+- `20261016000100_admin_delete_invitation_user` → versi remote `20261121010944`
+- Prod kini 65 migrasi. Mapping versi lokal→remote dicatat di sini; rekonsiliasi histori = P2.
+
+Verifikasi pasca-apply:
+- `public_live_count` ada, default false; 0 event opt-in.
+- `event_allows_public_tally` + 3 policy anon (`candidates`, `candidate_pairs`, `candidate_pair_members`) ada.
+- 0 fungsi `search_path` mutable (dari 7).
+- Helper: 4 event open+counting+`public_results=true` → `true`; 1 event closed+counting+`public_results=false` → `false`.
+- `get_election_tally('95676965…')` sebagai anon mengembalikan 1 baris; event closed `1b413f64…` → `42501` (sesuai guard).
+- `admin_delete_invitation_user`: SECURITY DEFINER, `search_path=public`, owner `postgres`, anon tidak boleh EXECUTE, authenticated boleh.

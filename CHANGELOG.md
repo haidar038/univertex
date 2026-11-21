@@ -12,6 +12,18 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-21 — prod migration window (3 migrasi)
+- Snapshot logis prod + rollback `get_election_tally` disimpan di `backups/`
+  (SHA256 `55D0DABD…1965A` / `700A45DC…8E335`); full `pg_dump` tidak bisa
+  karena Docker/password DB tidak tersedia.
+- Apply via MCP: `lock_function_search_path`, `public_live_count`,
+  `admin_delete_invitation_user` → prod 65 migrasi.
+- Verifikasi: 0 fungsi `search_path` mutable (dari 7); 3 policy anon baru;
+  helper publik `true` untuk 4 event open+counting, `false` untuk event closed;
+  tally closed → `42501`; RPC hapus undangan hanya `authenticated`.
+- Mapping versi remote: `20261121010909/…0924/…0944` ↔ file lokal
+  `20261012001100/20261016000000/20261016000100`.
+
 ### Selesai (bukti lokal 2026-09-13)
 - Baseline: `npm run test -- --run` **20 files / 156 tests passed** (~45s),
   `npx tsc --noEmit` **0 error**, `npm run build` **sukses (~1m9s)**.
