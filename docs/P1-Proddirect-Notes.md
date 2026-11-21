@@ -286,3 +286,24 @@ Verifikasi pasca-apply:
   - `rpc/get_election_tally(1b413f64…)` event closed → HTTP 401 (PostgREST memetakan `42501`).
   - `rpc/event_allows_public_tally(95676965…)` → `true`.
 - Catatan: `.env` lokal menunjuk staging `koveroqhxphdiakvukxt`; kredensial prod ada di `.env-prod.bak`. Jangan tertukar saat smoke.
+
+## Fase 3 staging — fixture + E2E 2026-11-21
+
+Fixture staging (`koveroqhxphdiakvukxt`, 66 migrasi) dibuat via RPC dengan klaim admin disimulasikan (`set_config('request.jwt.claims', …)`):
+
+| Event | ID | Status | Catatan |
+|---|---|---|---|
+| `[P1-TEST] Voting Tunggal 2026` | `a1111111-1111-4111-8111-111111111111` | voting/open | 2 kandidat, `public_live_count=true`, DPT TI 2021 |
+| `[P1-TEST] Voting Paslon 2026` | `b2222222-2222-4222-8222-222222222222` | voting/open | 2 paslon × 2 anggota, `public_live_count=true` |
+| `[P1-TEST] Counting Publik 2026` | `c3333333-3333-4333-8333-333333333333` | counting/open | `public_results=true`, 2 suara |
+| `[P1-TEST] Voting Tertutup 2026` | `d4444444-4444-4444-8444-444444444444` | voting/closed | anon candidates 0, tally 401, helper `false` |
+| `[P1-TEST] Arsip 2026` | `e5555555-5555-4555-8555-555555555555` | archived | target uji hapus |
+
+Akun `p1-*@test.local` (password di `docs/completion-phases/13-manual-ops-handbook.md`): admin, voter, voter2, non-DPT, committee, observer, 4 kandidat. Login password grant diverifikasi 5/5. Assignment committee/observer mencakup 4 event (A–D).
+
+E2E (`test-results/e2e-staging-20261121-final2.log`): **7/7 passed, 0 skip** (2,5 mnt).
+- Dua bug harness ditemukan + diperbaiki:
+  - test 4 sebelumnya lolos tanpa menulis observasi (placeholder tidak cocok); kini pakai `#obs-description` + assert toast.
+  - test 3 flaky saat body masih `Memuat...`; kini tunggu loading selesai + timeout 20 dtk.
+- Bukti DB: 1 vote + 1 observasi di event A; `audit_log` `vote.cast` metadata hanya `{event_id}` (tanpa kandidat).
+- Reset rerun: hapus vote/observasi event A (SQL di handbook).

@@ -27,6 +27,14 @@ All notable changes to UniVertex are documented here. Format follows
   (`dpl_DiR6BavW9ta9NBGPqXR2QKgL1vxV`), alias `www.univertex.site`.
   Smoke bundle: 4 fitur baru terdeteksi; smoke anon: tally open 1 baris,
   tally closed 401, helper `true`.
+- Fixture staging lengkap: 5 event `[P1-TEST]` (voting tunggal/paslon,
+  counting publik, voting tertutup, arsip) + 10 akun `p1-*@test.local`,
+  DPT TI 2021, committee/observer assignment.
+- E2E staging **7/7 passed, 0 skip** (`test-results/e2e-staging-20261121-final2.log`).
+  Harness fix: test 4 kini benar-benar submit observasi; test 3 tunggu
+  loading selesai (anti-flaky). Bukti DB: 1 vote + 1 observasi event A;
+  `vote.cast` audit metadata hanya `{event_id}`.
+- Fixture closed-voting: anon candidates 0, tally 401, helper `false`.
 
 ### Selesai (bukti lokal 2026-09-13)
 - Baseline: `npm run test -- --run` **20 files / 156 tests passed** (~45s),

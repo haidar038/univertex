@@ -55,9 +55,12 @@ test.describe('voter vote + double-vote + non-DPT (event isolasi)', () => {
     const password = env('E2E_VOTER_PASSWORD')!;
     await login(page, email, password);
     await page.goto(`/app/vote/${TEST_EVENT_ID}`);
+    // Tunggu query selesai (body sempat "Memuat..." di mesin lambat).
+    await expect(page.locator('body')).not.toContainText(/Memuat\.\.\./i, { timeout: 20000 });
     // Salah satu banner status harus tampil; tidak boleh ada crash.
     await expect(page.locator('body')).toContainText(
-      /belum dimulai|Waktu pemilihan sudah berakhir|tahap draf|tahap pendaftaran|penghitungan|dipublikasikan|diarsipkan|sudah memberikan suara|Pilih satu kandidat/i
+      /belum dimulai|Waktu pemilihan sudah berakhir|tahap draf|tahap pendaftaran|penghitungan|dipublikasikan|diarsipkan|sudah memberikan suara|Pilih satu kandidat/i,
+      { timeout: 20000 }
     );
   });
 });

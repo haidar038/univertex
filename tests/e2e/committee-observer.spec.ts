@@ -20,15 +20,13 @@ test.describe('committee & observer', () => {
     await expect(page.locator('body')).toContainText(/Panitia|pemilihan/i);
     await page.goto(`/committee/election/${TEST_EVENT_ID}`);
     await expect(page.locator('body')).toContainText(/Tally|Hasil|Observasi|Monitoring/i);
-    const obsBox = page.getByPlaceholder(/observasi|catatan/i);
-    if (await obsBox.count()) {
-      await obsBox.first().fill(`[P1-TEST] observasi e2e ${new Date().toISOString()}`);
-      const submit = page.getByRole('button', { name: /kirim|simpan|tambah/i });
-      if (await submit.count()) {
-        await submit.first().click();
-        await expect(page.locator('body')).toContainText(/tersimpan|berhasil/i);
-      }
-    }
+    const obsBox = page.locator('#obs-description');
+    await expect(obsBox).toBeVisible({ timeout: 15000 });
+    await obsBox.fill(`[P1-TEST] observasi e2e ${new Date().toISOString()}`);
+    const submit = page.getByRole('button', { name: /Kirim Observasi/i });
+    await expect(submit).toBeVisible();
+    await submit.click();
+    await expect(page.locator('body')).toContainText(/Observasi tercatat|berhasil|tersimpan/i, { timeout: 15000 });
   });
 
   test('5. observer login → /observer read-only (tanpa tombol aksi)', async ({ page }) => {

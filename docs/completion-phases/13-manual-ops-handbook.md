@@ -5,6 +5,40 @@
 > Setiap item: lakukan → kirim result ke agen → tunggu verifikasi hijau → lanjut.
 > Format laporan: `item: <kode> | hasil: <ok/gagal> | bukti: <screenshot/log/angka>`.
 
+## Fixture staging P1 (2026-11-21)
+
+Staging `koveroqhxphdiakvukxt`. Semua akun sintetis, password khusus uji.
+
+| Event | ID | Status | Kegunaan |
+|---|---|---|---|
+| `[P1-TEST] Voting Tunggal 2026` | `a1111111-1111-4111-8111-111111111111` | voting/open | E2E voter, double-vote, non-DPT, committee/observer |
+| `[P1-TEST] Voting Paslon 2026` | `b2222222-2222-4222-8222-222222222222` | voting/open | uji paslon + tally live |
+| `[P1-TEST] Counting Publik 2026` | `c3333333-3333-4333-8333-333333333333` | counting/open | hasil publik, k6 tally |
+| `[P1-TEST] Voting Tertutup 2026` | `d4444444-4444-4444-8444-444444444444` | voting/closed | uji redaksi hasil (anon 401) |
+| `[P1-TEST] Arsip 2026` | `e5555555-5555-4555-8555-555555555555` | archived | uji hapus event |
+
+Akun (login password grant sudah diverifikasi):
+
+| Email | Password | Role |
+|---|---|---|
+| `p1-admin@test.local` | `P1Test!2026adm` | admin, voter |
+| `p1-voter@test.local` | `P1Test!2026vtr` | voter (DPT TI 2021) |
+| `p1-voter2@test.local` | `P1Test!2026v2` | voter (DPT TI 2021) |
+| `p1-nondpt@test.local` | `P1Test!2026ndp` | voter (Akuntansi 2021, non-DPT) |
+| `p1-committee@test.local` | `P1Test!2026cmt` | committee + assignment 4 event |
+| `p1-observer@test.local` | `P1Test!2026obs` | observer + assignment 4 event |
+| `p1-candidate1..4@test.local` | `P1Test!2026c1..c4` | candidate, voter |
+
+Reset sebelum rerun E2E (vote + observasi event A):
+
+```sql
+delete from public.election_observations
+ where election_id = 'a1111111-1111-4111-8111-111111111111';
+delete from public.votes
+ where event_id = 'a1111111-1111-4111-8111-111111111111'
+   and voter_id = '6e01e5b3-7dec-4f51-bdb4-4354a94d988d';
+```
+
 ## B1. Paste fix import ke dashboard PROD [BLOKIR, ±2 menit]
 
 Kenapa: import di prod rusak (pgcrypto + kolom audit). Staging sudah hijau.
@@ -24,10 +58,10 @@ Kenapa: kode P-B hijau di unit, belum pernah diklik manusia di browser.
 
 Persiapan (app menembak staging, login admin staging):
 
-1. **Vote single:** event open/voting (`d8b974a5`) → login 1 voter DPT → vote → toast sukses → vote lagi → ditolak "sudah vote". Catat jam.
-2. **Vote paslon:** bila ada event `use_pairs`, ulangi langkah 1 di sana. Bila belum ada, lewati + tulis "paslon: belum ada event".
-3. **Closed tidak bocor:** event closed/voting (`3c0c4606`) → login voter → vote → harus mendarat di **dashboard** (bukan `/app/results`) → buka `/app/results/<id>` manual → harus tampil **"Hasil Disembunyikan" + "Pilihanmu: X"**, tanpa angka/persen/pemenang. Coba panggil tally via console (harus 42501) — opsional.
-4. **Hapus arsip:** arsipkan 1 event uji kecil (status → archived via tombol Status) → Hapus → ketik nama persis → event hilang; cek audit `event.delete` ada (tanya agen bila perlu).
+1. **Vote single:** event open/voting `a1111111` → login `p1-voter@test.local` → vote → toast sukses → vote lagi → ditolak "sudah vote". Catat jam.
+2. **Vote paslon:** event `use_pairs` `b2222222` → login `p1-voter2@test.local` → pilih paslon → vote → cek tally live (event `public_live_count=true`).
+3. **Closed tidak bocor:** event closed/voting `d4444444` → login voter DPT yang belum vote → vote → harus mendarat di **dashboard** (bukan `/app/results`) → buka `/app/results/<id>` manual → harus tampil **"Hasil Disembunyikan" + "Pilihanmu: X"**, tanpa angka/persen/pemenang. Cek anon tally via REST → 401.
+4. **Hapus arsip:** event `e5555555` sudah `archived` → Hapus → ketik nama persis → event hilang; cek audit `event.delete` ada (tanya agen bila perlu).
 5. Kirim: untuk tiap nomor — OK/GAGAL + screenshot kunci (struk abu-abu, toast sukses, dialog hapus).
 
 ## Y1. Dashboard M4 + helpdesk [±30 menit + latihan]
@@ -55,7 +89,7 @@ Persiapan (app menembak staging, login admin staging):
 1. **k6 (staging saja, jangan prod):** `tests/load/staging-mixed.js`. Mode REST-only (default aman):
    ```powershell
    $env:ANON_KEY = <anon staging, tanpa kutip>
-   k6 run -e LANDING=0 -e TALLY_EVENT_ID=87f36fe7-f251-4326-8215-1eff49058608 -e VUS=100 -e DURATION=2m tests/load/staging-mixed.js
+   k6 run -e LANDING=0 -e TALLY_EVENT_ID=c3333333-3333-4333-8333-333333333333 -e VUS=100 -e DURATION=2m tests/load/staging-mixed.js
    ```
    Target preview Vercel terproteksi → script abort di setup (temuan run 100 VU pertama: tanpa guard, yang terukur justru halaman login Vercel). Untuk ikut fetch halaman app: `-e BYPASS=<secret>` (Dashboard Vercel → Settings → Deployment Protection → Protection Bypass for Automation → Generate). Catat p95/max/error%.
 2. **ZAP pasif** ke staging, target 0 High. Pindai agresif dilarang di mana pun.

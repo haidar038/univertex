@@ -127,16 +127,16 @@ Catat di `docs/P1-Proddirect-Notes.md`: `p1-pre: <tanggal> <hash> <lokasi1> <lok
 
 ## Fase 3 — `npm test:e2e` (±10 mnt)
 
-### 3.1 Terminal A — dev server (pakai .env prod)
+### 3.1 Terminal A — dev server (pakai `.env` staging)
 ```powershell
 npm run dev
 # Tunggu sampai:  "Local: http://localhost:8080"
 ```
 
-### 3.2 Terminal B — env + run
+### 3.2 Terminal B — env + run (fixture staging 2026-11-21)
 ```powershell
 $env:BASE_URL               = 'http://localhost:8080'
-$env:TEST_EVENT_ID          = '<EVENT_ID-uuid>'
+$env:TEST_EVENT_ID          = 'a1111111-1111-4111-8111-111111111111'
 $env:E2E_VOTER_EMAIL        = 'p1-voter@test.local'
 $env:E2E_VOTER_PASSWORD     = 'P1Test!2026vtr'
 $env:E2E_NON_DPT_EMAIL      = 'p1-nondpt@test.local'
@@ -145,8 +145,8 @@ $env:E2E_COMMITTEE_EMAIL    = 'p1-committee@test.local'
 $env:E2E_COMMITTEE_PASSWORD = 'P1Test!2026cmt'
 $env:E2E_OBSERVER_EMAIL     = 'p1-observer@test.local'
 $env:E2E_OBSERVER_PASSWORD  = 'P1Test!2026obs'
-$env:E2E_ADMIN_EMAIL        = '<email-admin-lama-Anda>'
-$env:E2E_ADMIN_PASSWORD     = '<password-admin-lama-Anda>'
+$env:E2E_ADMIN_EMAIL        = 'p1-admin@test.local'
+$env:E2E_ADMIN_PASSWORD     = 'P1Test!2026adm'
 
 npm test:e2e                 # alias: npx playwright test
 ```
