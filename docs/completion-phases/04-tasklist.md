@@ -51,6 +51,10 @@
 
 ## P-F — Gladi + Go/No-Go
 
+> **Keputusan owner 2026-11-22:** ZAP, UAT, pentest, Peraturan, helpdesk, backup H-1,
+> dan dashboard auth **di-skip / WAIVED**, bukan hijau. Form penerimaan risiko ada di
+> `docs/LIVE-ELECTION-RUNBOOK.md §1.2 / §5.4`. M9 (GO/NO-GO tanda tangan) masih pending.
+
 * [ ] UAT 15/15 (HP + laptop) + tanda tangan panitia + `Peraturan-*.md` SAH.
 * [ ] Gladi auto-`counting` via `auto_transition_elections` (cron tiap menit) + publish manual.
 * [ ] H-1: tally cocok counts, audit 24 jam wajar, backup hash + RTO tercatat, helpdesk siap.
