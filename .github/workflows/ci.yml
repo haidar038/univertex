@@ -79,7 +79,8 @@ jobs:
 
       - name: Deploy preview
         id: vercel
-        run: echo "Preview URL: https://git-${{ github.event.pull_request.head.repo.owner }}-${{ github.event.pull_request.head.ref }}-${{ github.event.pull_request.number }}.vercel.app"
+        run: |
+          echo "Preview URL: https://git-${{ github.event.pull_request.head.repo.owner }}-${{ github.event.pull_request.head.ref }}-${{ github.event.pull_request.number }}.vercel.app"
         # The actual deploy is handled by Vercel's GitHub integration; this job
         # mainly gates preview behind CI success.
 
