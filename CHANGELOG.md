@@ -41,6 +41,23 @@ All notable changes to UniVertex are documented here. Format follows
   coverage gate lolos (lines 68.92%); `vite build` 3845 modules; lint 0 error
   (33 warning existing). CI `node-version` dipin 20.19.5 agar npm = 10.8.2.
 
+### 2026-11-22 — audit ulang + gate waiver
+- Audit: `main` `0922ccb` CI run #30 **success** (32 files/210 tests), deploy prod `READY`.
+- Temuan + fix lokal:
+  - `@remotion/sfx` nyasar di `package.json` **working tree** saat audit (paket ini
+    milik sub-proyek `docs/motion`, tidak dipakai app dan belum ter-commit) →
+    lockfile tidak sinkron, `npm ci` EUSAGE. Dihapus dari working tree;
+    `npx npm@10 ci --dry-run` lolos lagi. HEAD tidak pernah mengandung dep ini.
+  - Migrasi `20261121123000_requeue_failed_email_queue` sudah di staging tapi
+    belum di prod. Di-apply via MCP → prod 66 migrasi; verifikasi fungsi
+    `admin_enqueue_event_voters` memakai `DO UPDATE` + guard `failed/bounced`.
+  - `staging` tertinggal 2 commit dari `main`; disinkronkan.
+- M1 email: user laporkan 4 provider lolos; audit staging `email.blast_batch`
+  4 terkirim / 0 gagal (bukti inbox belum dilampirkan ke repo).
+- M2–M8 **di-skip atas instruksi owner 2026-11-22**. Dicatat sebagai WAIVED,
+  bukan hijau. `docs/LIVE-ELECTION-RUNBOOK.md` ditambahi kolom status, peringatan
+  kebijakan, dan form penerimaan risiko tertulis untuk M9.
+
 ### 2026-11-21 — live election runbook
 - Runbook terpusat `docs/LIVE-ELECTION-RUNBOOK.md`: status engineering vs manual
   gate, blocker M1–M9, roadmap H-14→H+7, preflight, setup event, gladi staging,

@@ -1,48 +1,54 @@
 # LIVE ELECTION RUNBOOK — UniVertex (P1 Pilot)
 
-> Versi: 2026-11-21 (WIB) · Commit baseline: `09d02d4` · Status: **ENGINEERING GREEN, MANUAL GATE PENDING**
+> Versi: 2026-11-22 (WIB) · Commit baseline: `0922ccb` · Status: **ENGINEERING GREEN, MANUAL GATES WAIVED OLEH OWNER, TANDA TANGAN GO/NO-GO PENDING**
 > Dokumen ini satu pintu untuk pilot/event pemilihan mendatang. Sumber kebenaran teknis tetap
 > `docs/P0-Golive-Readiness-Plan.md`, `CHANGELOG.md`, `docs/RUNBOOK.md`.
 > **Aturan emas: satu gate merah = postpone. Jangan paksa live.**
 
 ---
 
-## 1. Status saat ini ( ASEAN Jakarta, 21 Nov 2026 )
+## 1. Status saat ini ( ASEAN Jakarta, 22 Nov 2026 )
 
 ### 1.1 Engineering — HIJAU
 
 | Item | Bukti | Status |
 |---|---|---|
-| Migrasi prod | 3 migrasi via MCP `apply_migration`: `lock_function_search_path`, `public_live_count`, `admin_delete_invitation_user` → prod 65 migrasi | ✅ |
+| Migrasi prod | 4 migrasi via MCP `apply_migration`: 3 sebelumnya + `requeue_failed_email_queue` → prod **66** migrasi; verifikasi fungsi memakai `DO UPDATE` + guard `failed/bounced` (bukan `DO NOTHING`) | ✅ |
 | Search path R3 | prod & staging: 0 fungsi `proconfig IS NULL` (dari 7) | ✅ |
-| Deploy prod | Vercel `READY`, target production, commit `09d02d4`, alias `www.univertex.site` / `univertex.site` | ✅ |
+| Deploy prod | Vercel `READY`, target production, commit `0922ccb`, alias `www.univertex.site` / `univertex.site` | ✅ |
 | Smoke bundle/RLS anon | fitur baru terdeteksi; tally open 1 baris; closed → 401; helper `true` | ✅ |
-| CI | YAML valid; `next-themes` & `vaul` support React 19; lockfile di-generate di Linux Node 20.19.5 / npm 10.8.2; `node-version` dipin; audit gate `critical`; `fileParallelism: false` | ✅ |
-| Verifikasi lokal | `npm ci` (Linux CI-equivalent) sukses, `tsc --noEmit` 0, vitest 31 files/206 tests, coverage lines 68,92%, build sukses, lint 0 error | ✅ |
+| CI | Run GitHub Actions **#30 sukses** untuk `0922ccb` (32 files / 210 tests); YAML valid; `next-themes` & `vaul` support React 19; lockfile Linux Node 20.19.5/npm 10.8.2; audit gate `critical`; `fileParallelism: false` | ✅ |
+| Verifikasi lokal | `npm ci` (npm 10) sukses, `tsc --noEmit` 0, vitest 31/206 lalu 32/210, coverage lines 68,92%, build sukses, lint 0 error | ✅ |
+| Email retry | staging `email.blast_batch` **4 terkirim / 0 gagal** (audit 2026-11-21 12:27 UTC); migrasi requeue kini ada di staging **dan** prod | ✅ |
 | Fixture staging | 5 event `[P1-TEST]` + 10 akun `p1-*` + DPT/paslon/committee/observer | ✅ |
 | E2E | 7/7 passed, 0 skip — `test-results/e2e-staging-20261121-final2.log` | ✅ |
 | k6 smoke | 100 VU × 1 mnt, 9.032/9.032 checks, 0 error, p95 tally 256 ms | ✅ |
 | Audit `vote.cast` | metadata hanya `{event_id}`, tanpa kandidat | ✅ |
 
-Bukti lengkap: `docs/P1-Proddirect-Notes.md`, `CHANGELOG.md [P1 Pilot]`, `docs/completion-phases/04-tasklist.md`.
+Bukti lengkap: `docs/P1-Proddirect-Notes.md`, `CHANGELOG.md [P1 Pilot]`, `docs/completion-phases/04-tasklist.md`, GitHub Actions run #30.
 
-### 1.2 Manual gate — BELUM DIJALANKAN / MERAH
+### 1.2 Manual gate — 1 HIJAU, 7 DI-SKIP OLEH OWNER, 1 PENDING
 
-| Kode | Gate | DoD | Owner | Ref |
-|---|---|---|---|---|
-| M1 | Email 4 provider | Gmail/Yahoo/Outlook/kampus masuk **inbox** (bukan spam), link aktif, catat menit kirim→terima | User | Handbook Y2 |
-| M2 | ZAP pasif staging | 0 High; agresif DILARANG | User | Handbook G1 |
-| M3 | UAT 15/15 | HP + laptop, tanda tangan panitia | User + panitia | Handbook G1 / P-F |
-| M4 | Pentest 6 vektor | 6/6 ulang di staging | User | Handbook G1 |
-| M5 | Peraturan pemilihan | `Peraturan-Pemilihan-*.md` SAH & ditandatangani | Panitia | P0 gate :37 |
-| M6 | Helpdesk H-H | 3 PIC + on-call terisi, 2 orang terlatih reset & invite, SOP dicetak 2 lembar | User | SOP §1, handbook Y1 |
-| M7 | Backup H-1 | snapshot baru + hash SHA-256 + 2 lokasi + RTO tercatat | User | RUNBOOK §1–2, §4, handbook Y3 |
-| M8 | Auth dashboard | JWT 3600, rate-limit ON, redirect/reset, SMTP aktif; MFA/CAPTCHA status & aturan manual terdokumentasi | User | `supabase-auth-redirects.md` §E |
-| M9 | GO/NO-GO tertulis | Checklist H-1 lengkap + keputusan ditandatangani | Ketua + IT | P0 gate :30–40 |
+| Kode | Gate | Status | Bukti / Catatan |
+|---|---|---|---|
+| M1 | Email 4 provider | ✅ HIJAU | User melaporkan 4 provider lolos; audit staging `email.blast_batch` 4 terkirim / 0 gagal. Bukti inbox (screenshot) belum dilampirkan ke repo — **user-attested**. |
+| M2 | ZAP pasif staging | ⚠️ DI-SKIP | Instruksi owner 2026-11-22. Tidak ada laporan ZAP di repo. |
+| M3 | UAT 15/15 | ⚠️ DI-SKIP | Instruksi owner 2026-11-22. Tidak ada form tanda tangan panitia. |
+| M4 | Pentest 6 vektor | ⚠️ DI-SKIP | Instruksi owner 2026-11-22. Tidak ada laporan pentest. |
+| M5 | Peraturan pemilihan SAH | ⚠️ DI-SKIP | Instruksi owner 2026-11-22. File `Peraturan-Pemilihan-BEM-Hukum-2026.md` ada (tanda tangan 2026-09-29), tapi tidak diperbarui untuk event baru. |
+| M6 | Helpdesk H-H | ⚠️ DI-SKIP | Instruksi owner 2026-11-22. `SOP-Helpdesk-HariH.md` masih ber-PIC kosong (`__`). |
+| M7 | Backup H-1 | ⚠️ DI-SKIP | Instruksi owner 2026-11-22. Snapshot pre-migrasi ada, tapi snapshot H-1 + hash + 2 lokasi belum ada bukti baru. |
+| M8 | Auth dashboard | ⚠️ DI-SKIP | Instruksi owner 2026-11-22. `supabase-auth-redirects.md` terakhir diupdate 2026-09-29. |
+| M9 | GO/NO-GO tertulis | ⬜ PENDING | Menunggu keputusan + tanda tangan ketua & IT. |
 
-> MFA/CAPTCHA saat ini **deferred** (tidak ada UI enroll/widget). Gate terpenuhi bila status
-> terdokumentasi + aturan manual dipakai: admin/committee wajib TOTP di akun masing-masing,
-> login/invite diawasi manual. Jangan klaim enforced di aplikasi.
+> **Peringatan kebijakan:** `docs/P0-Golive-Readiness-Plan.md:30-40` menyatakan satu gate merah
+> = postpone. M2–M8 tidak "hijau", melainkan **WAIVED atas instruksi owner**. Sebelum live,
+> cantumkan penerimaan risiko tertulis (siapa menyetujui, jam, alasan) di M9 — jangan
+> mengubah status M2–M8 jadi ✅ tanpa bukti.
+>
+> MFA/CAPTCHA tetap **deferred** secara aplikasi (tidak ada UI enroll/widget). Jika M8 dilewati,
+> catat sebagai risiko: admin/committee wajib pakai TOTP di akun masing-masing dan login/invite
+> diawasi manual. Jangan klaim enforced di aplikasi.
 
 ---
 
@@ -247,25 +253,28 @@ Salin tabel ini, centang hanya dengan bukti (screenshot/hash/log):
 
 | # | Cek | Bukti | OK |
 |---|---|---|---|
-| 1 | `npm ci`, tsc, vitest 31/206, build, audit critical = 0 | log CI | ☐ |
-| 2 | Deploy prod SHA terbaru `READY` + smoke bundle | Vercel | ☐ |
-| 3 | Prod migrasi lengkap; 0 `search_path` mutable | SQL | ☐ |
-| 4 | M1 email 4 provider inbox | 4 screenshot | ☐ |
-| 5 | M2 ZAP pasif 0 High | laporan | ☐ |
-| 6 | M3 UAT 15/15 + tanda tangan | form | ☐ |
-| 7 | M4 pentest 6/6 | laporan | ☐ |
-| 8 | M5 Peraturan SAH | tanda tangan | ☐ |
-| 9 | M6 helpdesk PIC + latihan 2/2 | SOP | ☐ |
-| 10 | M7 snapshot + hash + 2 lokasi + RTO | hash & Drive | ☐ |
-| 11 | M8 dashboard auth terdokumentasi | `supabase-auth-redirects.md` §E | ☐ |
-| 12 | Revoke 2-device ≤5 mnt | audit + toast | ☐ |
-| 13 | Tally = jumlah votes; audit 24 jam wajar | SQL | ☐ |
-| 14 | Sentry tidak ada error baru; kontak darurat valid | dashboard | ☐ |
-| 15 | E2E 7/7 + k6 smoke staging | log | ☐ |
+| 1 | `npm ci`, tsc, vitest 32/210, build, audit critical = 0 | CI run #30 | ☑ |
+| 2 | Deploy prod SHA terbaru `0922ccb` `READY` + smoke bundle | Vercel | ☑ |
+| 3 | Prod migrasi lengkap (66); 0 `search_path` mutable; requeue aktif | SQL | ☑ |
+| 4 | M1 email 4 provider inbox | audit 4/0 + user-attested | ☑ |
+| 5 | M2 ZAP pasif 0 High | — | ⚠️ WAIVED |
+| 6 | M3 UAT 15/15 + tanda tangan | — | ⚠️ WAIVED |
+| 7 | M4 pentest 6/6 | — | ⚠️ WAIVED |
+| 8 | M5 Peraturan SAH | — | ⚠️ WAIVED |
+| 9 | M6 helpdesk PIC + latihan 2/2 | — | ⚠️ WAIVED |
+| 10 | M7 snapshot + hash + 2 lokasi + RTO | — | ⚠️ WAIVED |
+| 11 | M8 dashboard auth terdokumentasi | — | ⚠️ WAIVED |
+| 12 | Revoke 2-device ≤5 mnt | bukti 2026-09-28 (±3 mnt) | ☑ |
+| 13 | Tally = jumlah votes; audit 24 jam wajar | SQL H-1 | ☐ |
+| 14 | Sentry tidak ada error baru; kontak darurat valid | dashboard H-1 | ☐ |
+| 15 | E2E 7/7 + k6 smoke staging | log | ☑ |
 
 **Keputusan:** ☐ GO  ☐ NO-GO — Ketua: ______ IT: ______ Jam: ______
 
-> Satu saja tidak centang → **NO-GO**, postpone. Jangan "nanti diperbaiki saat live".
+**Penerimaan risiko M2–M8:** saya __________ menyetujui pengecualian gate di atas pada __________ pukul ______, alasan: ______________________________. Tanda tangan: ______
+
+> Tanpa penerimaan risiko tertulis di atas, kebijakan `P0-Golive-Readiness-Plan.md:30-40`
+> tetap berlaku: gate merah = **NO-GO**. Jangan tandatangani GO hanya karena engineering hijau.
 
 ### 5.5 H-0 — Hari pemilihan
 
