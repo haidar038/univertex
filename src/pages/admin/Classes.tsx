@@ -9,36 +9,42 @@ import { DeleteClassDialog } from '@/components/admin/classes/DeleteClassDialog'
 import { ClassDetailsDialog } from '@/components/admin/classes/ClassDetailsDialog';
 import { BulkAssignUsersDialog } from '@/components/admin/classes/BulkAssignUsersDialog';
 
+interface ClassItem {
+  id: string;
+  name: string;
+  faculty: string;
+}
+
 export default function AdminClasses() {
-  const [classes, setClasses] = useState<any[]>([]);
+  const [classes, setClasses] = useState<ClassItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [editDialogOpen, setEditDialogOpen] = useState(false);
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [detailsDialogOpen, setDetailsDialogOpen] = useState(false);
   const [bulkAssignDialogOpen, setBulkAssignDialogOpen] = useState(false);
-  const [selectedClass, setSelectedClass] = useState<any>(null);
+  const [selectedClass, setSelectedClass] = useState<ClassItem | null>(null);
 
   useEffect(() => {
     fetchClasses();
   }, []);
 
-  const handleEdit = (classData: any) => {
+  const handleEdit = (classData: ClassItem) => {
     setSelectedClass(classData);
     setEditDialogOpen(true);
   };
 
-  const handleDelete = (classData: any) => {
+  const handleDelete = (classData: ClassItem) => {
     setSelectedClass(classData);
     setDeleteDialogOpen(true);
   };
 
-  const handleViewDetails = (classData: any) => {
+  const handleViewDetails = (classData: ClassItem) => {
     setSelectedClass(classData);
     setDetailsDialogOpen(true);
   };
 
-  const handleBulkAssign = (classData: any) => {
+  const handleBulkAssign = (classData: ClassItem) => {
     setSelectedClass(classData);
     setBulkAssignDialogOpen(true);
   };
@@ -168,6 +174,7 @@ export default function AdminClasses() {
         onOpenChange={setDetailsDialogOpen}
         classId={selectedClass?.id || null}
         className={selectedClass?.name || null}
+        onSuccess={fetchClasses}
         onBulkAssign={() => {
           setDetailsDialogOpen(false);
           handleBulkAssign(selectedClass);
