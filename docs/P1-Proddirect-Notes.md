@@ -274,3 +274,15 @@ Verifikasi pasca-apply:
 - Helper: 4 event open+counting+`public_results=true` → `true`; 1 event closed+counting+`public_results=false` → `false`.
 - `get_election_tally('95676965…')` sebagai anon mengembalikan 1 baris; event closed `1b413f64…` → `42501` (sesuai guard).
 - `admin_delete_invitation_user`: SECURITY DEFINER, `search_path=public`, owner `postgres`, anon tidak boleh EXECUTE, authenticated boleh.
+
+## Fase 2 prod-direct — deploy UI 2026-11-21
+
+- `staging` (`f434a85`) → merge `--no-ff` ke `main` (`ede9021`), push.
+- Vercel deploy `dpl_DiR6BavW9ta9NBGPqXR2QKgL1vxV` state `READY`, target production, commit `ede9021`, alias aktif `www.univertex.site` / `univertex.site`.
+- Smoke bundle prod (`assets/index-BvU9_Mpw.js`, 1.272.217 byte): `public_live_count`, `admin_delete_invitation_user`, `admin_bulk_delete_users`, teks `Hasil Disembunyikan` masing-masing 1 hit.
+- Smoke REST anon memakai kredensial prod (bukan `.env` lokal yang menunjuk staging):
+  - `candidates?event_id=95676965…` → 1 baris (approved, counting, public_results).
+  - `rpc/get_election_tally(95676965…)` → 1 baris.
+  - `rpc/get_election_tally(1b413f64…)` event closed → HTTP 401 (PostgREST memetakan `42501`).
+  - `rpc/event_allows_public_tally(95676965…)` → `true`.
+- Catatan: `.env` lokal menunjuk staging `koveroqhxphdiakvukxt`; kredensial prod ada di `.env-prod.bak`. Jangan tertukar saat smoke.

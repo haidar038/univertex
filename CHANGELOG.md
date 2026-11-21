@@ -23,6 +23,10 @@ All notable changes to UniVertex are documented here. Format follows
   tally closed → `42501`; RPC hapus undangan hanya `authenticated`.
 - Mapping versi remote: `20261121010909/…0924/…0944` ↔ file lokal
   `20261012001100/20261016000000/20261016000100`.
+- Deploy prod: merge `staging`→`main` `ede9021`, Vercel `READY`
+  (`dpl_DiR6BavW9ta9NBGPqXR2QKgL1vxV`), alias `www.univertex.site`.
+  Smoke bundle: 4 fitur baru terdeteksi; smoke anon: tally open 1 baris,
+  tally closed 401, helper `true`.
 
 ### Selesai (bukti lokal 2026-09-13)
 - Baseline: `npm run test -- --run` **20 files / 156 tests passed** (~45s),
