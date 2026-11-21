@@ -21,8 +21,8 @@
 * [x] `ResultsPage.tsx` 2026-10-12: mode `redacted` untuk closed pre-publish (trophy disembunyi, angka → `?`, bar abu-abu, total → "Disembunyikan", struk "Pilihanmu: X"; 42501 tally ditelan jadi sensor bukan error). Test tangkap 1 bocor badge `Total:` → diperbaiki. Test +3 hijau.
 * [x] `Dashboard.tsx:189` 2026-10-12: tombol hasil sementara hanya open.
 * [x] Fix hapus event 2026-10-12 (`DeleteEventDialog.tsx`): tolak bila `votes>0` (tombol disabled + pesan arsip) — berlaku UI; hapus manual staging via SQL diberikan.
-* [ ] Paslon: UI admin (`EventDetail` tab + 3 dialog) + voter + tally sudah ada; uji klik + E2E paslon MENUNGGU fixture auth staging (terkait P-C). Tanpa баг yang terbukti — tidak diubah (YAGNI).
-* [ ] E2E `closed-redacted` + `vote-paslon` di staging: MENUNGGU fixture auth staging (P-C import). Unit + tsc + build hijau (21 files / 165 tests).
+* [ ] Paslon: UI admin (`EventDetail` tab + 3 dialog) + voter + tally sudah ada. Fixture auth staging SIAP 2026-11-21 (event `b2222222` voting/open + 2 paslon × 2 anggota + DPT + committee/observer). Uji klik manual + E2E paslon khusus belum dijalankan. Tanpa баг yang terbukti — tidak diubah (YAGNI).
+* [ ] E2E `closed-redacted` + `vote-paslon` khusus: MENUNGGU eksekusi. Fixture tersedia (`d4444444` closed/voting untuk redaksi; `b2222222` untuk paslon). E2E umum 7/7 hijau 2026-11-21 (`test-results/e2e-staging-20261121-final2.log`) tapi belum mencakup dua skenario ini. Unit + tsc + build hijau (21 files / 165 tests).
 * [ ] Drift histori prod: remote punya versi dashboard (`20260912113532`, `20260913121150`, `20260913121201`, `20261009054208` + 2 apply MCP P-B) yang tak ada di lokal → `db push --project-ref prod` DITOLAK CLI. Jangan `repair reverted` buta. Opsi: `db pull` lalu rapikan, atau teruskan pola MCP `apply_migration` + catat. Putuskan sebelum push prod berikutnya.
 
 ## P-C — User + Invite
@@ -47,7 +47,7 @@
 * [ ] ZAP pasif staging 0 High — manual user (ZAP/docker tidak ada di mesin ini).
 * [ ] UAT 15/15 + H-1 — manual user + panitia.
 * [ ] Pentest 6 vektor ulang di staging — manual user (pola P1-03 berlaku).
-* [ ] Rapikan advisor: `search_path` 7 fungsi + cabut EXECUTE anon/auth yang tidak perlu (uji tidak break invite/tally/sesi).
+* [x] R3 search_path 2026-10-16 (`20261012001100`, 7 fungsi; push staging EXIT 0; prod = MCP `apply_migration` 2026-11-21). Verifikasi 2026-11-21: prod **0 fungsi** `proconfig IS NULL`, staging **0**. EXECUTE anon pada `get_election_tally`/`event_allows_public_tally` wajib (tally publik); `admin_delete_invitation_user` anon DITOLAK, authenticated diizinkan.
 
 ## P-F — Gladi + Go/No-Go
 
