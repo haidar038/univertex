@@ -30,6 +30,7 @@ export function ResetQueueDialog({
           <AlertDialogTitle>Reset Antrean?</AlertDialogTitle>
           <AlertDialogDescription>
             {pendingCount} email pending event ini akan dihapus dari antrean.
+            Error pengiriman akan diunduh sebagai CSV sebelum dihapus.
             Yang sudah terkirim/gagal dipertahankan. Isi ulang dari DPT sesudahnya bila perlu.
           </AlertDialogDescription>
         </AlertDialogHeader>

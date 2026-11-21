@@ -338,9 +338,9 @@ export function CreateEventDialog({ open, onOpenChange, onSuccess }: CreateEvent
                   }}
                   disabled={isSubmitting}
                 >
-                  <SelectTrigger><SelectValue placeholder="(tidak ada)" /></SelectTrigger>
+                  <SelectTrigger><SelectValue placeholder="Tidak Ada" /></SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="none">(tidak ada)</SelectItem>
+                    <SelectItem value="none">Tidak Ada</SelectItem>
                     <SelectItem value="class">Kelas</SelectItem>
                     <SelectItem value="organization">Organisasi</SelectItem>
                     <SelectItem value="cohort">Angkatan</SelectItem>

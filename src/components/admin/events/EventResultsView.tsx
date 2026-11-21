@@ -42,6 +42,9 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
     winner: null,
   });
   const [loading, setLoading] = useState(true);
+  const [usePairs, setUsePairs] = useState(false);
+
+  const nameColumnLabel = usePairs ? 'Nama Paslon - Nama Kandidat' : 'Nama Kandidat';
 
   useEffect(() => {
     fetchResults();
@@ -58,7 +61,8 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
         .eq('id', eventId)
         .single();
       if (eventError) throw eventError;
-      const usePairs = !!eventData?.use_pairs;
+      const isPairMode = !!eventData?.use_pairs;
+      setUsePairs(isPairMode);
 
       // Single aggregated RPC instead of N+1 per-candidate count queries
       const { data: tally, error: tallyError } = await supabase.rpc('get_election_tally', {
@@ -68,7 +72,7 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
 
       let candidateResults: CandidateResult[] = [];
 
-      if (usePairs) {
+      if (isPairMode) {
         // Mode pasangan: satu baris per pasangan (nama = ketua & wakil)
         const pairs = await fetchPairsWithMembers(eventId);
 
@@ -79,15 +83,18 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
           }
         });
 
-        candidateResults = pairs.map((p) => ({
-          id: p.id,
-          name: getPairDisplayName(p),
-          student_id: p.members
-            .map((m) => m.candidates?.profiles?.full_name || 'Tanpa nama')
-            .join(' • '),
-          votes: votesByPair.get(p.id) ?? 0,
-          percentage: 0, // will calculate later
-        }));
+        candidateResults = pairs.map((p) => {
+          const pairName = getPairDisplayName(p);
+          return {
+            id: p.id,
+            name: p.label?.trim() ? `${p.label.trim()} - ${pairName}` : pairName,
+            student_id: p.members
+              .map((m) => m.candidates?.profiles?.full_name || 'Tanpa nama')
+              .join(' • '),
+            votes: votesByPair.get(p.id) ?? 0,
+            percentage: 0, // will calculate later
+          };
+        });
       } else {
         const { data: candidatesData, error: candidatesError } = await supabase
           .from('candidates')
@@ -161,7 +168,7 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
   };
 
   const exportToCSV = () => {
-    const csvHeader = 'No,Nama Kandidat,NIM,Jumlah Suara,Persentase\n';
+    const csvHeader = `No,${nameColumnLabel},NIM,Jumlah Suara,Persentase\n`;
     const csvRows = results
       .map((candidate, index) => {
         return `${index + 1},${candidate.name},${candidate.student_id},${candidate.votes},${candidate.percentage.toFixed(2)}%`;
@@ -299,7 +306,7 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
           <thead>
             <tr>
               <th>No</th>
-              <th>Nama Kandidat</th>
+              <th>${nameColumnLabel}</th>
               <th>NIM</th>
               <th>Jumlah Suara</th>
               <th>Persentase</th>
@@ -502,7 +509,7 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
               <thead className="border-b border-border bg-muted/50">
                 <tr>
                   <th className="p-4 text-left text-sm font-medium text-foreground">Peringkat</th>
-                  <th className="p-4 text-left text-sm font-medium text-foreground">Nama Kandidat</th>
+                  <th className="p-4 text-left text-sm font-medium text-foreground">{nameColumnLabel}</th>
                   <th className="p-4 text-left text-sm font-medium text-foreground">NIM</th>
                   <th className="p-4 text-left text-sm font-medium text-foreground">Jumlah Suara</th>
                   <th className="p-4 text-left text-sm font-medium text-foreground">Persentase</th>

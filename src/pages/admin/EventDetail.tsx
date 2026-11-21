@@ -1,34 +1,70 @@
-import { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Textarea } from '@/components/ui/textarea';
+import { useEffect, useState } from "react";
+import { useParams, Link } from "react-router-dom";
+import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
   SelectItem,
   SelectTrigger,
   SelectValue,
-} from '@/components/ui/select';
-import { Users, UserPlus, GraduationCap, Edit, BarChart3, CheckCircle2, AlertCircle, Clock, User as UserIcon, ShieldCheck, ListChecks, Settings, History, Plus, Trash2, ScrollText, Layers, Ban } from 'lucide-react';
-import { Switch } from '@/components/ui/switch';
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
-import { AddCandidateDialog } from '@/components/admin/events/AddCandidateDialog';
-import { CreatePairDialog } from '@/components/admin/events/CreatePairDialog';
-import { EditPairDialog } from '@/components/admin/events/EditPairDialog';
-import { ApprovePairDialog } from '@/components/admin/events/ApprovePairDialog';
-import { fetchPairsWithMembers, getPairDisplayName, getPairPositionLabel, type PairWithMembers } from '@/lib/candidate-pair-helpers';
-import { AssignVoterGroupsDialog } from '@/components/admin/events/AssignVoterGroupsDialog';
-import { EditCandidateDialog } from '@/components/admin/events/EditCandidateDialog';
-import { EventResultsView } from '@/components/admin/events/EventResultsView';
-import { ApproveCandidateDialog } from '@/components/admin/events/ApproveCandidateDialog';
-import { RevokeCandidateDialog } from '@/components/admin/events/RevokeCandidateDialog';
-import { getCandidatePhotoUrl, getCandidateStatusInfo } from '@/lib/candidate-helpers';
+} from "@/components/ui/select";
+import {
+  Users,
+  UserPlus,
+  GraduationCap,
+  Edit,
+  BarChart3,
+  CheckCircle2,
+  AlertCircle,
+  Clock,
+  User as UserIcon,
+  ShieldCheck,
+  ListChecks,
+  Settings,
+  History,
+  Plus,
+  Trash2,
+  ScrollText,
+  Layers,
+  Ban,
+} from "lucide-react";
+import { Switch } from "@/components/ui/switch";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { AddCandidateDialog } from "@/components/admin/events/AddCandidateDialog";
+import { CreatePairDialog } from "@/components/admin/events/CreatePairDialog";
+import { EditPairDialog } from "@/components/admin/events/EditPairDialog";
+import { ApprovePairDialog } from "@/components/admin/events/ApprovePairDialog";
+import {
+  fetchPairsWithMembers,
+  getPairDisplayName,
+  getPairPositionLabel,
+  type PairWithMembers,
+} from "@/lib/candidate-pair-helpers";
+import { AssignVoterGroupsDialog } from "@/components/admin/events/AssignVoterGroupsDialog";
+import { EditCandidateDialog } from "@/components/admin/events/EditCandidateDialog";
+import { EventResultsView } from "@/components/admin/events/EventResultsView";
+import { ApproveCandidateDialog } from "@/components/admin/events/ApproveCandidateDialog";
+import { RevokeCandidateDialog } from "@/components/admin/events/RevokeCandidateDialog";
+import {
+  getCandidatePhotoUrl,
+  getCandidateStatusInfo,
+} from "@/lib/candidate-helpers";
 import {
   ELECTION_STATUSES,
   STATUS_LABEL,
@@ -37,12 +73,12 @@ import {
   STATUS_ACTION_LABEL,
   canTransition,
   type ElectionStatus,
-} from '@/lib/election-state';
-import { useAuth } from '@/hooks/useAuth';
-import { logAudit } from '@/lib/audit';
-import { toast } from 'sonner';
-import { format } from 'date-fns';
-import { id as idLocale } from 'date-fns/locale';
+} from "@/lib/election-state";
+import { useAuth } from "@/hooks/useAuth";
+import { logAudit } from "@/lib/audit";
+import { toast } from "sonner";
+import { format } from "date-fns";
+import { id as idLocale } from "date-fns/locale";
 
 export default function AdminEventDetail() {
   const { id } = useParams();
@@ -64,26 +100,38 @@ export default function AdminEventDetail() {
   const [editPairOpen, setEditPairOpen] = useState(false);
   const [approvePairOpen, setApprovePairOpen] = useState(false);
   const [deletePairOpen, setDeletePairOpen] = useState(false);
-  const [selectedPair, setSelectedPair] = useState<PairWithMembers | null>(null);
+  const [selectedPair, setSelectedPair] = useState<PairWithMembers | null>(
+    null,
+  );
   const [pendingUsePairs, setPendingUsePairs] = useState<boolean | null>(null);
   const [pairsBusy, setPairsBusy] = useState(false);
 
   // Phase 2 state
   const [transitions, setTransitions] = useState<any[]>([]);
   const [eligibilityRules, setEligibilityRules] = useState<any[]>([]);
-  const [newRule, setNewRule] = useState<{ rule_type: string; rule_value: string; description: string }>({
-    rule_type: 'class_id',
-    rule_value: '',
-    description: '',
+  const [newRule, setNewRule] = useState<{
+    rule_type: string;
+    rule_value: string;
+    description: string;
+  }>({
+    rule_type: "class_id",
+    rule_value: "",
+    description: "",
   });
-  const [scopeDraft, setScopeDraft] = useState<{ scope_type: string; scope_id: string }>({ scope_type: '', scope_id: '' });
+  const [scopeDraft, setScopeDraft] = useState<{
+    scope_type: string;
+    scope_id: string;
+  }>({ scope_type: "", scope_id: "" });
   const [stateBusy, setStateBusy] = useState(false);
 
-  const currentStatus: ElectionStatus | null = event && ELECTION_STATUSES.includes(event.status)
-    ? (event.status as ElectionStatus)
-    : null;
+  const currentStatus: ElectionStatus | null =
+    event && ELECTION_STATUSES.includes(event.status)
+      ? (event.status as ElectionStatus)
+      : null;
   const nextStates = currentStatus
-    ? ALLOWED_TRANSITIONS[currentStatus].filter((s) => canTransition(currentStatus, s, isAdmin))
+    ? ALLOWED_TRANSITIONS[currentStatus].filter((s) =>
+        canTransition(currentStatus, s, isAdmin),
+      )
     : [];
 
   useEffect(() => {
@@ -94,18 +142,19 @@ export default function AdminEventDetail() {
 
   const fetchEventDetails = async () => {
     try {
-      const [eventResult, candidatesResult, voterGroupsResult, pairsResult] = await Promise.all([
-        supabase.from('election_events').select('*').eq('id', id).single(),
-        supabase
-          .from('candidates')
-          .select('*, profiles(full_name, student_id)')
-          .eq('event_id', id),
-        supabase
-          .from('event_voter_groups')
-          .select('*, classes(name, faculty)')
-          .eq('event_id', id),
-        fetchPairsWithMembers(id),
-      ]);
+      const [eventResult, candidatesResult, voterGroupsResult, pairsResult] =
+        await Promise.all([
+          supabase.from("election_events").select("*").eq("id", id).single(),
+          supabase
+            .from("candidates")
+            .select("*, profiles(full_name, student_id)")
+            .eq("event_id", id),
+          supabase
+            .from("event_voter_groups")
+            .select("*, classes(name, faculty)")
+            .eq("event_id", id),
+          fetchPairsWithMembers(id),
+        ]);
 
       if (eventResult.error) throw eventResult.error;
 
@@ -118,12 +167,12 @@ export default function AdminEventDetail() {
         // scope_type/scope_id belum ada di generated types.ts (gap pre-existing)
         const eventData = eventResult.data as any;
         setScopeDraft({
-          scope_type: eventData.scope_type ?? '',
-          scope_id: eventData.scope_id ?? '',
+          scope_type: eventData.scope_type ?? "",
+          scope_id: eventData.scope_id ?? "",
         });
       }
     } catch (error) {
-      console.error('Error fetching event details:', error);
+      console.error("Error fetching event details:", error);
     } finally {
       setLoading(false);
     }
@@ -136,21 +185,21 @@ export default function AdminEventDetail() {
       const client = supabase as any;
       const [t, r] = await Promise.all([
         client
-          .from('election_state_transitions')
-          .select('*')
-          .eq('election_id', id)
-          .order('created_at', { ascending: false })
+          .from("election_state_transitions")
+          .select("*")
+          .eq("election_id", id)
+          .order("created_at", { ascending: false })
           .limit(50),
         client
-          .from('election_eligibility_rules')
-          .select('*')
-          .eq('election_id', id)
-          .order('created_at', { ascending: false }),
+          .from("election_eligibility_rules")
+          .select("*")
+          .eq("election_id", id)
+          .order("created_at", { ascending: false }),
       ]);
       setTransitions(t.data || []);
       setEligibilityRules(r.data || []);
     } catch (e) {
-      console.error('Error fetching phase 2 data:', e);
+      console.error("Error fetching phase 2 data:", e);
     }
   };
 
@@ -162,7 +211,7 @@ export default function AdminEventDetail() {
     if (!id || !event) return;
     setStateBusy(true);
     try {
-      const { error } = await supabase.rpc('admin_transition_election_state', {
+      const { error } = await supabase.rpc("admin_transition_election_state", {
         p_election_id: id,
         p_to_status: to,
         p_reason: null,
@@ -172,7 +221,7 @@ export default function AdminEventDetail() {
       await Promise.all([fetchEventDetails(), fetchPhase2Data()]);
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || 'Gagal mengubah status');
+      toast.error(e?.message || "Gagal mengubah status");
     } finally {
       setStateBusy(false);
     }
@@ -181,82 +230,85 @@ export default function AdminEventDetail() {
   const handleAddRule = async () => {
     if (!id) return;
     if (!newRule.rule_value.trim()) {
-      toast.error('rule_value harus diisi');
+      toast.error("rule_value harus diisi");
       return;
     }
     try {
-      const { error } = await supabase.rpc('admin_add_eligibility_rule', {
+      const { error } = await supabase.rpc("admin_add_eligibility_rule", {
         p_election_id: id,
         p_rule_type: newRule.rule_type,
         p_rule_value: newRule.rule_value.trim(),
         p_description: newRule.description.trim() || null,
       });
       if (error) throw error;
-      toast.success('Rule eligibility ditambahkan');
-      setNewRule({ rule_type: 'class_id', rule_value: '', description: '' });
+      toast.success("Rule eligibility ditambahkan");
+      setNewRule({ rule_type: "class_id", rule_value: "", description: "" });
       await fetchPhase2Data();
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || 'Gagal menambah rule');
+      toast.error(e?.message || "Gagal menambah rule");
     }
   };
 
   const handleRemoveRule = async (ruleId: string) => {
     try {
-      const { error } = await supabase.rpc('admin_remove_eligibility_rule', {
+      const { error } = await supabase.rpc("admin_remove_eligibility_rule", {
         p_rule_id: ruleId,
       });
       if (error) throw error;
-      toast.success('Rule dihapus');
+      toast.success("Rule dihapus");
       await fetchPhase2Data();
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || 'Gagal menghapus rule');
+      toast.error(e?.message || "Gagal menghapus rule");
     }
   };
 
   const handleSaveScope = async () => {
     if (!id) return;
-    if ((scopeDraft.scope_type === '') !== (scopeDraft.scope_id === '')) {
-      toast.error('scope_type dan scope_id harus diisi bersamaan');
+    if ((scopeDraft.scope_type === "") !== (scopeDraft.scope_id === "")) {
+      toast.error("scope_type dan scope_id harus diisi bersamaan");
       return;
     }
     if (scopeDraft.scope_type && scopeDraft.scope_id) {
-      const { data: ok, error: vErr } = await (supabase as any).rpc('validate_scope_id', {
-        p_scope_type: scopeDraft.scope_type,
-        p_scope_id: scopeDraft.scope_id,
-      });
+      const { data: ok, error: vErr } = await (supabase as any).rpc(
+        "validate_scope_id",
+        {
+          p_scope_type: scopeDraft.scope_type,
+          p_scope_id: scopeDraft.scope_id,
+        },
+      );
       if (vErr) {
         toast.error(vErr.message);
         return;
       }
       if (!ok) {
-        toast.error('scope_id tidak valid untuk scope_type tersebut');
+        toast.error("scope_id tidak valid untuk scope_type tersebut");
         return;
       }
     }
     try {
       const { error } = await supabase
-        .from('election_events')
+        .from("election_events")
         .update({
           scope_type: scopeDraft.scope_type || null,
           scope_id: scopeDraft.scope_id || null,
         } as any)
-        .eq('id', id);
+        .eq("id", id);
       if (error) throw error;
       await logAudit({
-        action: 'event.scope_change',
+        action: "event.scope_change",
         description: `Event scope updated`,
-        category: 'election',
-        targetType: 'election_events',
+        category: "election",
+        targetType: "election_events",
         targetId: id,
         metadata: scopeDraft,
       });
-      toast.success('Cakupan acara diperbarui');
+      toast.success("Cakupan acara diperbarui");
       await fetchEventDetails();
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || 'Gagal memperbarui cakupan');
+      toast.error(e?.message || "Gagal memperbarui cakupan");
     }
   };
 
@@ -265,24 +317,28 @@ export default function AdminEventDetail() {
     setPairsBusy(true);
     try {
       const { error } = await supabase
-        .from('election_events')
+        .from("election_events")
         .update({ use_pairs: pendingUsePairs })
-        .eq('id', id);
+        .eq("id", id);
       if (error) throw error;
       await logAudit({
-        action: 'event.use_pairs_change',
-        description: `Candidate pairs mode ${pendingUsePairs ? 'enabled' : 'disabled'}`,
-        category: 'election',
-        targetType: 'election_events',
+        action: "event.use_pairs_change",
+        description: `Candidate pairs mode ${pendingUsePairs ? "enabled" : "disabled"}`,
+        category: "election",
+        targetType: "election_events",
         targetId: id,
         metadata: { use_pairs: pendingUsePairs },
       });
-      toast.success(pendingUsePairs ? 'Mode pasangan kandidat diaktifkan' : 'Mode pasangan kandidat dinonaktifkan');
+      toast.success(
+        pendingUsePairs
+          ? "Mode pasangan kandidat diaktifkan"
+          : "Mode pasangan kandidat dinonaktifkan",
+      );
       setPendingUsePairs(null);
       await fetchEventDetails();
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || 'Gagal mengubah mode pasangan');
+      toast.error(e?.message || "Gagal mengubah mode pasangan");
     } finally {
       setPairsBusy(false);
     }
@@ -293,26 +349,26 @@ export default function AdminEventDetail() {
     setPairsBusy(true);
     try {
       const { error } = await supabase
-        .from('candidate_pairs')
+        .from("candidate_pairs")
         .delete()
-        .eq('id', selectedPair.id);
+        .eq("id", selectedPair.id);
       if (error) throw error;
       await logAudit({
-        action: 'candidate.pair.delete',
+        action: "candidate.pair.delete",
         description: `Deleted candidate pair: ${getPairDisplayName(selectedPair)}`,
-        category: 'election',
-        targetType: 'candidate_pairs',
+        category: "election",
+        targetType: "candidate_pairs",
         targetId: selectedPair.id,
         metadata: { event_id: id },
-        severity: 'warning',
+        severity: "warning",
       });
-      toast.success('Pasangan kandidat dihapus');
+      toast.success("Pasangan kandidat dihapus");
       setDeletePairOpen(false);
       setSelectedPair(null);
       await fetchEventDetails();
     } catch (e: any) {
       console.error(e);
-      toast.error(e?.message || 'Gagal menghapus pasangan');
+      toast.error(e?.message || "Gagal menghapus pasangan");
     } finally {
       setPairsBusy(false);
     }
@@ -356,10 +412,14 @@ export default function AdminEventDetail() {
       <div className="mb-8">
         <div className="mb-4 flex items-center justify-between">
           <div>
-            <h1 className="mb-2 text-3xl font-bold text-foreground">{event.title}</h1>
+            <h1 className="mb-2 text-3xl font-bold text-foreground">
+              {event.title}
+            </h1>
             <p className="text-muted-foreground">{event.description}</p>
           </div>
-          <Badge className={currentStatus ? STATUS_COLOR[currentStatus] : 'bg-muted'}>
+          <Badge
+            className={currentStatus ? STATUS_COLOR[currentStatus] : "bg-muted"}
+          >
             {currentStatus ? STATUS_LABEL[currentStatus] : event.status}
           </Badge>
         </div>
@@ -388,7 +448,9 @@ export default function AdminEventDetail() {
 
         <TabsContent value="candidates" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-foreground">Daftar Kandidat</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              Daftar Kandidat
+            </h2>
             <Button className="gap-2" onClick={() => setAddCandidateOpen(true)}>
               <UserPlus className="h-4 w-4" />
               Tambah Kandidat
@@ -399,16 +461,27 @@ export default function AdminEventDetail() {
             <Card>
               <CardContent className="flex min-h-[200px] flex-col items-center justify-center py-12">
                 <Users className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Belum ada kandidat</p>
+                <p className="text-sm text-muted-foreground">
+                  Belum ada kandidat
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {candidates.map((candidate) => {
-                const statusInfo = getCandidateStatusInfo(candidate.status || 'pending');
-                const StatusIcon = candidate.status === 'approved' ? CheckCircle2 :
-                  candidate.status === 'rejected' ? AlertCircle : Clock;
-                const photoUrl = getCandidatePhotoUrl(candidate.photo_storage_path, candidate.photo_url);
+                const statusInfo = getCandidateStatusInfo(
+                  candidate.status || "pending",
+                );
+                const StatusIcon =
+                  candidate.status === "approved"
+                    ? CheckCircle2
+                    : candidate.status === "rejected"
+                      ? AlertCircle
+                      : Clock;
+                const photoUrl = getCandidatePhotoUrl(
+                  candidate.photo_storage_path,
+                  candidate.photo_url,
+                );
 
                 return (
                   <Card key={candidate.id}>
@@ -417,7 +490,11 @@ export default function AdminEventDetail() {
                         {/* Photo */}
                         <div className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border-2 border-primary/20">
                           {photoUrl ? (
-                            <img src={photoUrl} alt="Foto kandidat" className="h-full w-full object-cover" />
+                            <img
+                              src={photoUrl}
+                              alt="Foto kandidat"
+                              className="h-full w-full object-cover"
+                            />
                           ) : (
                             <UserIcon className="h-8 w-8 text-muted-foreground" />
                           )}
@@ -443,7 +520,10 @@ export default function AdminEventDetail() {
                               </Button>
                             </div>
                           </div>
-                          <Badge variant={statusInfo.variant as any} className="mt-2 gap-1">
+                          <Badge
+                            variant={statusInfo.variant as any}
+                            className="mt-2 gap-1"
+                          >
                             <StatusIcon className="h-3 w-3" />
                             {statusInfo.label}
                           </Badge>
@@ -452,20 +532,24 @@ export default function AdminEventDetail() {
                     </CardHeader>
                     <CardContent className="space-y-3">
                       <div>
-                        <p className="text-sm font-medium text-foreground">Visi:</p>
+                        <p className="text-sm font-medium text-foreground">
+                          Visi:
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {candidate.vision || 'Belum diisi'}
+                          {candidate.vision || "Belum diisi"}
                         </p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">Misi:</p>
+                        <p className="text-sm font-medium text-foreground">
+                          Misi:
+                        </p>
                         <p className="text-sm text-muted-foreground">
-                          {candidate.mission || 'Belum diisi'}
+                          {candidate.mission || "Belum diisi"}
                         </p>
                       </div>
 
                       {/* Approval button for pending candidates */}
-                      {candidate.status === 'pending' && (
+                      {candidate.status === "pending" && (
                         <Button
                           className="mt-2 w-full gap-2"
                           variant="default"
@@ -477,7 +561,7 @@ export default function AdminEventDetail() {
                       )}
 
                       {/* Revoke button for approved candidates */}
-                      {candidate.status === 'approved' && (
+                      {candidate.status === "approved" && (
                         <Button
                           className="mt-2 w-full gap-2"
                           variant="destructive"
@@ -489,11 +573,12 @@ export default function AdminEventDetail() {
                       )}
 
                       {/* Re-approval button for rejected candidates */}
-                      {candidate.status === 'rejected' && (
+                      {candidate.status === "rejected" && (
                         <div className="mt-2 space-y-2">
                           {candidate.rejection_reason && (
                             <p className="text-xs text-destructive">
-                              <strong>Ditolak:</strong> {candidate.rejection_reason}
+                              <strong>Ditolak:</strong>{" "}
+                              {candidate.rejection_reason}
                             </p>
                           )}
                           <Button
@@ -516,7 +601,9 @@ export default function AdminEventDetail() {
 
         <TabsContent value="pairs" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-foreground">Daftar Pasangan Kandidat</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              Daftar Pasangan Kandidat
+            </h2>
             <Button className="gap-2" onClick={() => setCreatePairOpen(true)}>
               <Plus className="h-4 w-4" />
               Tambah Pasangan
@@ -526,9 +613,12 @@ export default function AdminEventDetail() {
           <Card>
             <CardContent className="flex items-center justify-between gap-4 py-4">
               <div>
-                <p className="font-medium text-foreground">Mode Pasangan Kandidat</p>
+                <p className="font-medium text-foreground">
+                  Mode Pasangan Kandidat
+                </p>
                 <p className="text-sm text-muted-foreground">
-                  Saat aktif, pemilih memilih satu pasangan (ketua & wakil) alih-alih kandidat tunggal.
+                  Saat aktif, pemilih memilih satu pasangan (ketua & wakil)
+                  alih-alih kandidat tunggal.
                 </p>
               </div>
               <Switch
@@ -543,15 +633,21 @@ export default function AdminEventDetail() {
             <Card>
               <CardContent className="flex min-h-[200px] flex-col items-center justify-center py-12">
                 <Layers className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Belum ada pasangan kandidat</p>
+                <p className="text-sm text-muted-foreground">
+                  Belum ada pasangan kandidat
+                </p>
               </CardContent>
             </Card>
           ) : (
             <div className="grid gap-4 md:grid-cols-2">
               {pairs.map((pair) => {
                 const statusInfo = getCandidateStatusInfo(pair.status);
-                const StatusIcon = pair.status === 'approved' ? CheckCircle2 :
-                  pair.status === 'rejected' ? AlertCircle : Clock;
+                const StatusIcon =
+                  pair.status === "approved"
+                    ? CheckCircle2
+                    : pair.status === "rejected"
+                      ? AlertCircle
+                      : Clock;
 
                 return (
                   <Card key={pair.id}>
@@ -559,26 +655,36 @@ export default function AdminEventDetail() {
                       <div className="flex items-start justify-between">
                         <div>
                           <CardTitle className="text-lg">
-                            #{pair.number ?? '-'} {pair.label || 'Pasangan'}
+                            #{pair.number ?? "-"} {pair.label || "Pasangan"}
                           </CardTitle>
                           <p className="text-sm text-muted-foreground">
                             {getPairDisplayName(pair)}
                           </p>
                         </div>
                         <div className="flex gap-1">
-                          <Button variant="outline" size="sm" onClick={() => handleEditPair(pair)}>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            onClick={() => handleEditPair(pair)}
+                          >
                             <Edit className="h-4 w-4" />
                           </Button>
                           <Button
                             variant="destructive"
                             size="sm"
-                            onClick={() => { setSelectedPair(pair); setDeletePairOpen(true); }}
+                            onClick={() => {
+                              setSelectedPair(pair);
+                              setDeletePairOpen(true);
+                            }}
                           >
                             <Trash2 className="h-4 w-4" />
                           </Button>
                         </div>
                       </div>
-                      <Badge variant={statusInfo.variant as any} className="mt-2 gap-1">
+                      <Badge
+                        variant={statusInfo.variant}
+                        className="mt-2 w-fit gap-1 self-start"
+                      >
                         <StatusIcon className="h-3 w-3" />
                         {statusInfo.label}
                       </Badge>
@@ -586,42 +692,60 @@ export default function AdminEventDetail() {
                     <CardContent className="space-y-3">
                       <div className="space-y-2">
                         {pair.members.map((member) => (
-                          <div key={member.id} className="flex items-center justify-between rounded border p-2">
+                          <div
+                            key={member.id}
+                            className="flex items-center justify-between rounded border p-2"
+                          >
                             <div>
                               <p className="text-sm font-medium text-foreground">
-                                {member.candidates?.profiles?.full_name || 'Tanpa nama'}
+                                {member.candidates?.profiles?.full_name ||
+                                  "Tanpa nama"}
                               </p>
                               <p className="text-xs text-muted-foreground">
-                                {member.candidates?.profiles?.student_id || '-'}
+                                {member.candidates?.profiles?.student_id || "-"}
                               </p>
                             </div>
-                            <Badge variant="outline">{getPairPositionLabel(member.position)}</Badge>
+                            <Badge variant="outline">
+                              {getPairPositionLabel(member.position)}
+                            </Badge>
                           </div>
                         ))}
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">Visi:</p>
-                        <p className="text-sm text-muted-foreground">{pair.vision || 'Belum diisi'}</p>
+                        <p className="text-sm font-medium text-foreground">
+                          Visi:
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {pair.vision || "Belum diisi"}
+                        </p>
                       </div>
                       <div>
-                        <p className="text-sm font-medium text-foreground">Misi:</p>
-                        <p className="text-sm text-muted-foreground">{pair.mission || 'Belum diisi'}</p>
+                        <p className="text-sm font-medium text-foreground">
+                          Misi:
+                        </p>
+                        <p className="text-sm text-muted-foreground">
+                          {pair.mission || "Belum diisi"}
+                        </p>
                       </div>
 
-                      {pair.status === 'rejected' && pair.rejection_reason && (
+                      {pair.status === "rejected" && pair.rejection_reason && (
                         <p className="text-xs text-destructive">
                           <strong>Ditolak:</strong> {pair.rejection_reason}
                         </p>
                       )}
 
-                      {pair.status !== 'approved' && (
+                      {pair.status !== "approved" && (
                         <Button
                           className="mt-2 w-full gap-2"
-                          variant={pair.status === 'pending' ? 'default' : 'outline'}
+                          variant={
+                            pair.status === "pending" ? "default" : "outline"
+                          }
                           onClick={() => handleApprovePair(pair)}
                         >
                           <CheckCircle2 className="h-4 w-4" />
-                          {pair.status === 'pending' ? 'Tinjau & Setujui' : 'Tinjau Ulang'}
+                          {pair.status === "pending"
+                            ? "Tinjau & Setujui"
+                            : "Tinjau Ulang"}
                         </Button>
                       )}
                     </CardContent>
@@ -634,7 +758,9 @@ export default function AdminEventDetail() {
 
         <TabsContent value="voters" className="space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-xl font-bold text-foreground">Daftar Pemilih Tetap (DPT)</h2>
+            <h2 className="text-xl font-bold text-foreground">
+              Daftar Pemilih Tetap (DPT)
+            </h2>
             <Button className="gap-2" onClick={() => setAssignGroupsOpen(true)}>
               <GraduationCap className="h-4 w-4" />
               Kelola Grup Pemilih
@@ -645,7 +771,9 @@ export default function AdminEventDetail() {
             <Card>
               <CardContent className="flex min-h-[200px] flex-col items-center justify-center py-12">
                 <GraduationCap className="mb-4 h-12 w-12 text-muted-foreground" />
-                <p className="text-sm text-muted-foreground">Belum ada grup pemilih</p>
+                <p className="text-sm text-muted-foreground">
+                  Belum ada grup pemilih
+                </p>
               </CardContent>
             </Card>
           ) : (
@@ -670,8 +798,8 @@ export default function AdminEventDetail() {
           {id && (
             <EventResultsView
               eventId={id}
-              eventTitle={event?.title || ''}
-              eventStatus={currentStatus ?? 'draft'}
+              eventTitle={event?.title || ""}
+              eventStatus={currentStatus ?? "draft"}
             />
           )}
         </TabsContent>
@@ -686,8 +814,14 @@ export default function AdminEventDetail() {
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="flex items-center gap-3">
-                <span className="text-sm text-muted-foreground">Status saat ini:</span>
-                <Badge className={currentStatus ? STATUS_COLOR[currentStatus] : 'bg-muted'}>
+                <span className="text-sm text-muted-foreground">
+                  Status saat ini:
+                </span>
+                <Badge
+                  className={
+                    currentStatus ? STATUS_COLOR[currentStatus] : "bg-muted"
+                  }
+                >
                   {currentStatus ? STATUS_LABEL[currentStatus] : event.status}
                 </Badge>
               </div>
@@ -712,7 +846,9 @@ export default function AdminEventDetail() {
               )}
 
               <p className="text-xs text-muted-foreground">
-                Transisi otomatis (registration→voting, voting→counting) dilakukan oleh pg_cron setiap menit berdasarkan start_time / end_time.
+                Transisi otomatis (registration→voting, voting→counting)
+                dilakukan oleh pg_cron setiap menit berdasarkan start_time /
+                end_time.
               </p>
             </CardContent>
           </Card>
@@ -721,7 +857,8 @@ export default function AdminEventDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ScrollText className="h-5 w-5" />
-                Cakupan (Scope)
+                Cakupan (Scope) -{" "}
+                <em className="font-normal opacity-[.5]">Opsional</em>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -729,16 +866,20 @@ export default function AdminEventDetail() {
                 <div className="space-y-2">
                   <Label>Tipe Scope</Label>
                   <Select
-                    value={scopeDraft.scope_type || 'none'}
-                    onValueChange={(v) => setScopeDraft((s) => ({
-                      ...s,
-                      scope_type: v === 'none' ? '' : v,
-                      scope_id: v === 'none' ? '' : s.scope_id,
-                    }))}
+                    value={scopeDraft.scope_type || "none"}
+                    onValueChange={(v) =>
+                      setScopeDraft((s) => ({
+                        ...s,
+                        scope_type: v === "none" ? "" : v,
+                        scope_id: v === "none" ? "" : s.scope_id,
+                      }))
+                    }
                   >
-                    <SelectTrigger><SelectValue placeholder="(tidak ada)" /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue placeholder="Tidak Ada" />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="none">(tidak ada)</SelectItem>
+                      <SelectItem value="none">Tidak Ada</SelectItem>
                       <SelectItem value="class">Kelas</SelectItem>
                       <SelectItem value="organization">Organisasi</SelectItem>
                       <SelectItem value="cohort">Angkatan</SelectItem>
@@ -754,7 +895,9 @@ export default function AdminEventDetail() {
                   <Input
                     placeholder="UUID atau kunci"
                     value={scopeDraft.scope_id}
-                    onChange={(e) => setScopeDraft((s) => ({ ...s, scope_id: e.target.value }))}
+                    onChange={(e) =>
+                      setScopeDraft((s) => ({ ...s, scope_id: e.target.value }))
+                    }
                     disabled={!scopeDraft.scope_type}
                   />
                 </div>
@@ -767,7 +910,8 @@ export default function AdminEventDetail() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <ListChecks className="h-5 w-5" />
-                Eligibility Rules
+                Eligibility Rules -{" "}
+                <em className="font-normal opacity-[.5]">Opsional</em>
               </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
@@ -776,16 +920,20 @@ export default function AdminEventDetail() {
                   <Label>Rule Type</Label>
                   <Select
                     value={newRule.rule_type}
-                    onValueChange={(v) => setNewRule((r) => ({ ...r, rule_type: v }))}
+                    onValueChange={(v) =>
+                      setNewRule((r) => ({ ...r, rule_type: v }))
+                    }
                   >
-                    <SelectTrigger><SelectValue /></SelectTrigger>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="class_id">class_id</SelectItem>
-                      <SelectItem value="profile_id">profile_id</SelectItem>
-                      <SelectItem value="department">department</SelectItem>
-                      <SelectItem value="cohort">cohort</SelectItem>
-                      <SelectItem value="organization">organization</SelectItem>
-                      <SelectItem value="custom">custom</SelectItem>
+                      <SelectItem value="class_id">Class ID</SelectItem>
+                      <SelectItem value="profile_id">Profile ID</SelectItem>
+                      <SelectItem value="department">Department</SelectItem>
+                      <SelectItem value="cohort">Cohort</SelectItem>
+                      <SelectItem value="organization">Organization</SelectItem>
+                      <SelectItem value="custom">Custom</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -794,7 +942,9 @@ export default function AdminEventDetail() {
                   <Input
                     placeholder="UUID atau nilai"
                     value={newRule.rule_value}
-                    onChange={(e) => setNewRule((r) => ({ ...r, rule_value: e.target.value }))}
+                    onChange={(e) =>
+                      setNewRule((r) => ({ ...r, rule_value: e.target.value }))
+                    }
                   />
                 </div>
                 <div className="space-y-2 md:col-span-2">
@@ -802,7 +952,9 @@ export default function AdminEventDetail() {
                   <Textarea
                     placeholder="Catatan (opsional)"
                     value={newRule.description}
-                    onChange={(e) => setNewRule((r) => ({ ...r, description: e.target.value }))}
+                    onChange={(e) =>
+                      setNewRule((r) => ({ ...r, description: e.target.value }))
+                    }
                     rows={1}
                   />
                 </div>
@@ -813,20 +965,31 @@ export default function AdminEventDetail() {
               </Button>
 
               {eligibilityRules.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada rule tambahan (cuma event_voter_groups).</p>
+                <p className="text-sm text-muted-foreground">
+                  Belum ada rule tambahan.
+                </p>
               ) : (
                 <div className="space-y-2">
                   {eligibilityRules.map((r) => (
-                    <div key={r.id} className="flex items-center justify-between rounded border p-3">
+                    <div
+                      key={r.id}
+                      className="flex items-center justify-between rounded border p-3"
+                    >
                       <div>
                         <p className="font-medium text-foreground">
                           {r.rule_type} = <code>{r.rule_value}</code>
                         </p>
                         {r.description && (
-                          <p className="text-sm text-muted-foreground">{r.description}</p>
+                          <p className="text-sm text-muted-foreground">
+                            {r.description}
+                          </p>
                         )}
                       </div>
-                      <Button variant="destructive" size="sm" onClick={() => handleRemoveRule(r.id)}>
+                      <Button
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => handleRemoveRule(r.id)}
+                      >
                         <Trash2 className="h-4 w-4" />
                       </Button>
                     </div>
@@ -845,20 +1008,27 @@ export default function AdminEventDetail() {
             </CardHeader>
             <CardContent>
               {transitions.length === 0 ? (
-                <p className="text-sm text-muted-foreground">Belum ada transisi tercatat.</p>
+                <p className="text-sm text-muted-foreground">
+                  Belum ada transisi tercatat.
+                </p>
               ) : (
                 <ul className="space-y-2">
                   {transitions.map((t) => (
-                    <li key={t.id} className="flex items-start gap-3 rounded border p-3">
+                    <li
+                      key={t.id}
+                      className="flex items-start gap-3 rounded border p-3"
+                    >
                       <div className="flex-1">
-                        <p className="font-medium text-foreground">
+                        <p className="font-medium text-foreground capitalize">
                           {t.from_status} → {t.to_status}
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {format(new Date(t.created_at), 'dd MMM yyyy HH:mm', { locale: idLocale })}
-                          {' • '}
+                          {format(new Date(t.created_at), "dd MMM yyyy HH:mm", {
+                            locale: idLocale,
+                          })}
+                          {" • "}
                           {t.triggered_by}
-                          {t.reason ? ` • ${t.reason}` : ''}
+                          {t.reason ? ` • ${t.reason}` : ""}
                         </p>
                       </div>
                     </li>
@@ -926,23 +1096,32 @@ export default function AdminEventDetail() {
           {/* Confirm toggle use_pairs */}
           <AlertDialog
             open={pendingUsePairs !== null}
-            onOpenChange={(o) => { if (!o) setPendingUsePairs(null); }}
+            onOpenChange={(o) => {
+              if (!o) setPendingUsePairs(null);
+            }}
           >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>
-                  {pendingUsePairs ? 'Aktifkan mode pasangan kandidat?' : 'Nonaktifkan mode pasangan kandidat?'}
+                  {pendingUsePairs
+                    ? "Aktifkan mode pasangan kandidat?"
+                    : "Nonaktifkan mode pasangan kandidat?"}
                 </AlertDialogTitle>
                 <AlertDialogDescription>
                   {pendingUsePairs
-                    ? 'Pemilih akan memilih satu pasangan (ketua & wakil) alih-alih kandidat tunggal. Pastikan pasangan sudah disiapkan sebelum pemilihan dimulai.'
-                    : 'Pemilih akan kembali memilih kandidat tunggal. Suara yang sudah tercatat untuk pasangan tetap tersimpan, tetapi tidak akan ditampilkan sebagai pilihan.'}
+                    ? "Pemilih akan memilih satu pasangan (ketua & wakil) alih-alih kandidat tunggal. Pastikan pasangan sudah disiapkan sebelum pemilihan dimulai."
+                    : "Pemilih akan kembali memilih kandidat tunggal. Suara yang sudah tercatat untuk pasangan tetap tersimpan, tetapi tidak akan ditampilkan sebagai pilihan."}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={pairsBusy}>Batal</AlertDialogCancel>
-                <AlertDialogAction onClick={handleToggleUsePairs} disabled={pairsBusy}>
-                  {pairsBusy ? 'Menyimpan...' : 'Ya, Lanjutkan'}
+                <AlertDialogCancel disabled={pairsBusy}>
+                  Batal
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleToggleUsePairs}
+                  disabled={pairsBusy}
+                >
+                  {pairsBusy ? "Menyimpan..." : "Ya, Lanjutkan"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -956,13 +1135,18 @@ export default function AdminEventDetail() {
                 <AlertDialogDescription>
                   {selectedPair
                     ? `Pasangan "${getPairDisplayName(selectedPair)}" akan dihapus permanen beserta anggotanya.`
-                    : ''}
+                    : ""}
                 </AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel disabled={pairsBusy}>Batal</AlertDialogCancel>
-                <AlertDialogAction onClick={handleDeletePair} disabled={pairsBusy}>
-                  {pairsBusy ? 'Menghapus...' : 'Ya, Hapus'}
+                <AlertDialogCancel disabled={pairsBusy}>
+                  Batal
+                </AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={handleDeletePair}
+                  disabled={pairsBusy}
+                >
+                  {pairsBusy ? "Menghapus..." : "Ya, Hapus"}
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>

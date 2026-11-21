@@ -191,7 +191,11 @@ Deno.serve(async (req: Request) => {
 
   // 4) Audit ringkasan batch.
   await admin.from("audit_log").insert({
+    // actor_email/role ikut diisi: UI audit pakai actor_email || 'anonim',
+    // jadi insert via service-role tanpa field ini tampil sebagai anonim.
     actor_id: user.id,
+    actor_email: user.email ?? null,
+    actor_role: "admin",
     action: "email.blast_batch",
     category: "admin",
     target_type: "election_events",

@@ -44,6 +44,16 @@ export default function AdminEmailBlast() {
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
   const toSend = Math.min(stats.pending, batchSize);
 
+  const downloadCsv = (filename: string, csv: string) => {
+    const blob = new Blob([csv], { type: 'text/csv' });
+    const url = window.URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = filename;
+    a.click();
+    window.URL.revokeObjectURL(url);
+  };
+
   useEffect(() => {
     supabase
       .from('election_events')
@@ -111,9 +121,20 @@ export default function AdminEmailBlast() {
       });
       // Tampilkan pesan server apa adanya (no_token/bad_token/not_admin/secrets).
       if (error) throw new Error(error.message || 'Gagal mengirim batch');
-      const r = data as { sent: number; failed: number };
-      setLastResult(`Terkirim ${r.sent}, gagal ${r.failed} (batch ${batchSize})`);
-      toast.success('Batch selesai — lihat statistik');
+      const r = data as {
+        sent: number;
+        failed: number;
+        errors?: Array<{ email: string; error: string }>;
+      };
+      // Tampilkan alasan kegagalan (mis. Resend 403 domain belum verified),
+      // jangan cuma hitungan — error hilang saat antrean di-reset.
+      const detail = r.errors?.[0]?.error;
+      setLastResult(
+        `Terkirim ${r.sent}, gagal ${r.failed} (batch ${batchSize})` +
+          (detail ? `\n${detail}` : '')
+      );
+      if (r.failed > 0) toast.error(`${r.failed} email gagal — lihat detail di bawah`);
+      else toast.success('Batch selesai — lihat statistik');
       refreshStats();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Gagal mengirim batch');
@@ -126,13 +147,40 @@ export default function AdminEmailBlast() {
     if (!eventId) return;
     setBusy(true);
     try {
+      // Baris gagal tetap 'pending' (attempts < 3), jadi error-nya ikut terhapus
+      // kalau reset langsung. Unduh dulu sebelum DELETE.
+      const { data: errors, error: readErr } = await supabase
+        .from('email_queue')
+        .select('email, full_name, attempts, error')
+        .eq('event_id', eventId)
+        .eq('status', 'pending')
+        .not('error', 'is', null);
+      if (readErr) throw readErr;
+      const withError = (errors || []).filter(
+        (r: { error: string | null }) => !!r.error
+      ) as Array<{ email: string; full_name: string | null; attempts: number; error: string }>;
+      if (withError.length) {
+        const rows = withError.map(
+          (r) =>
+            `${r.full_name || ''},${r.email},${r.attempts},"${r.error.replace(/"/g, '""')}"`
+        );
+        downloadCsv(
+          'error-antrean-blast.csv',
+          `full_name,email,attempts,error\n${rows.join('\n')}`
+        );
+      }
+
       const { error } = await supabase
         .from('email_queue')
         .delete()
         .eq('event_id', eventId)
         .eq('status', 'pending');
       if (error) throw error;
-      toast.success('Antrean pending dikosongkan — siap isi ulang');
+      toast.success(
+        withError.length
+          ? `${withError.length} error diunduh — antrean pending dikosongkan`
+          : 'Antrean pending dikosongkan — siap isi ulang'
+      );
       refreshStats();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Gagal mereset antrean');
@@ -157,14 +205,7 @@ export default function AdminEmailBlast() {
     const rows = (data || []).map(
       (r: { email: string; full_name: string | null }) => `${r.full_name || ''},${r.email}`
     );
-    const csv = `full_name,email\n${rows.join('\n')}`;
-    const blob = new Blob([csv], { type: 'text/csv' });
-    const url = window.URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'gagal-kirim-slip.csv';
-    a.click();
-    window.URL.revokeObjectURL(url);
+    downloadCsv('gagal-kirim-slip.csv', `full_name,email\n${rows.join('\n')}`);
     toast.success(`${rows.length} alamat gagal diekspor — cetak sebagai slip fisik`);
   };
 
@@ -207,7 +248,7 @@ export default function AdminEmailBlast() {
                   <Badge variant="destructive">Gagal: {stats.failed}</Badge>
                   <Badge variant="outline">Bounce: {stats.bounced}</Badge>
                 </div>
-                {lastResult && <p className="text-sm text-muted-foreground">{lastResult}</p>}
+                {lastResult && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{lastResult}</p>}
                 <div className="flex flex-wrap items-center gap-2">
                   <Label htmlFor="batch-size">Batch</Label>
                   <Select value={String(batchSize)} onValueChange={(v) => setBatchSize(Number(v))}>
