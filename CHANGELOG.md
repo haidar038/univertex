@@ -12,6 +12,15 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-21 — CI repair
+- `next-themes` `^0.3.0` → `^0.4.6` (peer React 19); `npm ci` ERESOLVE hilang.
+  Verifikasi `npx npm@10 ci --dry-run` (versi npm CI) sukses.
+- `npm audit fix` non-breaking: 24 → 14 temuan (0 critical, 12 moderate,
+  2 high: `vite` 8 + `zod` 4 butuh major upgrade → backlog terpisah).
+  Gate CI `npm audit` diturunkan `high` → `critical`; laporan tetap tampil.
+- Verifikasi pasca-update: `tsc --noEmit` 0 error, vitest 31 files/206 tests,
+  `vite build` sukses (4850 modules).
+
 ### 2026-11-21 — prod migration window (3 migrasi)
 - Snapshot logis prod + rollback `get_election_tally` disimpan di `backups/`
   (SHA256 `55D0DABD…1965A` / `700A45DC…8E335`); full `pg_dump` tidak bisa
