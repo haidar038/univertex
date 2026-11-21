@@ -35,6 +35,7 @@ All notable changes to UniVertex are documented here. Format follows
   loading selesai (anti-flaky). Bukti DB: 1 vote + 1 observasi event A;
   `vote.cast` audit metadata hanya `{event_id}`.
 - Fixture closed-voting: anon candidates 0, tally 401, helper `false`.
+- k6 smoke pasca-fixture: 100 VU × 1 mnt, checks 9.032/9.032, p95 tally 256 ms, 0 error.
 
 ### Selesai (bukti lokal 2026-09-13)
 - Baseline: `npm run test -- --run` **20 files / 156 tests passed** (~45s),

@@ -307,3 +307,4 @@ E2E (`test-results/e2e-staging-20261121-final2.log`): **7/7 passed, 0 skip** (2,
   - test 3 flaky saat body masih `Memuat...`; kini tunggu loading selesai + timeout 20 dtk.
 - Bukti DB: 1 vote + 1 observasi di event A; `audit_log` `vote.cast` metadata hanya `{event_id}` (tanpa kandidat).
 - Reset rerun: hapus vote/observasi event A (SQL di handbook).
+- k6 smoke read-only pasca-fixture (`test-results/k6-staging-20261121.txt`): 100 VU × 1 mnt, `LANDING=0`, `TALLY_EVENT_ID=c3333333…`, checks 9.032/9.032 (100%), errors 0,00%, http_req_failed 0,00%, p95 events 311 ms / tally 256 ms, avg 161 ms, max 1,31 s, exit k6 `default ✓`. (PowerShell melaporkan exit 1 karena stderr k6 ditreat sebagai error record — bukan kegagalan threshold.)
