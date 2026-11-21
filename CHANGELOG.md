@@ -21,6 +21,14 @@ All notable changes to UniVertex are documented here. Format follows
   `vite` 8.3.8 ditolak resolver npm 10. Fix: samakan `vitest`/`@vitest/coverage-v8`/
   `@vitest/ui` ke `^4.1.12`, regenerate lockfile dengan `npm@10`, verifikasi
   `npx npm@10 ci` sungguhan (bukan dry-run) sukses.
+- **Koreksi CI repair (2026-11-21):** verifikasi di atas false-green. `npx npm@10`
+  jalan di atas Node 26/Windows dan `--dry-run` tidak memuat optional peer.
+  Regenerasi from-scratch di Windows memangkas optional deps jadi satu
+  `@esbuild/win32-x64` serta membuang `fsevents`; di Linux CI (Node 20 / npm 10.8.2)
+  `npm ci` pun EUSAGE: `Missing: esbuild@0.28.2`, `@esbuild/*`, `fsevents@2.3.3`.
+  Fix final: regenerate lock **di Linux** (Node 20.19.5 / npm 10.8.2) dari nol —
+  seluruh platform `@esbuild`, `fsevents`, dan `esbuild@0.28.2` masuk lock.
+  Reproduksi `npm ci` sukses di image yang sama persis dengan CI.
 - `vitest.config.ts`: `fileParallelism: false` — parallel penuh bikin
   `UsersSelection.test.tsx` timeout flaky di CI. Serial 31 files / 206 tests stabil.
 - `npm audit fix` non-breaking: 24 → 14 temuan (0 critical, 12 moderate,
@@ -28,6 +36,10 @@ All notable changes to UniVertex are documented here. Format follows
   Gate CI `npm audit` diturunkan `high` → `critical`; laporan tetap tampil.
 - Verifikasi pasca-update: `tsc --noEmit` 0 error, vitest 31 files/206 tests,
   `vite build` sukses (4850 modules).
+- Verifikasi lock final: `npm ci` sukses di Linux Node 20.19.5/npm 10.8.2 (sama
+  dengan CI) + Windows; `tsc --noEmit` 0 error; vitest 31 files/206 tests;
+  coverage gate lolos (lines 68.92%); `vite build` 3845 modules; lint 0 error
+  (33 warning existing). CI `node-version` dipin 20.19.5 agar npm = 10.8.2.
 
 ### 2026-11-21 — prod migration window (3 migrasi)
 - Snapshot logis prod + rollback `get_election_tally` disimpan di `backups/`

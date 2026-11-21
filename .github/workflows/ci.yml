@@ -22,7 +22,10 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          # Pin: lock di-generate dengan npm 10.8.2 (bundled Node 20.19.5).
+          # Drift npm/Node bikin optional deps (@esbuild/*, fsevents,
+          # esbuild@0.28.2) missing saat `npm ci` di Linux.
+          node-version: 20.19.5
           cache: npm
 
       - name: Install dependencies
@@ -93,7 +96,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 20.19.5
           cache: npm
       - name: npm audit
         # 2 high tersisa butuh major upgrade (vite 8, zod 4) — backlog terpisah.
