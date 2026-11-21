@@ -9,6 +9,9 @@ export default defineConfig({
     environment: 'jsdom',
     setupFiles: ['./src/test/setup.ts'],
     css: true,
+    // Parallel penuh bikin UsersSelection.test.tsx timeout flaky di CI.
+    // Serial = 31 files / 206 tests stabil (terverifikasi berulang).
+    fileParallelism: false,
     // E2E dijalankan oleh Playwright (bukan Vitest) — exclude agar vitest
     // tidak mencoba resolve `@playwright/test` dan tidak mengganggu coverage.
     exclude: ['tests/e2e/**', 'tests/load/**', 'node_modules/**', 'dist/**', '.kilo/**'],

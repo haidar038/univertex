@@ -15,7 +15,14 @@ All notable changes to UniVertex are documented here. Format follows
 ### 2026-11-21 — CI repair
 - `next-themes` `^0.3.0` → `^0.4.6` dan `vaul` `^0.9.9` → `^1.1.2` (peer React 19).
   Root cause scan seluruh `package-lock.json`: 0 package lagi dengan `peerDependencies.react`
-  yang tidak menerima 19.2.0. `npx npm@10 ci --dry-run` (npm versi CI) sukses.
+  yang tidak menerima 19.2.0.
+- `npm ci` EUSAGE: lockfile hasil npm 12 tidak cocok npm 10 (CI). Keluarga Vitest
+  tidak sinkron (`vitest` 4.1.12 vs coverage/ui 4.0.6 yang peer-exact), nested
+  `vite` 8.3.8 ditolak resolver npm 10. Fix: samakan `vitest`/`@vitest/coverage-v8`/
+  `@vitest/ui` ke `^4.1.12`, regenerate lockfile dengan `npm@10`, verifikasi
+  `npx npm@10 ci` sungguhan (bukan dry-run) sukses.
+- `vitest.config.ts`: `fileParallelism: false` — parallel penuh bikin
+  `UsersSelection.test.tsx` timeout flaky di CI. Serial 31 files / 206 tests stabil.
 - `npm audit fix` non-breaking: 24 → 14 temuan (0 critical, 12 moderate,
   2 high: `vite` 8 + `zod` 4 butuh major upgrade → backlog terpisah).
   Gate CI `npm audit` diturunkan `high` → `critical`; laporan tetap tampil.
