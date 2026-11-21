@@ -41,6 +41,11 @@ All notable changes to UniVertex are documented here. Format follows
   coverage gate lolos (lines 68.92%); `vite build` 3845 modules; lint 0 error
   (33 warning existing). CI `node-version` dipin 20.19.5 agar npm = 10.8.2.
 
+### 2026-11-21 — live election runbook
+- Runbook terpusat `docs/LIVE-ELECTION-RUNBOOK.md`: status engineering vs manual
+  gate, blocker M1–M9, roadmap H-14→H+7, preflight, setup event, gladi staging,
+  GO/NO-GO, H-0, incident playbook, counting/publish, cleanup, rollback, sign-off.
+
 ### 2026-11-21 — prod migration window (3 migrasi)
 - Snapshot logis prod + rollback `get_election_tally` disimpan di `backups/`
   (SHA256 `55D0DABD…1965A` / `700A45DC…8E335`); full `pg_dump` tidak bisa
