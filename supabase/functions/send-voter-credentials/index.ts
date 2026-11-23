@@ -19,6 +19,9 @@ const PAGE_SIZE = 1000; // batas aman PostgREST default max-rows
 const MAX_ITEMS = 5000;
 const PASSWORD_CONCURRENCY = 16;
 const MAX_ATTEMPTS = 3;
+// Worker supabase dihentikan ~150 dtk (546 WORKER_RESOURCE_LIMIT). Berhenti
+// lebih awal supaya invocation selesai dengan response + audit yang valid.
+const MAX_DURATION_MS = 120_000;
 const MAX_RATE_RETRIES = 2;
 const RESEND_BATCH_URL = "https://api.resend.com/emails/batch";
 
@@ -163,6 +166,7 @@ Deno.serve(async (req: Request) => {
   if (req.method !== "POST") return json({ error: "POST only" }, 405);
 
   const startedAt = Date.now();
+  const deadlineAt = startedAt + MAX_DURATION_MS;
   const supabaseUrl = Deno.env.get("SUPABASE_URL") ?? "";
   const serviceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
   const resendKey = Deno.env.get("RESEND_API_KEY") ?? "";
@@ -232,6 +236,7 @@ Deno.serve(async (req: Request) => {
 
   const stats = { sent: 0, failed: 0 };
   const errors: Array<{ email: string; error: string }> = [];
+  let truncated = false;
 
   const markFailed = async (row: QueueRow, message: string) => {
     const attempts = (row.attempts ?? 0) + 1;
@@ -245,6 +250,10 @@ Deno.serve(async (req: Request) => {
   };
 
   for (let offset = 0; offset < queue.length; offset += CHUNK_SIZE) {
+    if (Date.now() >= deadlineAt) {
+      truncated = true;
+      break;
+    }
     const chunk = queue.slice(offset, offset + CHUNK_SIZE);
     const pins = chunk.map(() => makePin());
 
@@ -305,25 +314,35 @@ Deno.serve(async (req: Request) => {
       continue;
     }
 
-    // 3) data[i] urut sesuai payload[i]. Simpan id sebagai provider_msg_id.
+    // 3) data[i] urut sesuai payload[i]. Satu RPC untuk seluruh chunk:
+    // update per-baris bikin worker kena 546 sebelum sempat selesai.
     const data = Array.isArray(res.body?.data) ? res.body.data : [];
+    const sentItems: Array<{ id: string; provider_msg_id: string }> = [];
     for (let i = 0; i < sendable.length; i++) {
       const entry = data[i] as { id?: string; message?: string } | undefined;
       const row = sendable[i].row;
       if (entry?.id) {
-        await admin.from("email_queue").update({
-          status: "sent",
-          sent_at: new Date().toISOString(),
-          provider_msg_id: entry.id,
-          error: null,
-        }).eq("id", row.id);
-        stats.sent++;
+        sentItems.push({ id: row.id, provider_msg_id: entry.id });
       } else {
         await markFailed(row, `Resend batch: ${entry?.message ?? "id tidak dikembalikan"}`);
       }
     }
+    if (sentItems.length > 0) {
+      const { error: markErr } = await admin.rpc(
+        "admin_mark_email_queue_sent_bulk",
+        { p_items: sentItems },
+      );
+      if (markErr) throw new Error(markErr.message);
+      stats.sent += sentItems.length;
+    }
   }
 
+  const { count: pendingCount } = await admin
+    .from("email_queue")
+    .select("*", { count: "exact", head: true })
+    .eq("event_id", body.event_id)
+    .eq("status", "pending");
+  const pending = pendingCount ?? 0;
   const durationMs = Date.now() - startedAt;
   await admin.from("audit_log").insert({
     actor_id: user.id,
@@ -340,6 +359,8 @@ Deno.serve(async (req: Request) => {
       failed: stats.failed,
       duration_ms: durationMs,
       send_all: body.send_all === true,
+      truncated,
+      pending,
     },
     severity: "info",
   });
@@ -348,6 +369,8 @@ Deno.serve(async (req: Request) => {
     sent: stats.sent,
     failed: stats.failed,
     remaining_estimate: Math.max(0, queue.length - stats.sent - stats.failed),
+    pending,
+    truncated,
     errors: errors.slice(0, 10),
     duration_ms: durationMs,
   });
