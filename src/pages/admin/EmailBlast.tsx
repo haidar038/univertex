@@ -1,9 +1,5 @@
 import { useEffect, useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Badge } from '@/components/ui/badge';
-import { Label } from '@/components/ui/label';
 import {
   Select,
   SelectContent,
@@ -11,6 +7,10 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+import { Button } from '@/components/ui/button';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Badge } from '@/components/ui/badge';
+import { Label } from '@/components/ui/label';
 import {
   AlertDialog,
   AlertDialogAction,
@@ -39,10 +39,16 @@ export default function AdminEmailBlast() {
   const [stats, setStats] = useState<Stats>({ pending: 0, sent: 0, bounced: 0, failed: 0 });
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
-  // Ukuran batch kirim (label tombol selalu = yang benar-benar dikirim).
-  const [batchSize, setBatchSize] = useState(40);
+  // One-shot blast: semua pending dikirim sekali jalan, progres dibaca dari antrean.
+  const [blastTotal, setBlastTotal] = useState(0);
+  const [blastBaseline, setBlastBaseline] = useState({ sent: 0, failed: 0 });
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
-  const toSend = Math.min(stats.pending, batchSize);
+  const toSend = stats.pending;
+  const processed = Math.max(
+    0,
+    stats.sent - blastBaseline.sent + (stats.failed - blastBaseline.failed),
+  );
+  const progress = blastTotal > 0 ? Math.min(100, Math.round((processed / blastTotal) * 100)) : 0;
 
   const downloadCsv = (filename: string, csv: string) => {
     const blob = new Blob([csv], { type: 'text/csv' });
@@ -80,9 +86,18 @@ export default function AdminEmailBlast() {
   useEffect(() => {
     setStats({ pending: 0, sent: 0, bounced: 0, failed: 0 });
     setLastResult(null);
+    setBlastTotal(0);
     refreshStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [eventId]);
+
+  // Poll antrean saat blast berjalan supaya progress bar bergerak.
+  useEffect(() => {
+    if (!busy || blastTotal === 0) return;
+    const id = window.setInterval(() => { void refreshStats(); }, 2000);
+    return () => window.clearInterval(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [busy, blastTotal]);
 
   const handleEnqueue = async () => {
     if (!eventId) return;
@@ -114,30 +129,33 @@ export default function AdminEmailBlast() {
     }
     setBusy(true);
     setLastResult(null);
+    setBlastBaseline({ sent: stats.sent, failed: stats.failed });
+    setBlastTotal(stats.pending);
     try {
       const { data, error } = await supabase.functions.invoke('send-voter-credentials', {
-        body: { event_id: eventId, batch: batchSize },
+        body: { event_id: eventId, send_all: true },
         headers: { Authorization: `Bearer ${session.access_token}` },
       });
       // Tampilkan pesan server apa adanya (no_token/bad_token/not_admin/secrets).
-      if (error) throw new Error(error.message || 'Gagal mengirim batch');
+      if (error) throw new Error(error.message || 'Gagal mengirim');
       const r = data as {
         sent: number;
         failed: number;
+        duration_ms?: number;
         errors?: Array<{ email: string; error: string }>;
       };
-      // Tampilkan alasan kegagalan (mis. Resend 403 domain belum verified),
+      // Tampilkan alasan kegagalan (mis. provider 403 domain belum verified),
       // jangan cuma hitungan — error hilang saat antrean di-reset.
       const detail = r.errors?.[0]?.error;
       setLastResult(
-        `Terkirim ${r.sent}, gagal ${r.failed} (batch ${batchSize})` +
+        `Terkirim ${r.sent}, gagal ${r.failed} — ${((r.duration_ms ?? 0) / 1000).toFixed(1)} dtk` +
           (detail ? `\n${detail}` : '')
       );
       if (r.failed > 0) toast.error(`${r.failed} email gagal — lihat detail di bawah`);
-      else toast.success('Batch selesai — lihat statistik');
+      else toast.success('Blast selesai — lihat statistik');
       refreshStats();
     } catch (e: unknown) {
-      toast.error(e instanceof Error ? e.message : 'Gagal mengirim batch');
+      toast.error(e instanceof Error ? e.message : 'Gagal mengirim');
     } finally {
       setBusy(false);
     }
@@ -249,19 +267,17 @@ export default function AdminEmailBlast() {
                   <Badge variant="outline">Bounce: {stats.bounced}</Badge>
                 </div>
                 {lastResult && <p className="whitespace-pre-wrap text-sm text-muted-foreground">{lastResult}</p>}
-                <div className="flex flex-wrap items-center gap-2">
-                  <Label htmlFor="batch-size">Batch</Label>
-                  <Select value={String(batchSize)} onValueChange={(v) => setBatchSize(Number(v))}>
-                    <SelectTrigger id="batch-size" className="w-24">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="10">10</SelectItem>
-                      <SelectItem value="40">40</SelectItem>
-                      <SelectItem value="100">100</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
+                {busy && blastTotal > 0 && (
+                  <div className="space-y-1">
+                    <div className="flex justify-between text-xs text-muted-foreground">
+                      <span>Mengirim PIN...</span>
+                      <span>{processed} / {blastTotal} ({progress}%)</span>
+                    </div>
+                    <div className="h-2 w-full overflow-hidden rounded-full bg-muted">
+                      <div className="h-full bg-primary transition-all" style={{ width: `${progress}%` }} />
+                    </div>
+                  </div>
+                )}
                 <div className="flex flex-wrap gap-2">
                   <Button variant="outline" className="gap-2" onClick={handleEnqueue} disabled={busy}>
                     <MailPlus className="h-4 w-4" />
@@ -269,7 +285,7 @@ export default function AdminEmailBlast() {
                   </Button>
                   <Button className="gap-2" onClick={handleSendBatch} disabled={busy || toSend === 0}>
                     <Send className="h-4 w-4" />
-                    {busy ? 'Memproses...' : `Kirim ${toSend} Email`}
+                    {busy ? 'Memproses...' : `Kirim Semua Email (${toSend})`}
                   </Button>
                   <Button variant="outline" className="gap-2" onClick={refreshStats} disabled={busy}>
                     <RefreshCw className="h-4 w-4" />

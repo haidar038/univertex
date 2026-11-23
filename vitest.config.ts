@@ -14,7 +14,10 @@ export default defineConfig({
     fileParallelism: false,
     // E2E dijalankan oleh Playwright (bukan Vitest) — exclude agar vitest
     // tidak mencoba resolve `@playwright/test` dan tidak mengganggu coverage.
-    exclude: ['tests/e2e/**', 'tests/load/**', 'node_modules/**', 'dist/**', '.kilo/**'],
+    // `node_modules/**` hanya kecuali root. Sub-proyek untracked (docs/motion)
+    // punya node_modules sendiri — tanpa `**/node_modules/**` test dependency
+    // ikut ke-discover dan bikin suite lokal merah (bukan kode app).
+    exclude: ['tests/e2e/**', 'tests/load/**', '**/node_modules/**', 'dist/**', '.kilo/**'],
     coverage: {
       provider: 'v8',
       reporter: ['text', 'lcov', 'html'],

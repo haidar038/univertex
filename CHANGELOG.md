@@ -12,6 +12,30 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-23 — one-shot PIN blast untuk 3000+ voter
+- `supabase/functions/send-voter-credentials`: kirim via Resend `POST /emails/batch`
+  (100 email/request, 1 hit rate-limit) menggantikan loop 1 email + throttle 1,5 dtk.
+  Password di-update paralel (concurrency 16) dengan retry 429; `Idempotency-Key`
+  per chunk; `data[i].id` → `provider_msg_id`; tag `queue_id`/`event_id`;
+  param `send_all: true` (batas 5000). Audit `email.blast_batch` dapat `duration_ms`.
+  Estimasi 3000 email < 2 menit (dulu ~75 menit). Deploy prod v7 (`verify_jwt=true`).
+- `src/pages/admin/EmailBlast.tsx`: tombol "Kirim Semua Email (n)" + progress bar
+  dari polling `email_queue` (2 dtk). Test kontrak di-update ke `send_all: true`.
+- Verifikasi: `tsc --noEmit` 0 error, `deno check` 0 error, vitest file terkait 3/3,
+  `vite build` sukses. Full suite `npm run test -- --run`: 227 file / 2959 test hijau;
+  34 file / 10 test gagal SEMUA berasal dari `docs/motion/node_modules/**` (work
+  untracked, dependency sub-proyek), bukan kode app. `vitest.config.ts` kini
+  mengecualikan `**/node_modules/**` supaya suite lokal tidak tercemar
+  (`npx vitest list src` pasca-fix: 0 file dari `docs/motion`).
+- Rate limit Auth **prod** `oiurjnmpkguyxevdbpbu` diubah via dashboard Supabase
+  (browse extension, sesi owner): `RATE_LIMIT_EMAIL_SENT` 30→6000,
+  `RATE_LIMIT_TOKEN_REFRESH` 150→5000, `RATE_LIMIT_OTP` (sign-up/sign-in per IP)
+  30→5000, `RATE_LIMIT_VERIFY` 30→1000. Terverifikasi persist setelah reload.
+  `SMTP_MAX_FREQUENCY` tetap 60 dtk. Nilai identik juga diterapkan ke staging
+  `koveroqhxphdiakvukxt` atas permintaan owner; keduanya terverifikasi persist
+  setelah reload.
+- **Menunggu:** owner upgrade Resend Free → Pro (3000 email/hari > kuota 100/hari).
+
 ### 2026-11-21 — CI repair
 - `next-themes` `^0.3.0` → `^0.4.6` dan `vaul` `^0.9.9` → `^1.1.2` (peer React 19).
   Root cause scan seluruh `package-lock.json`: 0 package lagi dengan `peerDependencies.react`
