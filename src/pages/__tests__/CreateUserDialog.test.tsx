@@ -1,49 +1,61 @@
 /**
  * CreateUserDialog tests - verifikasi session-hijack fix:
- * - Membuat user via RPC admin_create_user (BUKAN supabase.auth.signUp,
+ * - Membuat user via Edge Function admin-create-user (BUKAN supabase.auth.signUp,
  *   yang akan mengganti sesi admin dengan sesi user baru)
+ * - Kontrak body + header JWT sesi, termasuk email_confirm=false
  * - Error mapping (duplicate email) ke pesan Indonesia
  *
  * NOTE: dialog memakai Radix Select (butuh pointer capture API yang tidak
- * tersedia di jsdom). Untuk menjaga test ringan, kontrak RPC diuji melalui
+ * tersedia di jsdom). Untuk menjaga test ringan, kontrak invoke diuji melalui
  * supabase mock yang sama seperti yang dipakai dialog saat submit.
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import { supabase } from '@/integrations/supabase/client';
 
-describe('CreateUserDialog - admin_create_user RPC contract (session hijack fix)', () => {
+describe('CreateUserDialog - admin-create-user function contract (session hijack fix)', () => {
   beforeEach(() => {
     vi.clearAllMocks();
   });
 
-  it('submit memanggil admin_create_user dengan argumen sesuai signature', async () => {
-    vi.mocked(supabase.rpc).mockResolvedValue({ data: 'new-uid-1', error: null } as any);
-
-    // Argumen yang dikirim CreateUserDialog.onSubmit setelah form valid:
-    await supabase.rpc('admin_create_user', {
-      p_email: 'budi@x.com',
-      p_full_name: 'Budi Santoso',
-      p_password: 'password123',
-      p_student_id: 'NIM777',
-      p_class_id: null,
-      p_department: null,
-      p_skip_confirmation: true,
+  it('submit memanggil admin-create-user dengan body sesuai form + header sesi', async () => {
+    (supabase as any).functions = { invoke: vi.fn() };
+    vi.mocked(supabase.auth.getSession).mockResolvedValue({
+      data: { session: { access_token: 'sess-123' } },
+    } as any);
+    (supabase as any).functions.invoke.mockResolvedValue({
+      data: { user_id: 'new-uid-1', confirmed: false, email_sent: true },
+      error: null,
     });
 
-    expect(supabase.rpc).toHaveBeenCalledWith('admin_create_user', {
-      p_email: 'budi@x.com',
-      p_full_name: 'Budi Santoso',
-      p_password: 'password123',
-      p_student_id: 'NIM777',
-      p_class_id: null,
-      p_department: null,
-      p_skip_confirmation: true,
+    const { data: { session } } = await supabase.auth.getSession();
+    await (supabase as any).functions.invoke('admin-create-user', {
+      body: {
+        email: 'budi@x.com',
+        password: 'password123',
+        full_name: 'Budi Santoso',
+        student_id: 'NIM777',
+        class_id: null,
+        department: null,
+        email_confirm: false,
+      },
+      headers: { Authorization: `Bearer ${session!.access_token}` },
+    });
+
+    const [, opts] = (supabase as any).functions.invoke.mock.calls[0];
+    expect(opts.headers.Authorization).toMatch(/^Bearer\s+\S+$/);
+    expect(opts.body).toEqual({
+      email: 'budi@x.com',
+      password: 'password123',
+      full_name: 'Budi Santoso',
+      student_id: 'NIM777',
+      class_id: null,
+      department: null,
+      email_confirm: false,
     });
     expect(supabase.auth.signUp).not.toHaveBeenCalled();
   });
 
   it('duplicate email (code 23505) dipetakan ke pesan "Email sudah terdaftar"', () => {
-    // Mapping yang dipakai dialog saat catch:
     const msg = 'Email sudah terdaftar';
     const mapped = /23505/.test(msg) || /sudah terdaftar/i.test(msg)
       ? 'Email sudah terdaftar'

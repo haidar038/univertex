@@ -135,14 +135,14 @@ export default function Login() {
                     <CardContent>
                         <form onSubmit={handleLogin} className="space-y-4">
                             {error && (
-                                <Alert variant="destructive">
+                                <Alert variant="destructive" className="mb-2">
                                     <AlertCircle className="h-4 w-4" />
                                     <AlertDescription>{error}</AlertDescription>
                                 </Alert>
                             )}
 
                             <div className="space-y-2">
-                                <Label htmlFor="email">Email atau NIM</Label>
+                                <Label htmlFor="email">Email</Label>
                                 <Input id="email" type="email" placeholder="example@email.com" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required disabled={submitting} className="border-border" autoComplete="email" />
                             </div>
 

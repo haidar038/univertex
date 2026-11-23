@@ -12,6 +12,19 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-23 — label login, confirm email, color schema
+- `Login.tsx`: label field jadi "Email" (sebelumnya "Email atau NIM" — NIM tidak
+  didukung `signInWithPassword`, hanya email). Alert error diberi `mb-2`.
+- `admin-create-user` Edge Function baru: buat user via Auth Admin API
+  (`email_confirm:false`) + `generateLink` + kirim email konfirmasi via Resend.
+  `CreateUserDialog` invoke function (bukan RPC yang menghasilkan token kosong
+  dan tidak mengirim email). Deploy v1 ke staging + prod. Redirect URLs
+  `https://univertex.site/**` dan `https://www.univertex.site/**` didaftarkan
+  di kedua project.
+- `index.css`: destructive direduksi saturasinya (`0 70% 52%` light,
+  `0 52% 60%` dark); dark foreground jadi `hsl(222 47% 8%)` (kontras 5.07).
+- Test: `CreateUserDialog.test.tsx` kontrak invoke `admin-create-user` + JWT.
+
 ### 2026-11-23 — one-shot PIN blast untuk 3000+ voter
 - `supabase/functions/send-voter-credentials`: kirim via Resend `POST /emails/batch`
   (100 email/request, 1 hit rate-limit) menggantikan loop 1 email + throttle 1,5 dtk.

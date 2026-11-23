@@ -90,51 +90,65 @@ export function CreateUserDialog({ open, onOpenChange, onSuccess }: CreateUserDi
     }
   };
 
-  const onSubmit = async (data: UserFormValues) => {
+  const onSubmit = async (values: UserFormValues) => {
     setIsSubmitting(true);
     try {
-      // Use the admin_create_user RPC instead of supabase.auth.signUp:
-      // signUp from the admin's browser would REPLACE the admin's own
-      // session with the new user's session (session hijack by design).
-      const { data: newUserId, error: rpcError } = await supabase.rpc('admin_create_user', {
-        p_email: data.email,
-        p_full_name: data.full_name,
-        p_password: data.password,
-        p_student_id: data.student_id,
-        p_class_id: data.class_id || null,
-        p_department: data.department || null,
-        p_skip_confirmation: data.email_confirm,
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error('Sesi habis — logout lalu login ulang sebelum membuat user.');
+
+      // Edge Function pakai service_role. Jangan auth.signUp dari browser:
+      // itu mengganti sesi admin dengan sesi user baru (session hijack).
+      const { data: result, error: fnError } = await supabase.functions.invoke('admin-create-user', {
+        body: {
+          email: values.email,
+          password: values.password,
+          full_name: values.full_name,
+          student_id: values.student_id,
+          class_id: values.class_id || null,
+          department: values.department || null,
+          email_confirm: values.email_confirm,
+        },
+        headers: { Authorization: `Bearer ${session.access_token}` },
       });
-
-      if (rpcError) throw rpcError;
-      if (!newUserId) throw new Error('Gagal membuat user');
-
-      const userId = newUserId as string;
+      if (fnError) throw new Error(fnError.message || 'Gagal membuat user');
+      const created = result as {
+        user_id?: string;
+        email_sent?: boolean;
+        email_error?: string;
+        error?: string;
+      };
+      if (!created.user_id) throw new Error(created.error || 'Gagal membuat user');
+      const userId = created.user_id;
 
       // Role adjustments on top of the default 'voter' role created by the
       // handle_new_user trigger.
-      if (!data.roles.voter) {
+      if (!values.roles.voter) {
         await supabase.from('user_roles').delete().eq('user_id', userId).eq('role', 'voter');
       }
-      if (data.roles.candidate) {
+      if (values.roles.candidate) {
         await supabase.from('user_roles').insert({ user_id: userId, role: 'candidate' });
       }
 
       await logAudit({
         action: 'user.create',
-        description: `Created user ${data.full_name} (${data.student_id})`,
+        description: `Created user ${values.full_name} (${values.student_id})`,
         category: 'admin',
         targetType: 'auth.users',
         targetId: userId,
         metadata: {
-          email: data.email,
-          student_id: data.student_id,
-          class_id: data.class_id || null,
-          roles: Object.entries(data.roles).filter(([, v]) => v).map(([k]) => k),
+          email: values.email,
+          student_id: values.student_id,
+          class_id: values.class_id || null,
+          roles: Object.entries(values.roles).filter(([, v]) => v).map(([k]) => k),
         },
       });
 
-      toast.success('Pengguna berhasil dibuat!');
+      if (!values.email_confirm) {
+        if (created.email_sent) toast.success('User dibuat — email konfirmasi terkirim');
+        else toast.error(`User dibuat, tapi email konfirmasi gagal: ${created.email_error ?? 'hubungi admin'}`);
+      } else {
+        toast.success('Pengguna berhasil dibuat!');
+      }
       reset();
       onOpenChange(false);
       onSuccess?.();

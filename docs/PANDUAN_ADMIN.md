@@ -18,6 +18,7 @@
 
 ## Undangan & Staff
 * `/admin/invitations`: intent `register/voter_group/candidate/committee/observer`, token 64-hex, salin link `/invite/:token` manual (email SMTP belum otomatis bila belum setting).
+* Buat user baru: jika checkbox **auto-confirm email** dicentang, akun langsung aktif. Jika **tidak** dicentang, sistem mengirim email konfirmasi berisi tautan dari Supabase Auth lewat Resend; user harus membuka tautan itu sebelum login pertama. Jika email gagal terkirim, UI menampilkan error — hubungi admin untuk penanganan manual.
 * Staff per event: `/admin/events/:id/staff` (committee role `chair/secretary/verifier/technical/member`, observer read-only).
 
 ## Audit & Sesi

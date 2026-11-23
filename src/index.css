@@ -40,7 +40,7 @@ All colors MUST be HSL.
     --muted: hsl(210 40% 96%);
     --muted-foreground: hsl(215 16% 47%);
 
-    --destructive: hsl(0 84% 60%);
+    --destructive: hsl(0 70% 52%);
     --destructive-foreground: hsl(0 0% 100%);
 
     --border: hsl(214 32% 91%);
@@ -83,8 +83,9 @@ All colors MUST be HSL.
     --muted: hsl(222 40% 20%);
     --muted-foreground: hsl(215 20% 65%);
 
-    --destructive: hsl(0 67% 57%);
-    --destructive-foreground: hsl(210 40% 98%);
+    --destructive: hsl(0 52% 60%);
+    /* Teks gelap di dark mode: kontras 5.07 di atas merah lunak (vs 3.99 jika putih). */
+    --destructive-foreground: hsl(222 47% 8%);
 
     --border: hsl(217 33% 17%);
     --input: hsl(217 33% 17%);
