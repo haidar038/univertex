@@ -1,6 +1,6 @@
 ﻿/**
  * VotingPage tests - verifikasi implementasi:
- * - Timeline enforcement (belum mulai / sudah berakhir / active)
+ * - Timeline enforcement (status DB = otoritas; jam device tidak dipakai)
  * - Eligibility (DPT) check
  * - Double-vote prevention (unique constraint 23505)
  * - DB trigger timeline violation (P0001)
@@ -171,32 +171,46 @@ describe('VotingPage - Timeline Enforcement', () => {
     mockUseAuth();
   });
 
-  it('menampilkan banner "belum dimulai" ketika start_time di masa depan', async () => {
+  it('tidak memakai jam device: status voting tetap bisa vote walau start/end tampak lewat', async () => {
     mockFrom({
-      event: { ...activeEvent, start_time: futureDate(30), end_time: futureDate(120) },
+      event: { ...activeEvent, start_time: futureDate(30), end_time: pastDate(10) },
     });
 
     renderPage();
 
     await waitFor(() => {
-      expect(screen.getByText(/Pemilihan belum dimulai/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Waktu pemilihan sudah berakhir/i)).not.toBeInTheDocument();
+      expect(screen.queryByText(/Pemilihan belum dimulai/i)).not.toBeInTheDocument();
+    });
+    await castVoteFlow();
+  });
+
+  it('menutup voting berdasarkan status DB counting walau end_time masih depan', async () => {
+    mockFrom({
+      event: { ...activeEvent, status: 'counting', start_time: pastDate(60), end_time: futureDate(60) },
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText(/Voting telah berakhir/i)).toBeInTheDocument();
+      expect(screen.queryByText(/Konfirmasi Pilihan/i)).not.toBeInTheDocument();
     });
   });
 
-  it('menampilkan banner "sudah berakhir" ketika end_time sudah lewat dan TIDAK bisa vote (BUG SEBELUMNYA)', async () => {
-    mockFrom({
-      event: { ...activeEvent, start_time: pastDate(120), end_time: pastDate(10) },
-    });
-
+  it('refresh saat tab aktif mengikuti perubahan status DB tanpa reload', async () => {
+    const config: { event?: any } = { event: { ...activeEvent } };
+    mockFrom(config);
     renderPage();
+    await waitFor(() => screen.getByText('Kandidat A'));
 
-    await waitFor(() => {
-      expect(screen.getByText(/Waktu pemilihan sudah berakhir/i)).toBeInTheDocument();
+    config.event = { ...activeEvent, status: 'counting' };
+    await act(async () => {
+      document.dispatchEvent(new Event('visibilitychange'));
     });
 
-    // Kunci fix: tombol konfirmasi TIDAK boleh muncul
     await waitFor(() => {
-      expect(screen.queryByText(/Konfirmasi Pilihan/i)).not.toBeInTheDocument();
+      expect(screen.getByText(/Voting telah berakhir/i)).toBeInTheDocument();
     });
   });
 

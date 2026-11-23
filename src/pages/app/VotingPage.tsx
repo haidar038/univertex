@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { toast } from 'sonner';
-import { Vote, User, AlertTriangle, Clock, CheckCircle2 } from 'lucide-react';
+import { Vote, User, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getCandidatePhotoUrl } from '@/lib/candidate-helpers';
 import { fetchPairsWithMembers, getPairDisplayName, getPairPositionLabel, type PairWithMembers } from '@/lib/candidate-pair-helpers';
@@ -52,19 +52,36 @@ export default function VotingPage() {
   const [alreadyVotedCandidateId, setAlreadyVotedCandidateId] = useState<string | null>(null);
   const [alreadyVotedPairId, setAlreadyVotedPairId] = useState<string | null>(null);
   const [notEligible, setNotEligible] = useState(false);
-  const [now, setNow] = useState<number>(Date.now());
-
-  // Tick the "now" timer once per minute so countdown / "voting closed" status updates.
-  useEffect(() => {
-    const id = window.setInterval(() => setNow(Date.now()), 30_000);
-    return () => window.clearInterval(id);
-  }, []);
 
   useEffect(() => {
     if (eventId && profile) {
       fetchEventAndCandidates();
     }
   }, [eventId, profile]);
+
+  // Status DB = otoritas waktu voting. pg_cron mengubah voting → counting saat
+  // end_time tercapai; refresh berkala + saat tab aktif membuat perubahan
+  // status/admin tampil tanpa reload. Jam perangkat voter tidak dipakai.
+  useEffect(() => {
+    if (!eventId) return;
+    const refreshEvent = async () => {
+      const { data } = await supabase
+        .from('election_events')
+        .select('*')
+        .eq('id', eventId)
+        .maybeSingle();
+      if (data) setEvent(data as EventRow);
+    };
+    const intervalId = window.setInterval(refreshEvent, 30_000);
+    const onVisibilityChange = () => {
+      if (document.visibilityState === 'visible') void refreshEvent();
+    };
+    document.addEventListener('visibilitychange', onVisibilityChange);
+    return () => {
+      window.clearInterval(intervalId);
+      document.removeEventListener('visibilitychange', onVisibilityChange);
+    };
+  }, [eventId]);
 
   const fetchEventAndCandidates = async () => {
     if (!eventId || !profile) return;
@@ -129,16 +146,10 @@ export default function VotingPage() {
   };
 
   // ---- derived state ---------------------------------------------------
-  const eventStartMs = event ? new Date(event.start_time).getTime() : NaN;
-  const eventEndMs = event ? new Date(event.end_time).getTime() : NaN;
+  // Tidak ada perbandingan dengan jam device: trigger votes memakai now() server.
+  // Status non-voting (counting/published/...) ditampilkan showInactiveNotice.
   const eventIsActive = event?.status === 'voting';
-  const eventIsOpen = eventStartMs <= now;
-  const eventIsClosed = now >= eventEndMs;
-  const isWithinWindow = eventIsActive && eventIsOpen && !eventIsClosed;
-  const votingDisabled =
-    !event || !eventIsActive || eventIsClosed || !eventIsOpen || notEligible || hasVoted;
-  const showClosedNotice = event && eventIsActive && eventIsOpen && eventIsClosed;
-  const showNotStartedNotice = event && eventIsActive && !eventIsOpen;
+  const votingDisabled = !event || !eventIsActive || notEligible || hasVoted;
   const showInactiveNotice = event && !eventIsActive;
 
   const handleVote = async () => {
@@ -271,33 +282,7 @@ export default function VotingPage() {
           </Alert>
         )}
 
-        {showNotStartedNotice && (
-          <Alert variant="destructive" className="mb-6">
-            <Clock className="h-4 w-4" />
-            <AlertDescription>
-              Pemilihan belum dimulai. Akan dibuka pada{' '}
-              <strong>
-                {new Date(event.start_time).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
-              </strong>
-              .
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {showClosedNotice && (
-          <Alert variant="destructive" className="mb-6">
-            <Clock className="h-4 w-4" />
-            <AlertDescription>
-              Waktu pemilihan sudah berakhir pada{' '}
-              <strong>
-                {new Date(event.end_time).toLocaleString('id-ID', { dateStyle: 'long', timeStyle: 'short' })}
-              </strong>
-              . Suara tidak dapat lagi diberikan.
-            </AlertDescription>
-          </Alert>
-        )}
-
-        {isWithinWindow && !hasVoted && (
+        {eventIsActive && !hasVoted && !notEligible && (
           <div className="mb-8 rounded-lg bg-primary/10 p-4 text-sm">
             <p className="font-medium text-foreground">
               <Vote className="mb-1 mr-2 inline h-4 w-4" />
