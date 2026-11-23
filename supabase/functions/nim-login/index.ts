@@ -120,10 +120,17 @@ Deno.serve(async (req: Request) => {
     email: resolved.email,
     options: { redirectTo: appUrl },
   });
-  const properties = link?.properties as unknown as { token_hash?: string } | undefined;
-  const tokenHash = properties?.token_hash;
+  // GoTrue Admin API mengembalikan field `hashed_token` (bukan `token_hash`)
+  // di properties. supabase-js verifyOtp menerimanya sebagai `token_hash`.
+  const properties = link?.properties as unknown as
+    | { hashed_token?: string; token_hash?: string }
+    | undefined;
+  const tokenHash = properties?.hashed_token ?? properties?.token_hash;
   if (linkErr || !tokenHash) {
-    console.log("[nim-login] generate_link_failed");
+    console.log(
+      "[nim-login] generate_link_failed",
+      linkErr?.message ?? "hashed_token kosong",
+    );
     return json({ error: "Gagal membuat sesi. Coba lagi." }, 500);
   }
 

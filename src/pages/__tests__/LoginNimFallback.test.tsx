@@ -120,6 +120,25 @@ describe('Login - NIM sebagai password', () => {
     });
   });
 
+  it('function 500 → pesan sesi, bukan "email/password salah"', async () => {
+    vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
+      data: { user: null }, error: { message: 'Invalid login credentials' },
+    } as any);
+    vi.mocked(supabase.functions.invoke).mockResolvedValue({
+      data: null, error: { message: 'Gagal membuat sesi. Coba lagi.' },
+    } as any);
+
+    renderLogin();
+    fireEvent.change(screen.getByLabelText('Email'), { target: { value: 'u1@x.com' } });
+    fireEvent.change(screen.getByLabelText('Password'), { target: { value: 'N1' } });
+    await submit();
+
+    await waitFor(() => {
+      expect(screen.getByText('Gagal membuat sesi. Coba lagi.')).toBeInTheDocument();
+    });
+    expect(screen.queryByText(/Email atau kombinasi password yang dimasukkan salah/i)).not.toBeInTheDocument();
+  });
+
   it('dua-duanya gagal → satu log_failed_login dan error generik', async () => {
     vi.mocked(supabase.auth.signInWithPassword).mockResolvedValue({
       data: { user: null }, error: { message: 'Invalid login credentials' },

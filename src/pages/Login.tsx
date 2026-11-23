@@ -61,7 +61,10 @@ export default function Login() {
                     'nim-login',
                     { body: { identifier: email, password } },
                 );
-                if (nimError || !nimData?.token_hash) {
+                if (nimError) {
+                    throw new Error(nimError.message || 'Gagal membuat sesi. Coba lagi.');
+                }
+                if (!nimData?.token_hash) {
                     throw new Error('Kredensial tidak valid');
                 }
                 const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
@@ -112,9 +115,11 @@ export default function Login() {
             const target = dashboardPathFor({ ...profile, roles } as any);
             navigate(target, { replace: true });
         } catch (err: unknown) {
-            const msg =
-                err instanceof Error && err.message === 'Profil pengguna tidak ditemukan. Hubungi admin.'
-                    ? err.message
+            const raw = err instanceof Error ? err.message : '';
+            const msg = raw === 'Profil pengguna tidak ditemukan. Hubungi admin.'
+                ? raw
+                : raw.includes('Gagal membuat sesi')
+                    ? 'Gagal membuat sesi. Coba lagi.'
                     : 'Email atau kombinasi password yang dimasukkan salah.';
 
             // Failed-login audit must go through the anon-callable RPC; the

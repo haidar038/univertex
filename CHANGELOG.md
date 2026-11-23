@@ -12,6 +12,22 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-23 — perbaikan login NIM (hashed_token)
+- Root cause: `auth.admin.generateLink()` mengembalikan `properties.hashed_token`,
+  bukan `token_hash`. Kode awal membaca `token_hash` → selalu undefined →
+  function 500 "Gagal membuat sesi", lalu frontend menampilkannya sebagai
+  "email/password salah". 69 `auth.login_nim_failed` di staging, 0 sukses.
+- Fix: `nim-login` membaca `hashed_token` (fallback `token_hash`), log error
+  `generateLink` memuat pesan asli. `Login.tsx` tidak lagi mengubah error 500
+  jadi "email/password salah"; pesan generik hanya untuk kredensial invalid.
+- `resolve_nim_login` juga diubah case-insensitive + trim untuk NIM (11 NIM
+  uppercase di staging). Migrasi `20261123090500_fix_resolve_nim_login_case.sql`
+  **hanya di-apply ke staging** (live saat ini = staging; prod sengaja tidak
+  disentuh).
+- Verifikasi staging: E2E function 200 → token → `/auth/v1/verify` 200 + session;
+  uji NIM uppercase dengan input lowercase juga 200 + token. Test
+  `LoginNimFallback.test.tsx` 4/4 hijau, `deno check` 0 error.
+
 ### 2026-11-23 — login NIM sebagai password + pagination user management
 - **Login paralel NIM-as-password** (blast PIN tetap jalan, password tersimpan
   tidak dirotasi): `supabase/functions/nim-login` memverifikasi NIM terhadap
@@ -35,10 +51,12 @@ All notable changes to UniVertex are documented here. Format follows
   full suite 34 file / 221 test hijau, `tsc --noEmit` 0 error, `deno check`
   0 error, lint 0 error (45 warning lama), `vite build` sukses.
 - **Sudah di-apply + di-deploy** ke prod `oiurjnmpkguyxevdbpbu` dan staging
-  `koveroqhxphdiakvukxt`: 2 migrasi aktif, `nim-login` v1 ACTIVE dengan
-  `verify_jwt=false`, source identik di kedua project. Grant terverifikasi:
-  `resolve_nim_login` hanya service_role; `admin_list_users_paged` authenticated
-  + service_role, anon ditolak. Frontend aman di-deploy setelah ini.
+  `koveroqhxphdiakvukxt`: 2 migrasi aktif, `nim-login` ACTIVE dengan
+  `verify_jwt=false`. Grant terverifikasi: `resolve_nim_login` hanya service_role;
+  `admin_list_users_paged` authenticated + service_role, anon ditolak.
+  **Live saat ini = staging** (`univertex.site` → Supabase staging). Setelah
+  perbaikan `hashed_token`, staging pakai `nim-login` v2 + migrasi case-insensitive;
+  prod masih v1 (bug `hashed_token`) dan sengaja tidak disentuh.
 - Observasi prod saat verifikasi: `profiles` = 58 baris (56 non-admin), jauh
   di bawah ~1600 yang disebut owner — kemungkinan import massal belum jalan.
   RPC tetap sudah menangani pagination untuk skala tersebut.
