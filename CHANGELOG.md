@@ -12,6 +12,22 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-23 — kondisi "Seri" pada hasil pemilihan
+- `src/lib/election-results.ts`: helper `getTieGroup<T extends { votes: number }>()`
+  mengembalikan semua entri dengan suara terbanyak identik (≥2, suara > 0),
+  independen dari urutan input. Tidak menyentuh state machine 6-status/DB.
+- Dipakai di 3 tampilan hasil: `EventResultsView.tsx` (admin, termasuk ekspor
+  PDF + ikon trofi tabel), `app/ResultsPage.tsx` (voter), `PublicResultsPage.tsx`
+  (publik). Kartu "Pemenang"/"Posisi Teratas" kini hanya muncul untuk pemenang
+  tunggal; saat seri ditampilkan kartu "Seri" berisi semua kandidat/pasangan
+  yang terikat beserta perolehan suaranya. Mode sensor closed pre-publish tetap
+  mendahulukan kartu "Hasil Disembunyikan" (seri tidak bocor).
+- `Events.tsx`/`EventDetail.tsx` tidak diubah: tidak ada logika pemenang di sana
+  (detail admin mendelegasikan ke `EventResultsView`).
+- Test: `election-results.test.ts` (4) + 3 test baru di `ResultsPage.test.tsx`.
+  Verifikasi: targeted 16/16, full suite 33 file / 217 test hijau,
+  `tsc --noEmit` 0 error, `vite build` sukses.
+
 ### 2026-11-23 — label login, confirm email, color schema
 - `Login.tsx`: label field jadi "Email" (sebelumnya "Email atau NIM" — NIM tidak
   didukung `signInWithPassword`, hanya email). Alert error diberi `mb-2`.

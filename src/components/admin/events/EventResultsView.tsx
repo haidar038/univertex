@@ -4,10 +4,11 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Download, FileText, Trophy, Users, Vote, TrendingUp } from 'lucide-react';
+import { Download, FileText, Trophy, Users, Vote, TrendingUp, Scale } from 'lucide-react';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
 import { toast } from 'sonner';
 import { fetchPairsWithMembers, getPairDisplayName } from '@/lib/candidate-pair-helpers';
+import { getTieGroup } from '@/lib/election-results';
 
 interface EventResultsViewProps {
   eventId: string;
@@ -45,6 +46,10 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
   const [usePairs, setUsePairs] = useState(false);
 
   const nameColumnLabel = usePairs ? 'Nama Paslon - Nama Kandidat' : 'Nama Kandidat';
+
+  // Satu kondisi "Seri" dipakai oleh kartu UI, tabel, dan ekspor PDF.
+  const tieGroup = getTieGroup(results);
+  const isTie = tieGroup.length > 0;
 
   useEffect(() => {
     fetchResults();
@@ -290,7 +295,20 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
           </div>
         </div>
 
-        ${stats.winner
+        ${isTie
+        ? `
+        <div class="winner-card" style="background: linear-gradient(135deg, #a78bfa 0%, #8b5cf6 100%);">
+          <h3 style="margin: 0 0 10px 0; font-size: 14px; opacity: 0.9;">⚖️ HASIL SERI</h3>
+          <h2 style="margin: 0; font-size: 28px;">Seri</h2>
+          <p style="margin: 5px 0 0 0; opacity: 0.9;">${tieGroup.length} ${usePairs ? 'pasangan kandidat' : 'kandidat'} memperoleh suara terbanyak yang sama (${tieGroup[0].votes} suara).</p>
+          <ul style="margin: 10px 0 0 0; padding-left: 20px;">
+            ${tieGroup
+            .map((c) => `<li>${c.name} - ${c.student_id} (${c.percentage.toFixed(1)}%)</li>`)
+            .join('')}
+          </ul>
+        </div>
+        `
+        : stats.winner
         ? `
         <div class="winner-card">
           <h3 style="margin: 0 0 10px 0; font-size: 14px; opacity: 0.9;">🏆 PEMENANG PEMILIHAN</h3>
@@ -425,7 +443,7 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
       </div>
 
       {/* Winner Announcement */}
-      {stats.winner && stats.totalVotes > 0 && (
+      {stats.winner && stats.totalVotes > 0 && !isTie && (
         <Card className="bg-linear-to-r from-yellow-50 to-orange-50 border-yellow-200">
           <CardContent className="p-6">
             <div className="flex items-start gap-4">
@@ -442,6 +460,33 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
                   <Badge className="bg-yellow-500 hover:bg-yellow-600">
                     {stats.winner.votes} suara ({stats.winner.percentage.toFixed(1)}%)
                   </Badge>
+                </div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Seri Announcement */}
+      {isTie && (
+        <Card className="border-accent/50 bg-accent/10">
+          <CardContent className="p-6">
+            <div className="flex items-start gap-4">
+              <Scale className="h-12 w-12 text-primary shrink-0" />
+              <div className="flex-1">
+                <h3 className="text-sm font-medium text-muted-foreground mb-1">
+                  HASIL SERI
+                </h3>
+                <h2 className="text-2xl font-bold text-foreground mb-2">Seri</h2>
+                <p className="text-sm text-muted-foreground mb-3">
+                  {tieGroup.length} {usePairs ? 'pasangan kandidat' : 'kandidat'} memperoleh suara terbanyak yang sama ({tieGroup[0].votes} suara).
+                </p>
+                <div className="flex flex-wrap gap-2">
+                  {tieGroup.map((c) => (
+                    <Badge key={c.id} variant="secondary">
+                      {c.name} • {c.votes} suara ({c.percentage.toFixed(1)}%)
+                    </Badge>
+                  ))}
                 </div>
               </div>
             </div>
@@ -520,7 +565,7 @@ export function EventResultsView({ eventId, eventTitle, eventStatus }: EventResu
                   <tr key={candidate.id} className="hover:bg-muted/30">
                     <td className="p-4">
                       <div className="flex items-center gap-2">
-                        {index === 0 && stats.totalVotes > 0 ? (
+                        {index === 0 && stats.totalVotes > 0 && !isTie ? (
                           <Trophy className="h-5 w-5 text-yellow-500" />
                         ) : (
                           <span className="text-sm font-medium text-muted-foreground">

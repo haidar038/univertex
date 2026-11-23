@@ -317,5 +317,65 @@ describe('ResultsPage - P-B mode sensor closed', () => {
   });
 });
 
+describe('ResultsPage - Seri', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
 
+  const twoCandidates = [
+    { id: 'c1', profiles: { full_name: 'Kandidat A', student_id: 'NA' } },
+    { id: 'c2', profiles: { full_name: 'Kandidat B', student_id: 'NB' } },
+  ];
+
+  it('menampilkan kartu Seri ketika dua kandidat menyamai suara terbanyak', async () => {
+    mockResults({
+      tally: [
+        { candidate_id: 'c1', pair_id: null, total_votes: 5 },
+        { candidate_id: 'c2', pair_id: null, total_votes: 5 },
+      ],
+      candidates: twoCandidates,
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Seri')).toBeInTheDocument();
+    });
+    // Tidak ada yang dimahkotai sebagai pemenang tunggal
+    expect(document.body.textContent).not.toMatch(/Pemenang|Posisi Teratas/);
+    expect(screen.getByText(/2 kandidat memperoleh suara terbanyak yang sama/i)).toBeInTheDocument();
+    // Kedua kandidat tercantum di kartu seri dengan persentase yang sama
+    expect(screen.getAllByText('Kandidat A').length).toBeGreaterThan(1);
+    expect(screen.getAllByText('Kandidat B').length).toBeGreaterThan(1);
+    expect(document.body.textContent).toMatch(/50%/);
+  });
+
+  it('tetap menampilkan Pemenang ketika suara terbanyak tunggal', async () => {
+    mockResults({
+      tally: [
+        { candidate_id: 'c1', pair_id: null, total_votes: 5 },
+        { candidate_id: 'c2', pair_id: null, total_votes: 3 },
+      ],
+      candidates: twoCandidates,
+    });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Pemenang')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Seri')).not.toBeInTheDocument();
+  });
+
+  it('tidak menampilkan Seri ketika semua kandidat belum mendapat suara', async () => {
+    mockResults({ tally: [], candidates: twoCandidates });
+
+    renderPage();
+
+    await waitFor(() => {
+      expect(screen.getByText('Kandidat A')).toBeInTheDocument();
+    });
+    expect(screen.queryByText('Seri')).not.toBeInTheDocument();
+  });
+});
 

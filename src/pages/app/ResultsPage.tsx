@@ -5,11 +5,12 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Alert, AlertDescription } from '@/components/ui/alert';
-import { Trophy, Users, ArrowLeft, Lock, Eye, Clock, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { Trophy, Users, ArrowLeft, Lock, Eye, Clock, AlertTriangle, CheckCircle2, Scale } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { useAuth } from '@/hooks/useAuth';
 import { fetchPairsWithMembers, getPairDisplayName, type PairWithMembers } from '@/lib/candidate-pair-helpers';
+import { getTieGroup } from '@/lib/election-results';
 
 interface CandidateResult {
   id: string;
@@ -241,6 +242,9 @@ export default function ResultsPage() {
   const winnerVotes: number = isPairMode
     ? Number(pairResults[0]?.votes) || 0
     : Number(results[0]?.votes) || 0;
+  // Pemenang tunggal vs seri: ≥2 entri dengan suara terbanyak sama.
+  const tiedResults = getTieGroup(isPairMode ? pairResults : results);
+  const isTie = !isRedacted && tiedResults.length > 0;
 
   return (
     <div className="p-8">
@@ -259,7 +263,7 @@ export default function ResultsPage() {
           )}
         </div>
 
-        {winnerName && totalVotes > 0 && !isRedacted && (
+        {winnerName && totalVotes > 0 && !isRedacted && !isTie && (
           <Card className="mb-8 border-primary/50 bg-gradient-to-br from-card to-primary/10">
             <CardContent className="py-8 text-center">
               <Trophy className="mx-auto mb-4 h-16 w-16 text-primary" />
@@ -280,6 +284,39 @@ export default function ResultsPage() {
                 <span className="font-bold text-primary-foreground">
                   {winnerVotes} suara ({safePercent(winnerVotes, totalVotes)}%)
                 </span>
+              </div>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Seri: ≥2 kandidat/pasangan dengan suara terbanyak sama */}
+        {isTie && (
+          <Card className="mb-8 border-accent/50 bg-gradient-to-br from-card to-accent/10">
+            <CardContent className="py-8 text-center">
+              <Scale className="mx-auto mb-4 h-16 w-16 text-primary" />
+              <h2 className="mb-2 text-2xl font-bold text-foreground">Seri</h2>
+              <p className="mb-6 text-sm text-muted-foreground">
+                {isPairMode
+                  ? `${tiedResults.length} pasangan kandidat memperoleh suara terbanyak yang sama.`
+                  : `${tiedResults.length} kandidat memperoleh suara terbanyak yang sama.`}
+              </p>
+              <div className="flex flex-wrap justify-center gap-3">
+                {tiedResults.map((r) => (
+                  <div
+                    key={r.id}
+                    className="min-w-[180px] rounded-lg border border-accent/40 bg-card px-4 py-3 text-left"
+                  >
+                    <p className="font-semibold text-foreground">{r.name}</p>
+                    <p className="text-xs text-muted-foreground">
+                      {isPairMode
+                        ? (r as PairResult).members.join(' • ')
+                        : (r as CandidateResult).studentId}
+                    </p>
+                    <p className="mt-1 text-sm font-bold text-primary">
+                      {r.votes} suara ({safePercent(Number(r.votes), totalVotes)}%)
+                    </p>
+                  </div>
+                ))}
               </div>
             </CardContent>
           </Card>

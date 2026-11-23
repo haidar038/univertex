@@ -4,10 +4,11 @@ import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Trophy, Users, ArrowLeft, Lock, Eye, Clock } from 'lucide-react';
+import { Trophy, Users, ArrowLeft, Lock, Eye, Clock, Scale } from 'lucide-react';
 import { format } from 'date-fns';
 import { id } from 'date-fns/locale';
 import { fetchPairsWithMembers, getPairDisplayName } from '@/lib/candidate-pair-helpers';
+import { getTieGroup } from '@/lib/election-results';
 
 export default function PublicResultsPage() {
   const { eventId } = useParams();
@@ -211,6 +212,8 @@ export default function PublicResultsPage() {
 
   const totalVotes = results.reduce((sum, r) => sum + r.votes, 0);
   const winner = results[0];
+  const tiedResults = getTieGroup(results);
+  const isTie = tiedResults.length > 0;
   const isActive = event.status === 'voting';
 
   return (
@@ -251,7 +254,7 @@ export default function PublicResultsPage() {
             </Card>
           )}
 
-          {winner && totalVotes > 0 && (
+          {winner && totalVotes > 0 && !isTie && (
             <Card className="mb-8 border-primary/50 bg-gradient-to-br from-card to-primary/10">
               <CardContent className="py-8 text-center">
                 <Trophy className="mx-auto mb-4 h-16 w-16 text-primary" />
@@ -268,6 +271,33 @@ export default function PublicResultsPage() {
                   <span className="font-bold text-primary-foreground">
                     {winner.votes} suara ({totalVotes > 0 ? Math.round((winner.votes / totalVotes) * 100) : 0}%)
                   </span>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Seri: ≥2 kandidat/pasangan dengan suara terbanyak sama */}
+          {isTie && (
+            <Card className="mb-8 border-accent/50 bg-gradient-to-br from-card to-accent/10">
+              <CardContent className="py-8 text-center">
+                <Scale className="mx-auto mb-4 h-16 w-16 text-primary" />
+                <h2 className="mb-2 text-2xl font-bold text-foreground">Seri</h2>
+                <p className="mb-6 text-sm text-muted-foreground">
+                  {tiedResults.length} kandidat memperoleh suara terbanyak yang sama.
+                </p>
+                <div className="flex flex-wrap justify-center gap-3">
+                  {tiedResults.map((r) => (
+                    <div
+                      key={r.id}
+                      className="min-w-[180px] rounded-lg border border-accent/40 bg-card px-4 py-3 text-left"
+                    >
+                      <p className="font-semibold text-foreground">{r.name}</p>
+                      <p className="text-xs text-muted-foreground">{r.studentId}</p>
+                      <p className="mt-1 text-sm font-bold text-primary">
+                        {r.votes} suara ({totalVotes > 0 ? Math.round((r.votes / totalVotes) * 100) : 0}%)
+                      </p>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
