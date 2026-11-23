@@ -39,7 +39,7 @@ export default function AdminEmailBlast() {
   const [stats, setStats] = useState<Stats>({ pending: 0, sent: 0, bounced: 0, failed: 0 });
   const [busy, setBusy] = useState(false);
   const [lastResult, setLastResult] = useState<string | null>(null);
-  // One-shot blast: semua pending dikirim sekali jalan, progres dibaca dari antrean.
+  // Blast dijalankan bertahap (batch kecil) karena worker edge punya batas resource.
   const [blastTotal, setBlastTotal] = useState(0);
   const [blastBaseline, setBlastBaseline] = useState({ sent: 0, failed: 0 });
   const [resetDialogOpen, setResetDialogOpen] = useState(false);
@@ -131,29 +131,44 @@ export default function AdminEmailBlast() {
     setLastResult(null);
     setBlastBaseline({ sent: stats.sent, failed: stats.failed });
     setBlastTotal(stats.pending);
+    const totals = { sent: 0, failed: 0, durationMs: 0, rounds: 0 };
+    let detail = '';
+    let lastPending = stats.pending;
     try {
-      const { data, error } = await supabase.functions.invoke('send-voter-credentials', {
-        body: { event_id: eventId, send_all: true },
-        headers: { Authorization: `Bearer ${session.access_token}` },
-      });
-      // Tampilkan pesan server apa adanya (no_token/bad_token/not_admin/secrets).
-      if (error) throw new Error(error.message || 'Gagal mengirim');
-      const r = data as {
-        sent: number;
-        failed: number;
-        duration_ms?: number;
-        errors?: Array<{ email: string; error: string }>;
-      };
-      // Tampilkan alasan kegagalan (mis. provider 403 domain belum verified),
-      // jangan cuma hitungan — error hilang saat antrean di-reset.
-      const detail = r.errors?.[0]?.error;
+      // 200 per invoke: cukup besar untuk efisien, cukup kecil untuk tidak
+      // kena WORKER_RESOURCE_LIMIT (546) seperti saat send_all 1566 sekaligus.
+      while (totals.rounds < 30) {
+        const { data, error } = await supabase.functions.invoke('send-voter-credentials', {
+          body: { event_id: eventId, batch: 200 },
+          headers: { Authorization: `Bearer ${session.access_token}` },
+        });
+        // Tampilkan pesan server apa adanya (no_token/bad_token/not_admin/secrets).
+        if (error) throw new Error(error.message || 'Gagal mengirim');
+        const r = data as {
+          sent: number;
+          failed: number;
+          pending?: number;
+          duration_ms?: number;
+          errors?: Array<{ email: string; error: string }>;
+        };
+        totals.sent += r.sent ?? 0;
+        totals.failed += r.failed ?? 0;
+        totals.durationMs += r.duration_ms ?? 0;
+        totals.rounds++;
+        lastPending = r.pending ?? lastPending;
+        // Alasan kegagalan (mis. provider 403 domain belum verified) hilang
+        // saat antrean di-reset — simpan dulu untuk ditampilkan.
+        if (!detail && r.errors?.[0]?.error) detail = r.errors[0].error;
+        await refreshStats();
+        if (lastPending <= 0 || (r.sent ?? 0) + (r.failed ?? 0) === 0) break;
+      }
       setLastResult(
-        `Terkirim ${r.sent}, gagal ${r.failed} — ${((r.duration_ms ?? 0) / 1000).toFixed(1)} dtk` +
-          (detail ? `\n${detail}` : '')
+        `Terkirim ${totals.sent}, gagal ${totals.failed} — ${(totals.durationMs / 1000).toFixed(1)} dtk, ${totals.rounds} batch` +
+          (detail ? `\n${detail}` : '') +
+          (lastPending > 0 ? '\nMasih ada antrean — ulangi kirim.' : '')
       );
-      if (r.failed > 0) toast.error(`${r.failed} email gagal — lihat detail di bawah`);
+      if (totals.failed > 0) toast.error(`${totals.failed} email gagal — lihat detail di bawah`);
       else toast.success('Blast selesai — lihat statistik');
-      refreshStats();
     } catch (e: unknown) {
       toast.error(e instanceof Error ? e.message : 'Gagal mengirim');
     } finally {

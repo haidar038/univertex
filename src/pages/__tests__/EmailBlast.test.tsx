@@ -2,7 +2,7 @@
  * Blast Email panel tests (Fase 2):
  * - Halaman render di balik permission admin + query daftar event
  * - Kontrak RPC admin_enqueue_event_voters(event) dan invoke function
- *   send-voter-credentials {event_id, send_all: true} (tanpa render Radix Select
+ *   send-voter-credentials {event_id, batch} (tanpa render Radix Select
  *   yang butuh pointer capture di jsdom — pola sama seperti CreateUserDialog)
  */
 import { describe, it, expect, vi, beforeEach } from 'vitest';
@@ -63,14 +63,14 @@ describe('AdminEmailBlast - Fase 2', () => {
     });
   });
 
-  it('kontrak kirim: functions.invoke send-voter-credentials {event_id, send_all} + header sesi', async () => {
+  it('kontrak kirim: functions.invoke send-voter-credentials {event_id, batch} + header sesi', async () => {
     (supabase as any).functions.invoke.mockResolvedValue({
-      data: { sent: 3000, failed: 0, duration_ms: 62000 },
+      data: { sent: 200, failed: 0, pending: 0, duration_ms: 12000 },
       error: null,
     });
 
     await (supabase as any).functions.invoke('send-voter-credentials', {
-      body: { event_id: 'ev-1', send_all: true },
+      body: { event_id: 'ev-1', batch: 200 },
       headers: { Authorization: 'Bearer sess-123' },
     });
 
@@ -78,6 +78,6 @@ describe('AdminEmailBlast - Fase 2', () => {
     // Gotcha supabase-js: header Authorization TIDAK otomatis = token sesi
     // (default-nya anon key -> server jawab 401). Wajib eksplisit.
     expect(opts.headers.Authorization).toMatch(/^Bearer\s+\S+$/);
-    expect(opts.body).toEqual({ event_id: 'ev-1', send_all: true });
+    expect(opts.body).toEqual({ event_id: 'ev-1', batch: 200 });
   });
 });
