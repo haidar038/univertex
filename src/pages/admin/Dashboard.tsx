@@ -138,7 +138,7 @@ export default function AdminDashboard() {
             <div className="mb-6 md:mb-8 grid gap-4 md:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-4">
                 <Card>
                     <CardHeader className="flex flex-row items-center justify-between pb-2">
-                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Pemilih</CardTitle>
+                        <CardTitle className="text-sm font-medium text-muted-foreground">Total Pengguna</CardTitle>
                         <Users className="h-4 w-4 text-muted-foreground" />
                     </CardHeader>
                     <CardContent>
