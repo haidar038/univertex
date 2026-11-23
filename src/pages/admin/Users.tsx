@@ -26,6 +26,7 @@ interface UserWithRoles {
 
 export default function AdminUsers() {
   const [users, setUsers] = useState<UserWithRoles[]>([]);
+  const [totalCount, setTotalCount] = useState(0);
   const [loading, setLoading] = useState(true);
   const [createDialogOpen, setCreateDialogOpen] = useState(false);
   const [bulkImportDialogOpen, setBulkImportDialogOpen] = useState(false);
@@ -35,17 +36,35 @@ export default function AdminUsers() {
   const [bulkDeleteDialogOpen, setBulkDeleteDialogOpen] = useState(false);
   const [selectedIds, setSelectedIds] = useState<Set<string>>(new Set());
   const [selectedUser, setSelectedUser] = useState<UserWithRoles | null>(null);
+  const [searchInput, setSearchInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [page, setPage] = useState(1);
   const PAGE_SIZE = 20;
+  const requestSeq = useRef(0);
+  const firstSearchRun = useRef(true);
   // P-C shift+klik: anchor index klik terakhir + status tombol Shift global
   // (Radix onCheckedChange tidak membawa MouseEvent, jadi dibaca dari window).
   const lastClickedIndex = useRef<number | null>(null);
   const shiftHeld = useRef(false);
 
+  // Data diambil per halaman dari RPC; debounce agar tidak query tiap ketikan.
   useEffect(() => {
-    fetchUsers();
-  }, []);
+    // Mount = sudah ada fetch dari effect halaman; jangan jadwalkan reset.
+    if (firstSearchRun.current) {
+      firstSearchRun.current = false;
+      return;
+    }
+    const timer = setTimeout(() => {
+      setSearchQuery(searchInput.trim());
+      setPage(1);
+      lastClickedIndex.current = null;
+    }, 250);
+    return () => clearTimeout(timer);
+  }, [searchInput]);
+
+  useEffect(() => {
+    fetchUsers(page, searchQuery);
+  }, [page, searchQuery]);
 
   useEffect(() => {
     const down = (e: KeyboardEvent) => {
@@ -82,22 +101,15 @@ export default function AdminUsers() {
     setResetPasswordDialogOpen(true);
   };
 
-  // Tampil = hasil filter; halaman = potongan 20; seleksi/shift-anchor
-  // selalu mengacu urutan tampil (index global halaman).
-  const filteredUsers = searchQuery.trim() === ''
-    ? users
-    : users.filter((u) => {
-        const q = searchQuery.trim().toLowerCase();
-        return (
-          u.full_name.toLowerCase().includes(q) ||
-          u.student_id.toLowerCase().includes(q) ||
-          (u.email || '').toLowerCase().includes(q)
-        );
-      });
-  const totalPages = Math.max(1, Math.ceil(filteredUsers.length / PAGE_SIZE));
+  // Server yang memotong halaman + menghitung total; UI hanya merender.
+  const totalPages = Math.max(1, Math.ceil(totalCount / PAGE_SIZE));
   const safePage = Math.min(Math.max(page, 1), totalPages);
-  const pageUsers = filteredUsers.slice((safePage - 1) * PAGE_SIZE, safePage * PAGE_SIZE);
+  const pageUsers = users;
   const pageOffset = (safePage - 1) * PAGE_SIZE;
+
+  useEffect(() => {
+    if (page > totalPages) setPage(totalPages);
+  }, [page, totalPages]);
 
   const goPage = (p: number) => {
     lastClickedIndex.current = null;
@@ -109,10 +121,13 @@ export default function AdminUsers() {
     // Shift+klik: pilih semua dari klik terakhir (anchor) sampai baris ini.
     // Index = posisi di urutan tampil (halaman), diteruskan dari map.
     if (shiftHeld.current && anchor !== null && index !== undefined) {
-      const [a, b] = anchor < index ? [anchor, index] : [index, anchor];
+      const [from, to] = anchor < index ? [anchor, index] : [index, anchor];
+      // Anchor/index adalah posisi global; data yang ada hanya halaman aktif.
+      const a = Math.max(0, Math.min(from, to) - pageOffset);
+      const b = Math.min(users.length - 1, Math.max(from, to) - pageOffset);
       setSelectedIds((prev) => {
         const next = new Set(prev);
-        filteredUsers.slice(a, b + 1).forEach((u) => next.add(u.id));
+        if (a <= b) users.slice(a, b + 1).forEach((u) => next.add(u.id));
         return next;
       });
       return;
@@ -147,20 +162,40 @@ export default function AdminUsers() {
     }
   };
 
+  const reload = () => fetchUsers(page, searchQuery);
+
   const handleBulkDeleteSuccess = () => {
     setSelectedIds(new Set());
-    fetchUsers();
+    reload();
   };
 
-  const fetchUsers = async () => {
+  const fetchUsers = async (nextPage: number, nextSearch: string) => {
+    const seq = ++requestSeq.current;
+    setLoading(true);
     try {
-      // auth.users.email is deliberately not readable through PostgREST.
-      // Use the narrow admin RPC so the table can show the monitorable email
-      // address without issuing one privileged request per user.
-      const { data, error } = await supabase.rpc('admin_list_users');
+      // RPC melakukan filter admin, pencarian, count, dan LIMIT/OFFSET di DB.
+      // Tanpa ini PostgREST memotong ±1000 baris sebelum UI sempat pagination.
+      const { data, error } = await supabase.rpc('admin_list_users_paged', {
+        p_limit: PAGE_SIZE,
+        p_offset: (nextPage - 1) * PAGE_SIZE,
+        p_search: nextSearch || null,
+      });
       if (error) throw error;
+      if (seq !== requestSeq.current) return;
 
-      const usersWithRoles = (data || []).map((user) => ({
+      const rows = (data || []) as Array<{
+        id: string;
+        full_name: string;
+        student_id: string;
+        email: string;
+        department: string | null;
+        class_id: string | null;
+        class_name: string | null;
+        roles: string[];
+        total_count: number;
+      }>;
+
+      const usersWithRoles = rows.map((user) => ({
         id: user.id,
         full_name: user.full_name,
         student_id: user.student_id,
@@ -169,23 +204,17 @@ export default function AdminUsers() {
         class_id: user.class_id,
         classes: user.class_name ? { name: user.class_name } : null,
         roles: (user.roles || []).map((role) => ({ role })),
-      })).filter((user) => {
-        // Exclude users with admin role
-        return !user.roles.some(r => r.role === 'admin');
-      });
+      }));
 
       setUsers(usersWithRoles);
+      setTotalCount(Number(rows[0]?.total_count ?? 0));
       lastClickedIndex.current = null;
-      setPage(1);
-      // Buang seleksi untuk id yang sudah tidak ada (mis. habis dihapus).
-      setSelectedIds((prev) => {
-        const alive = new Set(usersWithRoles.map((u) => u.id));
-        return new Set([...prev].filter((id) => alive.has(id)));
-      });
+      // Seleksi sengaja dipertahankan lintas halaman — jangan dipangkas
+      // terhadap id di halaman aktif saja.
     } catch (error) {
-      console.error('Error fetching users:', error);
+      if (seq === requestSeq.current) console.error('Error fetching users:', error);
     } finally {
-      setLoading(false);
+      if (seq === requestSeq.current) setLoading(false);
     }
   };
 
@@ -226,7 +255,7 @@ export default function AdminUsers() {
 
         {loading ? (
           <div className="text-center text-muted-foreground">Memuat...</div>
-        ) : users.length === 0 ? (
+        ) : users.length === 0 && !searchQuery ? (
           <Card>
             <CardContent className="flex min-h-[300px] flex-col items-center justify-center py-12">
               <UsersIcon className="mb-4 h-12 w-12 text-muted-foreground" />
@@ -243,12 +272,8 @@ export default function AdminUsers() {
                 <div className="relative">
                   <Search className="absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-muted-foreground" />
                   <input
-                    value={searchQuery}
-                    onChange={(e) => {
-                      setSearchQuery(e.target.value);
-                      setPage(1);
-                      lastClickedIndex.current = null;
-                    }}
+                    value={searchInput}
+                    onChange={(e) => setSearchInput(e.target.value)}
                     placeholder="Cari nama, NIM, atau email..."
                     aria-label="Cari pengguna"
                     className="w-full rounded-md border border-input bg-background py-2 pl-10 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-2 focus:ring-ring"
@@ -256,7 +281,7 @@ export default function AdminUsers() {
                 </div>
                 {searchQuery.trim() !== '' && (
                   <p className="mt-2 text-xs text-muted-foreground">
-                    {filteredUsers.length} dari {users.length} pengguna cocok
+                    {totalCount} pengguna cocok
                   </p>
                 )}
               </div>
@@ -358,7 +383,7 @@ export default function AdminUsers() {
                       </tr>
                       );
                     })}
-                    {filteredUsers.length === 0 && (
+                    {pageUsers.length === 0 && (
                       <tr>
                         <td colSpan={7} className="p-8 text-center text-sm text-muted-foreground">
                           Tidak ada pengguna yang cocok dengan pencarian.
@@ -371,7 +396,7 @@ export default function AdminUsers() {
               {totalPages > 1 && (
                 <div className="flex items-center justify-between border-t border-border p-3">
                   <span className="text-xs text-muted-foreground">
-                    Halaman {safePage} dari {totalPages} ({filteredUsers.length} pengguna)
+                    Halaman {safePage} dari {totalPages} ({totalCount} pengguna)
                   </span>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => goPage(1)} disabled={safePage <= 1} aria-label="Halaman pertama">
@@ -397,18 +422,18 @@ export default function AdminUsers() {
         <CreateUserDialog
           open={createDialogOpen}
           onOpenChange={setCreateDialogOpen}
-          onSuccess={fetchUsers}
+          onSuccess={reload}
         />
         <BulkImportUsersDialog
           open={bulkImportDialogOpen}
           onOpenChange={setBulkImportDialogOpen}
-          onSuccess={fetchUsers}
+          onSuccess={reload}
         />
         <EditUserDialog
           open={editDialogOpen}
           onOpenChange={setEditDialogOpen}
           user={selectedUser}
-          onSuccess={fetchUsers}
+          onSuccess={reload}
         />
         <ResetPasswordDialog
           open={resetPasswordDialogOpen}
@@ -416,14 +441,14 @@ export default function AdminUsers() {
           userId={selectedUser?.id || null}
           userEmail={selectedUser?.email || null}
           userName={selectedUser?.full_name || null}
-          onSuccess={fetchUsers}
+          onSuccess={reload}
         />
         <DeleteUserDialog
           open={deleteDialogOpen}
           onOpenChange={setDeleteDialogOpen}
           userId={selectedUser?.id || null}
           userName={selectedUser?.full_name || null}
-          onSuccess={fetchUsers}
+          onSuccess={reload}
         />
         <BulkDeleteUsersDialog
           open={bulkDeleteDialogOpen}

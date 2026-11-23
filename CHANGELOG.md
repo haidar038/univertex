@@ -12,6 +12,39 @@ All notable changes to UniVertex are documented here. Format follows
 > event asli `95676965-a5c6-4f62-88bb-37ab9a57968b` TIDAK disentuh.
 > Rincian: `docs/P1-Proddirect-Notes.md`.
 
+### 2026-11-23 — login NIM sebagai password + pagination user management
+- **Login paralel NIM-as-password** (blast PIN tetap jalan, password tersimpan
+  tidak dirotasi): `supabase/functions/nim-login` memverifikasi NIM terhadap
+  `profiles.student_id`, lalu mengeluarkan `token_hash` magiclink via Auth
+  Admin API — **tanpa mengirim email**, jadi tidak terkena delay Gmail/Resend.
+  Client `src/pages/Login.tsx` mencoba `signInWithPassword` dulu; hanya jika
+  gagal memanggil fungsi lalu `verifyOtp(token_hash, 'magiclink')`. Field
+  identifier diubah ke `type="text"` (`inputMode="email"`) agar NIM lolos
+  validasi browser. Audit `auth.login[_nim|_nim_failed]`, error generik.
+- Migrasi `20261123090300_nim_login_resolve.sql`: RPC `resolve_nim_login`
+  (service_role only) memetakan email/NIM → id/email/student_id. Deploy
+  fungsi wajib `--no-verify-jwt` (dipanggil sebelum session ada) + env APP_URL.
+- **User management**: migrasi `20261123090400_admin_list_users_paged.sql`
+  — RPC `admin_list_users_paged(p_limit,p_offset,p_search)` melakukan filter
+  admin, search, dan `COUNT(*) OVER()` di DB. Akar 999: PostgREST memotong
+  ±1000 baris `admin_list_users()` lalu UI membuang 1 admin. `Users.tsx`
+  kini pagination/server-search dengan debounce 250 ms, guard response usang,
+  dan total_count dari RPC (seleksi tetap lintas halaman).
+- Test baru `LoginNimFallback.test.tsx` (3), `UsersSelection.test.tsx`
+  diperluas (10, termasuk total 1600 → 80 halaman). Verifikasi lokal:
+  full suite 34 file / 221 test hijau, `tsc --noEmit` 0 error, `deno check`
+  0 error, lint 0 error (45 warning lama), `vite build` sukses.
+- **Sudah di-apply + di-deploy** ke prod `oiurjnmpkguyxevdbpbu` dan staging
+  `koveroqhxphdiakvukxt`: 2 migrasi aktif, `nim-login` v1 ACTIVE dengan
+  `verify_jwt=false`, source identik di kedua project. Grant terverifikasi:
+  `resolve_nim_login` hanya service_role; `admin_list_users_paged` authenticated
+  + service_role, anon ditolak. Frontend aman di-deploy setelah ini.
+- Observasi prod saat verifikasi: `profiles` = 58 baris (56 non-admin), jauh
+  di bawah ~1600 yang disebut owner — kemungkinan import massal belum jalan.
+  RPC tetap sudah menangani pagination untuk skala tersebut.
+- Risiko disetujui owner: NIM diketahui publik → siapa pun bisa login sebagai
+  pemilik NIM. Tidak ada rotasi password; blast PIN tidak diubah.
+
 ### 2026-11-23 — kondisi "Seri" pada hasil pemilihan
 - `src/lib/election-results.ts`: helper `getTieGroup<T extends { votes: number }>()`
   mengembalikan semua entri dengan suara terbanyak identik (≥2, suara > 0),

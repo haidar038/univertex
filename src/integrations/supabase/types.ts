@@ -1144,6 +1144,24 @@ export type Database = {
           student_id: string
         }[]
       }
+      admin_list_users_paged: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_search?: string
+        }
+        Returns: {
+          class_id: string | null
+          class_name: string | null
+          department: string | null
+          email: string
+          full_name: string
+          id: string
+          roles: Database["public"]["Enums"]["app_role"][]
+          student_id: string
+          total_count: number
+        }[]
+      }
       admin_lookup_user_id_by_email: {
         Args: { p_email: string }
         Returns: string

@@ -42,12 +42,38 @@ export default function Login() {
         setError("");
 
         try {
+            // Jalur utama: email + PIN/password tersimpan.
             const { data, error: signInError } = await supabase.auth.signInWithPassword({
                 email,
                 password,
             });
 
-            if (signInError) throw signInError;
+            let userId: string;
+            let userEmail: string;
+
+            if (!signInError && data?.user) {
+                userId = data.user.id;
+                userEmail = data.user.email ?? email;
+            } else {
+                // Jalur paralel: NIM sebagai password. Edge Function hanya
+                // mengeluarkan token_hash (tanpa email) — session dibuat di sini.
+                const { data: nimData, error: nimError } = await supabase.functions.invoke(
+                    'nim-login',
+                    { body: { identifier: email, password } },
+                );
+                if (nimError || !nimData?.token_hash) {
+                    throw new Error('Kredensial tidak valid');
+                }
+                const { data: otpData, error: otpError } = await supabase.auth.verifyOtp({
+                    token_hash: nimData.token_hash as string,
+                    type: 'magiclink',
+                });
+                if (otpError || !otpData?.user) {
+                    throw new Error('Kredensial tidak valid');
+                }
+                userId = otpData.user.id;
+                userEmail = otpData.user.email ?? email;
+            }
 
             // Fetch profile + roles. Done locally so we can decide where to
             // go *before* the useAuth subscriber fires (otherwise the user
@@ -55,7 +81,7 @@ export default function Login() {
             const { data: profile } = await supabase
                 .from("profiles")
                 .select("id, full_name, student_id, department, class_id")
-                .eq("id", data.user.id)
+                .eq("id", userId)
                 .single();
 
             if (!profile) {
@@ -65,7 +91,7 @@ export default function Login() {
             const { data: rolesData } = await supabase
                 .from("user_roles")
                 .select("role")
-                .eq("user_id", data.user.id);
+                .eq("user_id", userId);
 
             const roles = (rolesData || []).map(
                 (r: { role: string }) => r.role as 'admin' | 'voter' | 'candidate'
@@ -75,10 +101,10 @@ export default function Login() {
             void registerCurrentDeviceSession();
             void logAudit({
                 action: 'auth.login',
-                description: `User logged in: ${data.user.email}`,
+                description: `User logged in: ${userEmail}`,
                 category: 'auth',
                 severity: 'info',
-                metadata: { user_id: data.user.id, roles },
+                metadata: { user_id: userId, roles },
             });
 
             toast.success("Login berhasil!");
@@ -143,7 +169,7 @@ export default function Login() {
 
                             <div className="space-y-2">
                                 <Label htmlFor="email">Email</Label>
-                                <Input id="email" type="email" placeholder="example@email.com" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required disabled={submitting} className="border-border" autoComplete="email" />
+                                <Input id="email" type="text" inputMode="email" placeholder="Email atau NIM" autoFocus value={email} onChange={(e) => setEmail(e.target.value)} required disabled={submitting} className="border-border" autoComplete="email" />
                             </div>
 
                             <div className="space-y-2">
@@ -170,6 +196,10 @@ export default function Login() {
                                     </button>
                                 </div>
                             </div>
+
+                            <p className="text-xs text-muted-foreground">
+                                Password tersimpan (PIN) tetap berlaku. NIM juga dapat dipakai sebagai password.
+                            </p>
 
                             <Button type="submit" className="w-full" disabled={submitting}>
                                 {submitting ? "Memproses..." : "Masuk"}

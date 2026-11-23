@@ -54,7 +54,9 @@ vi.mock('@/integrations/supabase/client', () => ({
       signOut: vi.fn(),
       updateUser: vi.fn(),
       resetPasswordForEmail: vi.fn(),
+      verifyOtp: vi.fn(),
     },
+    functions: { invoke: vi.fn() },
     // NOTE: rpc added so tests can vi.mocked(supabase.rpc) it.
     rpc: vi.fn().mockResolvedValue({ data: null, error: null }),
     from: vi.fn(() => ({
